@@ -31,7 +31,19 @@ def _extract_recipe(raw_recipe: dict[str, Any]) -> dict[str, str] | None:
     }
 
 
+def _empty_load_report() -> dict[str, object]:
+    return {
+        "elements": [],
+        "recipes": [],
+        "ignored_element_entries": 0,
+        "ignored_item_entries": 0,
+        "ignored_recipe_entries": 0,
+        "warnings": [],
+    }
+
+
 def _load_simple_save(data: dict[str, Any]) -> dict[str, list]:
+    report = _empty_load_report()
     raw_elements = data.get("elements", [])
     raw_recipes = data.get("recipes", [])
 
@@ -40,6 +52,8 @@ def _load_simple_save(data: dict[str, Any]) -> dict[str, list]:
         name = _extract_element_name(raw_element)
         if name:
             elements.append(name)
+        else:
+            report["ignored_element_entries"] += 1
 
     recipes = []
     for raw_recipe in raw_recipes:
@@ -47,26 +61,42 @@ def _load_simple_save(data: dict[str, Any]) -> dict[str, list]:
             recipe = _extract_recipe(raw_recipe)
             if recipe:
                 recipes.append(recipe)
+                continue
+        report["ignored_recipe_entries"] += 1
 
     for recipe in recipes:
         for key in ("left", "right", "result"):
             if recipe[key] not in elements:
                 elements.append(recipe[key])
 
-    return {"elements": sorted(set(elements)), "recipes": recipes}
+    report["elements"] = sorted(set(elements))
+    report["recipes"] = recipes
+    if report["ignored_element_entries"]:
+        report["warnings"].append(
+            f"Ignored {report['ignored_element_entries']} invalid element entries."
+        )
+    if report["ignored_recipe_entries"]:
+        report["warnings"].append(
+            f"Ignored {report['ignored_recipe_entries']} invalid recipe entries."
+        )
+    return report
 
 
 def _load_infinite_craft_save(data: dict[str, Any]) -> dict[str, list]:
+    report = _empty_load_report()
     items = data.get("items", [])
     id_to_name: dict[int, str] = {}
 
     for item in items:
         if not isinstance(item, dict):
+            report["ignored_item_entries"] += 1
             continue
         item_id = item.get("id")
         text = item.get("text")
         if isinstance(item_id, int) and isinstance(text, str) and text.strip():
             id_to_name[item_id] = text.strip()
+        else:
+            report["ignored_item_entries"] += 1
 
     recipes: list[dict[str, str]] = []
     for item in items:
@@ -79,6 +109,8 @@ def _load_infinite_craft_save(data: dict[str, Any]) -> dict[str, list]:
             or not result_name.strip()
             or not isinstance(raw_recipes, list)
         ):
+            if "id" in item or "text" in item or "recipes" in item:
+                report["ignored_recipe_entries"] += 1
             continue
 
         for raw_recipe in raw_recipes:
@@ -87,11 +119,13 @@ def _load_infinite_craft_save(data: dict[str, Any]) -> dict[str, list]:
                 or len(raw_recipe) != 2
                 or not all(isinstance(value, int) for value in raw_recipe)
             ):
+                report["ignored_recipe_entries"] += 1
                 continue
 
             left_name = id_to_name.get(raw_recipe[0])
             right_name = id_to_name.get(raw_recipe[1])
             if not left_name or not right_name:
+                report["ignored_recipe_entries"] += 1
                 continue
 
             recipes.append(
@@ -102,11 +136,24 @@ def _load_infinite_craft_save(data: dict[str, Any]) -> dict[str, list]:
                 }
             )
 
-    return {"elements": sorted(set(id_to_name.values())), "recipes": recipes}
+    report["elements"] = sorted(set(id_to_name.values()))
+    report["recipes"] = recipes
+    if report["ignored_item_entries"]:
+        report["warnings"].append(
+            f"Ignored {report['ignored_item_entries']} invalid item entries."
+        )
+    if report["ignored_recipe_entries"]:
+        report["warnings"].append(
+            f"Ignored {report['ignored_recipe_entries']} invalid or unresolved recipe entries."
+        )
+    return report
 
 
 def load_save(path: Path) -> dict[str, list]:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON save file: {exc.msg} at line {exc.lineno}.") from exc
     if isinstance(data, dict) and isinstance(data.get("items"), list):
         return _load_infinite_craft_save(data)
     if isinstance(data, dict):

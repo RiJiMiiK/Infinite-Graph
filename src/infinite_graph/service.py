@@ -47,6 +47,10 @@ def process_save(
     return {
         "elements": save["elements"],
         "recipes": save["recipes"],
+        "load_warnings": save["warnings"],
+        "ignored_element_entries": save["ignored_element_entries"],
+        "ignored_item_entries": save["ignored_item_entries"],
+        "ignored_recipe_entries": save["ignored_recipe_entries"],
         "graph_nodes": graph_data["nodes"],
         "graph_edges": graph_data["edges"],
         "node_weights": graph_data["node_weights"],

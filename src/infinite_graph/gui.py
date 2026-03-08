@@ -494,6 +494,9 @@ class InfiniteGraphWindow(QMainWindow):
                 [
                     f"Elements charges : {len(result['elements'])}",
                     f"Recettes chargees : {len(result['recipes'])}",
+                    f"Entrees element ignorees : {result['ignored_element_entries']}",
+                    f"Entrees item ignorees : {result['ignored_item_entries']}",
+                    f"Entrees recette ignorees : {result['ignored_recipe_entries']}",
                     f"Noeuds du graphe : {len(result['graph_nodes'])}",
                     f"Edges du graphe : {len(result['graph_edges'])}",
                     f"Combinaisons manquantes calculees : {len(result['missing'])}",
@@ -503,7 +506,12 @@ class InfiniteGraphWindow(QMainWindow):
                 ]
             )
         )
-        self.stage_label.setText("Current step: done")
+        if result["load_warnings"]:
+            self.stage_label.setText(
+                "Current step: done with warnings - " + " | ".join(result["load_warnings"])
+            )
+        else:
+            self.stage_label.setText("Current step: done")
 
     def _on_generation_failed(self, message: str) -> None:
         self.summary_label.setText("La generation a echoue.")
@@ -600,6 +608,9 @@ class InfiniteGraphWindow(QMainWindow):
                 [
                     f"Elements charges : {len(self._current_result['elements'])}",
                     f"Recettes chargees : {len(self._current_result['recipes'])}",
+                    f"Entrees element ignorees : {self._current_result['ignored_element_entries']}",
+                    f"Entrees item ignorees : {self._current_result['ignored_item_entries']}",
+                    f"Entrees recette ignorees : {self._current_result['ignored_recipe_entries']}",
                     f"Noeuds du graphe : {len(self._current_result['graph_nodes'])}",
                     f"Edges du graphe : {len(self._current_result['graph_edges'])}",
                     f"Combinaisons manquantes calculees : {len(self._current_result['missing'])}",
@@ -674,6 +685,9 @@ class InfiniteGraphWindow(QMainWindow):
                 [
                     f"Elements charges : {len(self._current_result['elements'])}",
                     f"Recettes chargees : {len(self._current_result['recipes'])}",
+                    f"Entrees element ignorees : {self._current_result['ignored_element_entries']}",
+                    f"Entrees item ignorees : {self._current_result['ignored_item_entries']}",
+                    f"Entrees recette ignorees : {self._current_result['ignored_recipe_entries']}",
                     f"Noeuds du graphe : {len(self._current_result['graph_nodes'])}",
                     f"Edges du graphe : {len(self._current_result['graph_edges'])}",
                     f"Combinaisons manquantes calculees : {len(self._current_result['missing'])}",

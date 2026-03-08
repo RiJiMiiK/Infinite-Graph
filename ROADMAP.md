@@ -21,8 +21,8 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Extraction normalisee des recettes sous forme `left`, `right`, `result`
 - [x] Validation des starters obligatoires `Water`, `Fire`, `Wind`, `Earth`
 - [x] Erreur explicite si un starter est manquant
-- [ ] Mieux gerer les saves partiellement corrompues
-- [ ] Signaler les recettes invalides ignorees
+- [x] Mieux gerer les saves partiellement corrompues
+- [x] Signaler les recettes invalides ignorees
 - [ ] Ajouter des tests unitaires de parsing
 
 ## 3. Modele du graphe
