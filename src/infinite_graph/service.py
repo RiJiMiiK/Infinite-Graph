@@ -18,6 +18,8 @@ def process_save(
     if progress_callback is not None:
         progress_callback("Loading save file")
     save = load_save(input_path)
+    if progress_callback is not None:
+        progress_callback("Loading discarded combinations")
     discarded_pairs = load_discarded_pairs(input_path)
     if progress_callback is not None:
         progress_callback("Building graph model")

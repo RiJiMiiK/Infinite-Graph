@@ -96,8 +96,20 @@ def test_build_graph_render_data_with_progress(monkeypatch) -> None:
     assert len(render["positions"]) == 2
     assert render["adj"] == [(0, 1)]
     assert render["labels"]
-    assert steps[-1][0] == gui.LAYOUT_PROGRESS_END
-    assert steps[-1][1].startswith("Computing spring layout: 10/10")
+    assert steps[0] == (
+        gui.GENERATION_STAGE_PROGRESS["Preparing graph structure"],
+        "Preparing graph structure",
+    )
+    assert steps[1] == (
+        gui.GENERATION_STAGE_PROGRESS["Initializing spring layout"],
+        "Initializing spring layout",
+    )
+    assert steps[-2][0] == gui.LAYOUT_PROGRESS_END
+    assert steps[-2][1].startswith("Computing spring layout: 10/10")
+    assert steps[-1] == (
+        gui.GENERATION_STAGE_PROGRESS["Finalizing graph geometry"],
+        "Finalizing graph geometry",
+    )
 
 
 def test_build_subgraph_render_data() -> None:
@@ -275,6 +287,7 @@ def test_generate_worker_success_and_failure(monkeypatch, sample_result) -> None
     assert finished
     assert not failures
     assert progress[0] == (0, "Starting generation")
+    assert (gui.GENERATION_STAGE_PROGRESS["Loading save file"], "Loading save file") in progress
     assert progress[-1] == (100, "Preparing interface update")
 
     monkeypatch.setattr(gui, "process_save", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
@@ -388,6 +401,7 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     assert window.random_button.isEnabled()
     assert "Combinaisons discardees" in window.summary_label.text()
     assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
+    assert window.progress_bar.value() == 100
 
     warned_result = dict(sample_result)
     warned_result["load_warnings"] = ["warn"]

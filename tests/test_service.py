@@ -23,6 +23,7 @@ def test_process_save_reports_progress_and_returns_expected_data(monkeypatch, tm
     result = service.process_save(tmp_path / "save.json", progress_callback=steps.append)
     assert steps == [
         "Loading save file",
+        "Loading discarded combinations",
         "Building graph model",
         "Computing graph statistics",
         "Computing missing combinations",

@@ -47,13 +47,24 @@ from .service import process_save
 GENERATION_STAGE_PROGRESS = {
     "Starting generation": 0,
     "Loading save file": 5,
+    "Loading discarded combinations": 12,
     "Building graph model": 20,
     "Computing graph statistics": 35,
     "Computing missing combinations": 50,
+    "Preparing graph structure": 58,
+    "Initializing spring layout": 60,
+    "Finalizing graph geometry": 96,
     "Preparing interface update": 100,
 }
 LAYOUT_PROGRESS_START = 60
 LAYOUT_PROGRESS_END = 95
+INTERFACE_PROGRESS = {
+    "Updating graph view": 96,
+    "Updating node table": 97,
+    "Updating edge table": 98,
+    "Updating statistics": 99,
+    "Updating summary": 100,
+}
 
 
 class ListTableModel(QAbstractTableModel):
@@ -139,6 +150,11 @@ def build_graph_render_data(
 ) -> dict[str, object]:
     ordered_nodes = sorted(nodes, key=lambda item: str(item["id"]))
     names = [str(node["id"]) for node in ordered_nodes]
+    if progress_callback is not None:
+        progress_callback(
+            GENERATION_STAGE_PROGRESS["Preparing graph structure"],
+            "Preparing graph structure",
+        )
     graph = nx.DiGraph()
     graph.add_nodes_from(names)
     graph.add_edges_from((str(edge["source"]), str(edge["target"])) for edge in edges)
@@ -147,6 +163,11 @@ def build_graph_render_data(
     batch_size = 5
     spring_positions = None
     started_at = time.perf_counter()
+    if progress_callback is not None:
+        progress_callback(
+            GENERATION_STAGE_PROGRESS["Initializing spring layout"],
+            "Initializing spring layout",
+        )
     for current_iteration in range(0, total_iterations, batch_size):
         iterations = min(batch_size, total_iterations - current_iteration)
         spring_positions = nx.spring_layout(
@@ -174,6 +195,11 @@ def build_graph_render_data(
             )
 
     assert spring_positions is not None
+    if progress_callback is not None:
+        progress_callback(
+            GENERATION_STAGE_PROGRESS["Finalizing graph geometry"],
+            "Finalizing graph geometry",
+        )
     positions = [
         (
             float(spring_positions[name][0] * 2000.0),
@@ -775,12 +801,20 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self._current_save_path = Path(self.input_edit.text().strip())
         self._full_render_data = render_data
         self._set_candidate_buttons_enabled(True)
+        self._on_generation_progress(
+            INTERFACE_PROGRESS["Updating graph view"],
+            "Updating graph view",
+        )
         self.graph_view.update_graph(render_data)
         self.selected_node_label.setText("Noeud selectionne : aucun")
         self.selected_node_details.setPlainText("Aucun noeud selectionne.")
         self.subgraph_center_edit.clear()
         self.subgraph_depth_edit.setText("1")
 
+        self._on_generation_progress(
+            INTERFACE_PROGRESS["Updating node table"],
+            "Updating node table",
+        )
         node_rows = []
         for node in sorted(
             result["graph_nodes"],
@@ -793,6 +827,10 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             node_rows.append([node["label"], "?" if node["weight"] is None else node["weight"]])
         self.node_model.update_rows(node_rows)
 
+        self._on_generation_progress(
+            INTERFACE_PROGRESS["Updating edge table"],
+            "Updating edge table",
+        )
         edge_rows = []
         for edge in sorted(
             result["graph_edges"],
@@ -809,6 +847,10 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.edge_model.update_rows(edge_rows)
 
         statistics = result["statistics"]
+        self._on_generation_progress(
+            INTERFACE_PROGRESS["Updating statistics"],
+            "Updating statistics",
+        )
         self.stats_canvas.update_series(
             statistics["recipe_counts_by_result_weight"],
             statistics["node_counts_by_weight"],
@@ -819,6 +861,10 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
                 f"Poids {weight}: {count} recipes non faites possibles"
             )
 
+        self._on_generation_progress(
+            INTERFACE_PROGRESS["Updating summary"],
+            "Updating summary",
+        )
         self.summary_label.setText(
             "\n".join(
                 [
