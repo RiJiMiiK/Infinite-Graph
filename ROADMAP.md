@@ -61,7 +61,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Recherche d'un element dans la vue
 - [x] Centrage automatique sur un element
 - [x] Filtrage du graphe par sous-graphe
-- [ ] Filtrage par poids minimal / maximal
+- [x] Filtrage par poids minimal / maximal
 - [ ] Reglages de layout via l'interface
 
 ## 5. Experience utilisateur pendant la generation

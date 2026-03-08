@@ -1,3 +1,7 @@
+"""Qt GUI for browsing and analyzing Infinite Craft saves."""
+
+# pylint: disable=too-many-lines
+
 from __future__ import annotations
 
 import sys
@@ -190,6 +194,7 @@ def build_graph_render_data(
         "brushes": symbol_brush,
         "labels": labels,
         "node_ids": names,
+        "node_weights": [node["weight"] for node in ordered_nodes],
     }
 
 
@@ -238,6 +243,44 @@ def build_subgraph_render_data(
         "brushes": [render_data["brushes"][index] for index in kept_indices],
         "labels": filtered_labels,
         "node_ids": [node_ids[index] for index in kept_indices],
+        "node_weights": [render_data["node_weights"][index] for index in kept_indices],
+    }
+
+
+def build_weight_filtered_render_data(
+    render_data: dict[str, object],
+    min_weight: int | None,
+    max_weight: int | None,
+) -> dict[str, object]:
+    node_weights = list(render_data.get("node_weights", []))
+    kept_indices = []
+    for index, weight in enumerate(node_weights):
+        if weight is None:
+            continue
+        if min_weight is not None and int(weight) < min_weight:
+            continue
+        if max_weight is not None and int(weight) > max_weight:
+            continue
+        kept_indices.append(index)
+
+    index_map = {old_index: new_index for new_index, old_index in enumerate(kept_indices)}
+    labels = render_data.get("labels", [])
+    filtered_labels = []
+    if len(labels) == len(node_weights):
+        filtered_labels = [labels[index] for index in kept_indices]
+
+    return {
+        "positions": [render_data["positions"][index] for index in kept_indices],
+        "adj": [
+            (index_map[source_index], index_map[target_index])
+            for source_index, target_index in render_data.get("adj", [])
+            if source_index in index_map and target_index in index_map
+        ],
+        "sizes": [render_data["sizes"][index] for index in kept_indices],
+        "brushes": [render_data["brushes"][index] for index in kept_indices],
+        "labels": filtered_labels,
+        "node_ids": [render_data["node_ids"][index] for index in kept_indices],
+        "node_weights": [node_weights[index] for index in kept_indices],
     }
 
 
@@ -283,12 +326,12 @@ class GraphViewWidget(pg.PlotWidget):
 
         self.autoRange()
 
-    def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.LeftButton and self._render_data.get("positions"):
-            scene_pos = self.mapToScene(event.position().toPoint())
+    def mousePressEvent(self, ev) -> None:
+        if ev.button() == Qt.LeftButton and self._render_data.get("positions"):
+            scene_pos = self.mapToScene(ev.position().toPoint())
             view_pos = self.getViewBox().mapSceneToView(scene_pos)
             self.select_node_at((float(view_pos.x()), float(view_pos.y())))
-        super().mousePressEvent(event)
+        super().mousePressEvent(ev)
 
     def select_node_by_id(self, node_id: str | None) -> None:
         available_ids = set(self._render_data.get("node_ids", []))
@@ -381,6 +424,14 @@ class GraphViewWidget(pg.PlotWidget):
             padding=0.0,
         )
 
+    @property
+    def selected_node_id(self) -> str | None:
+        return self._selected_node_id
+
+    @property
+    def current_render_data(self) -> dict[str, object]:
+        return self._render_data
+
 
 class GenerateWorker(QObject):
     progress = Signal(str)
@@ -412,7 +463,7 @@ class GenerateWorker(QObject):
         self.finished.emit(result, render_data)
 
 
-class InfiniteGraphWindow(QMainWindow):
+class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-attributes
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Infinite Graph")
@@ -449,6 +500,9 @@ class InfiniteGraphWindow(QMainWindow):
         self.subgraph_depth_edit = QLineEdit("1")
         self.subgraph_button = QPushButton("Sous-graphe")
         self.subgraph_reset_button = QPushButton("Reinitialiser")
+        self.min_weight_edit = QLineEdit()
+        self.max_weight_edit = QLineEdit()
+        self.weight_filter_button = QPushButton("Filtrer poids")
         self._worker_thread: QThread | None = None
         self._worker: GenerateWorker | None = None
         self._current_result: dict[str, object] | None = None
@@ -550,6 +604,19 @@ class InfiniteGraphWindow(QMainWindow):
         subgraph_layout.addWidget(self.subgraph_button)
         subgraph_layout.addWidget(self.subgraph_reset_button)
 
+        weight_row = QWidget()
+        weight_layout = QHBoxLayout(weight_row)
+        weight_layout.setContentsMargins(0, 0, 0, 0)
+        self.min_weight_edit.setPlaceholderText("Poids min")
+        self.max_weight_edit.setPlaceholderText("Poids max")
+        self.min_weight_edit.setFixedWidth(120)
+        self.max_weight_edit.setFixedWidth(120)
+        self.weight_filter_button.clicked.connect(self._apply_weight_filter)
+        weight_layout.addWidget(self.min_weight_edit)
+        weight_layout.addWidget(self.max_weight_edit)
+        weight_layout.addWidget(self.weight_filter_button)
+        weight_layout.addStretch(1)
+
         self.selected_node_details.setReadOnly(True)
         self.selected_node_details.setMinimumWidth(280)
         self.selected_node_details.setPlainText("Aucun noeud selectionne.")
@@ -567,6 +634,7 @@ class InfiniteGraphWindow(QMainWindow):
 
         layout.addWidget(search_row)
         layout.addWidget(subgraph_row)
+        layout.addWidget(weight_row)
         layout.addWidget(splitter)
         return tab
 
@@ -774,7 +842,7 @@ class InfiniteGraphWindow(QMainWindow):
 
         center_node = self.subgraph_center_edit.text().strip()
         if not center_node:
-            center_node = self.graph_view._selected_node_id or ""
+            center_node = self.graph_view.selected_node_id or ""
             if center_node:
                 self.subgraph_center_edit.setText(center_node)
         if not center_node:
@@ -815,6 +883,50 @@ class InfiniteGraphWindow(QMainWindow):
             return
         self.graph_view.update_graph(self._full_render_data)
 
+    def _apply_weight_filter(self) -> None:
+        current_render = self.graph_view.current_render_data or self._full_render_data
+        if not current_render:
+            return
+
+        min_text = self.min_weight_edit.text().strip()
+        max_text = self.max_weight_edit.text().strip()
+        if not min_text and not max_text:
+            QMessageBox.information(
+                self,
+                "Information",
+                "Saisis au moins un poids minimal ou maximal.",
+            )
+            return
+
+        if (min_text and not min_text.isdigit()) or (max_text and not max_text.isdigit()):
+            QMessageBox.information(
+                self,
+                "Information",
+                "Les poids min et max doivent etre des entiers positifs ou nuls.",
+            )
+            return
+
+        min_weight = int(min_text) if min_text else None
+        max_weight = int(max_text) if max_text else None
+        if (
+            min_weight is not None
+            and max_weight is not None
+            and min_weight > max_weight
+        ):
+            QMessageBox.information(
+                self,
+                "Information",
+                "Le poids minimal ne peut pas etre superieur au poids maximal.",
+            )
+            return
+
+        filtered = build_weight_filtered_render_data(
+            current_render,
+            min_weight,
+            max_weight,
+        )
+        self.graph_view.update_graph(filtered)
+
     def _build_selected_node_details(self, node_name: str) -> str:
         if not self._current_result:
             return f"Nom : {node_name}"
@@ -833,13 +945,15 @@ class InfiniteGraphWindow(QMainWindow):
         for edge in self._current_result["graph_edges"]:
             if edge["target"] == node_name:
                 incoming.append(str(edge["source"]))
+                edge_text = ", ".join(edge["elements"])
                 related_edges.append(
-                    f"{edge['source']} -> {edge['target']} (co-elements: {', '.join(edge['elements'])})"
+                    f"{edge['source']} -> {edge['target']} (co-elements: {edge_text})"
                 )
             elif edge["source"] == node_name:
                 outgoing.append(str(edge["target"]))
+                edge_text = ", ".join(edge["elements"])
                 related_edges.append(
-                    f"{edge['source']} -> {edge['target']} (co-elements: {', '.join(edge['elements'])})"
+                    f"{edge['source']} -> {edge['target']} (co-elements: {edge_text})"
                 )
 
         lines = [f"Nom : {node_name}"]

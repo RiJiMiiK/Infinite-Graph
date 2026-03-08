@@ -109,6 +109,7 @@ def test_build_subgraph_render_data() -> None:
             {"text": "Steam", "x": 200.0, "y": 0.0},
         ],
         "node_ids": ["Water", "Fire", "Steam"],
+        "node_weights": [0, 0, 1],
     }
     filtered = gui.build_subgraph_render_data(render_data, "Fire", 1)
     assert filtered["node_ids"] == ["Water", "Fire", "Steam"]
@@ -122,6 +123,32 @@ def test_build_subgraph_render_data() -> None:
     assert gui.build_subgraph_render_data(isolated, "Water", 5)["node_ids"] == ["Water"]
     assert gui.build_subgraph_render_data(render_data, "Ghost", 1) is None
     assert gui.build_subgraph_render_data(render_data, "Water", -1) is None
+
+
+def test_build_weight_filtered_render_data() -> None:
+    render_data = {
+        "positions": [(0.0, 0.0), (100.0, 0.0), (200.0, 0.0)],
+        "adj": [(0, 1), (1, 2)],
+        "sizes": [10, 10, 10],
+        "brushes": [gui.pg.mkBrush("#fff"), gui.pg.mkBrush("#000"), gui.pg.mkBrush("#333")],
+        "labels": [
+            {"text": "Water", "x": 0.0, "y": 0.0},
+            {"text": "Steam", "x": 100.0, "y": 0.0},
+            {"text": "Cloud", "x": 200.0, "y": 0.0},
+        ],
+        "node_ids": ["Water", "Steam", "Cloud"],
+        "node_weights": [0, 1, None],
+    }
+    filtered = gui.build_weight_filtered_render_data(render_data, 0, 0)
+    assert filtered["node_ids"] == ["Water"]
+    assert filtered["adj"] == []
+
+    filtered = gui.build_weight_filtered_render_data(render_data, 0, 1)
+    assert filtered["node_ids"] == ["Water", "Steam"]
+    assert filtered["adj"] == [(0, 1)]
+
+    filtered = gui.build_weight_filtered_render_data(render_data, 1, None)
+    assert filtered["node_ids"] == ["Steam"]
 
 
 def test_graph_view_widget_update_graph(qapp) -> None:
@@ -442,6 +469,7 @@ def test_window_subgraph_filter(monkeypatch, qapp, sample_result) -> None:
         "brushes": [gui.pg.mkBrush("#fff"), gui.pg.mkBrush("#000"), gui.pg.mkBrush("#333")],
         "labels": [],
         "node_ids": ["Water", "Fire", "Steam"],
+        "node_weights": [0, 0, 1],
     }
 
     window._apply_subgraph_filter()
@@ -465,6 +493,42 @@ def test_window_subgraph_filter(monkeypatch, qapp, sample_result) -> None:
 
     window._reset_subgraph_filter()
     assert updates[-1]["node_ids"] == ["Water", "Fire", "Steam"]
+    window.close()
+
+
+def test_window_weight_filter(monkeypatch, qapp) -> None:
+    window = gui.InfiniteGraphWindow()
+    infos = []
+    updates = []
+    monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
+    monkeypatch.setattr(window.graph_view, "update_graph", lambda render_data: updates.append(render_data))
+    window._apply_weight_filter()
+    window.graph_view._render_data = {
+        "positions": [(0.0, 0.0), (100.0, 0.0)],
+        "adj": [(0, 1)],
+        "sizes": [10, 10],
+        "brushes": [gui.pg.mkBrush("#fff"), gui.pg.mkBrush("#000")],
+        "labels": [],
+        "node_ids": ["Water", "Steam"],
+        "node_weights": [0, 1],
+    }
+
+    window._apply_weight_filter()
+    assert "au moins un poids" in infos[-1][-1]
+
+    window.min_weight_edit.setText("bad")
+    window._apply_weight_filter()
+    assert "entiers positifs" in infos[-1][-1]
+
+    window.min_weight_edit.setText("2")
+    window.max_weight_edit.setText("1")
+    window._apply_weight_filter()
+    assert "superieur" in infos[-1][-1]
+
+    window.min_weight_edit.setText("0")
+    window.max_weight_edit.setText("0")
+    window._apply_weight_filter()
+    assert updates[-1]["node_ids"] == ["Water"]
     window.close()
 
 
