@@ -72,7 +72,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Affichage de l'etape courante
 - [x] Progression detaillee pendant le `spring layout`
 - [x] ETA approximative pendant le calcul du layout
-- [ ] Vraie barre de progression en pourcentage
+- [x] Vraie barre de progression en pourcentage
 - [ ] Etapes encore plus fines
 - [ ] Temps total de generation affiche
 - [ ] Cache local du layout pour eviter de tout recalculer

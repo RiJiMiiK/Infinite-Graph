@@ -44,6 +44,17 @@ from .analyzer import (
 from .discard_store import add_discarded_pair
 from .service import process_save
 
+GENERATION_STAGE_PROGRESS = {
+    "Starting generation": 0,
+    "Loading save file": 5,
+    "Building graph model": 20,
+    "Computing graph statistics": 35,
+    "Computing missing combinations": 50,
+    "Preparing interface update": 100,
+}
+LAYOUT_PROGRESS_START = 60
+LAYOUT_PROGRESS_END = 95
+
 
 class ListTableModel(QAbstractTableModel):
     def __init__(self, headers: list[str], rows: list[list[object]] | None = None) -> None:
@@ -122,7 +133,7 @@ class StatsCanvas(FigureCanvasQTAgg):
 def build_graph_render_data(
     nodes: list[dict[str, object]],
     edges: list[dict[str, object]],
-    progress_callback: Callable[[str], None] | None = None,
+    progress_callback: Callable[[int, str], None] | None = None,
     layout_iterations: int = 80,
     spring_scale: float = 1.2,
 ) -> dict[str, object]:
@@ -153,7 +164,11 @@ def build_graph_render_data(
                 if completed == 0
                 else max(0.0, elapsed * (total_iterations - completed) / completed)
             )
+            progress = LAYOUT_PROGRESS_START + int(
+                (completed / total_iterations) * (LAYOUT_PROGRESS_END - LAYOUT_PROGRESS_START)
+            )
             progress_callback(
+                min(progress, LAYOUT_PROGRESS_END),
                 f"Computing spring layout: {completed}/{total_iterations} iterations "
                 f"(elapsed {elapsed:.1f}s, ETA {eta:.1f}s)"
             )
@@ -436,7 +451,7 @@ class GraphViewWidget(pg.PlotWidget):
 
 
 class GenerateWorker(QObject):
-    progress = Signal(str)
+    progress = Signal(int, str)
     finished = Signal(dict, dict)
     failed = Signal(str)
 
@@ -455,11 +470,15 @@ class GenerateWorker(QObject):
 
     def run(self) -> None:
         try:
-            self.progress.emit("Loading save file")
+            self.progress.emit(0, "Starting generation")
+
+            def emit_process_progress(message: str) -> None:
+                self.progress.emit(GENERATION_STAGE_PROGRESS.get(message, 0), message)
+
             result = process_save(
                 Path(self.input_path),
                 focus_element=self.focus_element,
-                progress_callback=self.progress.emit,
+                progress_callback=emit_process_progress,
             )
             render_data = build_graph_render_data(
                 result["graph_nodes"],
@@ -468,7 +487,10 @@ class GenerateWorker(QObject):
                 layout_iterations=self.layout_iterations,
                 spring_scale=self.spring_scale,
             )
-            self.progress.emit("Preparing interface update")
+            self.progress.emit(
+                GENERATION_STAGE_PROGRESS["Preparing interface update"],
+                "Preparing interface update",
+            )
         except Exception as exc:
             self.failed.emit(str(exc))
             return
@@ -552,7 +574,8 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.cheapest_button.clicked.connect(self._pick_cheapest_combination)
         self.done_button.clicked.connect(self._mark_current_combination_done)
         self.discard_button.clicked.connect(self._discard_current_combination)
-        self.progress_bar.setRange(0, 0)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
         self.progress_bar.setVisible(False)
         self.progress_bar.setFixedWidth(220)
         action_row_layout.addWidget(self.generate_button)
@@ -715,8 +738,9 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.generate_button.setEnabled(False)
         self._set_candidate_buttons_enabled(False)
         self.progress_bar.setVisible(True)
+        self.progress_bar.setValue(0)
         self.summary_label.setText("Generation en cours...")
-        self.stage_label.setText("Current step: starting")
+        self.stage_label.setText("Current step: Starting generation (0%)")
         try:
             layout_iterations, spring_scale = self._layout_settings()
         except ValueError as exc:
@@ -741,8 +765,10 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self._worker.failed.connect(self._cleanup_worker)
         self._worker_thread.start()
 
-    def _on_generation_progress(self, message: str) -> None:
-        self.stage_label.setText(f"Current step: {message}")
+    def _on_generation_progress(self, percent: int, message: str) -> None:
+        bounded_percent = max(0, min(100, percent))
+        self.progress_bar.setValue(bounded_percent)
+        self.stage_label.setText(f"Current step: {message} ({bounded_percent}%)")
 
     def _on_generation_finished(self, result: dict, render_data: dict) -> None:
         self._current_result = result
@@ -810,21 +836,24 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
                 ]
             )
         )
+        self.progress_bar.setValue(100)
         if result["load_warnings"]:
             self.stage_label.setText(
-                "Current step: done with warnings - " + " | ".join(result["load_warnings"])
+                "Current step: done with warnings (100%) - " + " | ".join(result["load_warnings"])
             )
         else:
-            self.stage_label.setText("Current step: done")
+            self.stage_label.setText("Current step: done (100%)")
 
     def _on_generation_failed(self, message: str) -> None:
         self.summary_label.setText("La generation a echoue.")
-        self.stage_label.setText("Current step: failed")
+        self.progress_bar.setValue(0)
+        self.stage_label.setText("Current step: failed (0%)")
         self._set_candidate_buttons_enabled(False)
         QMessageBox.critical(self, "Erreur", message)
 
     def _cleanup_worker(self) -> None:
         self.generate_button.setEnabled(True)
+        self.progress_bar.setValue(0)
         self.progress_bar.setVisible(False)
         if self._worker_thread is not None:
             self._worker_thread.quit()

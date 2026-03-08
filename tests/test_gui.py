@@ -82,21 +82,22 @@ def test_build_graph_render_data_with_progress(monkeypatch) -> None:
         return {"A": np.array([0.0, 0.0]), "B": np.array([1.0, 1.0])}
 
     monkeypatch.setattr(gui.nx, "spring_layout", fake_spring_layout)
-    steps: list[str] = []
+    steps: list[tuple[int, str]] = []
     render = gui.build_graph_render_data(
         [
             {"id": "A", "label": "A", "weight": 0, "is_starter": True},
             {"id": "B", "label": "B", "weight": None, "is_starter": False},
         ],
         [{"source": "A", "target": "B", "weight": 1, "elements": ["C"]}],
-        progress_callback=steps.append,
+        progress_callback=lambda percent, message: steps.append((percent, message)),
         layout_iterations=10,
         spring_scale=2.0,
     )
     assert len(render["positions"]) == 2
     assert render["adj"] == [(0, 1)]
     assert render["labels"]
-    assert steps[-1].startswith("Computing spring layout: 10/10")
+    assert steps[-1][0] == gui.LAYOUT_PROGRESS_END
+    assert steps[-1][1].startswith("Computing spring layout: 10/10")
 
 
 def test_build_subgraph_render_data() -> None:
@@ -245,7 +246,11 @@ def test_graph_view_widget_center_on_selected_node_without_match(qapp) -> None:
 
 
 def test_generate_worker_success_and_failure(monkeypatch, sample_result) -> None:
-    monkeypatch.setattr(gui, "process_save", lambda *args, **kwargs: sample_result)
+    def fake_process_save(*args, **kwargs):
+        kwargs["progress_callback"]("Loading save file")
+        return sample_result
+
+    monkeypatch.setattr(gui, "process_save", fake_process_save)
     monkeypatch.setattr(
         gui,
         "build_graph_render_data",
@@ -262,14 +267,15 @@ def test_generate_worker_success_and_failure(monkeypatch, sample_result) -> None
     worker = gui.GenerateWorker("save.json", None, 80, 1.2)
     finished: list[dict[str, object]] = []
     failures: list[str] = []
-    progress: list[str] = []
+    progress: list[tuple[int, str]] = []
     worker.finished.connect(lambda result, render: finished.append(result))
     worker.failed.connect(failures.append)
-    worker.progress.connect(progress.append)
+    worker.progress.connect(lambda percent, message: progress.append((percent, message)))
     worker.run()
     assert finished
     assert not failures
-    assert "Loading save file" in progress
+    assert progress[0] == (0, "Starting generation")
+    assert progress[-1] == (100, "Preparing interface update")
 
     monkeypatch.setattr(gui, "process_save", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
     worker = gui.GenerateWorker("save.json", None, 80, 1.2)
@@ -371,8 +377,9 @@ def test_window_generate_and_input_pick(monkeypatch, qapp, sample_result) -> Non
 def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_result) -> None:
     window = gui.InfiniteGraphWindow()
     window.input_edit.setText("save.json")
-    window._on_generation_progress("step")
+    window._on_generation_progress(42, "step")
     assert "step" in window.stage_label.text()
+    assert window.progress_bar.value() == 42
     window._on_generation_finished(
         sample_result,
         {"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []},
@@ -389,6 +396,7 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
         {"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []},
     )
     assert "done with warnings" in window.stage_label.text()
+    assert window.progress_bar.value() == 100
 
     errors = []
     monkeypatch.setattr(gui.QMessageBox, "critical", lambda *args: errors.append(args))
