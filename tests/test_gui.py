@@ -101,6 +101,10 @@ def test_build_graph_render_data_with_progress(monkeypatch) -> None:
         "Preparing graph structure",
     )
     assert steps[1] == (
+        gui.GENERATION_STAGE_PROGRESS["Checking layout cache"],
+        "Checking layout cache",
+    )
+    assert steps[2] == (
         gui.GENERATION_STAGE_PROGRESS["Initializing spring layout"],
         "Initializing spring layout",
     )
@@ -110,6 +114,54 @@ def test_build_graph_render_data_with_progress(monkeypatch) -> None:
         gui.GENERATION_STAGE_PROGRESS["Finalizing graph geometry"],
         "Finalizing graph geometry",
     )
+
+
+def test_build_graph_render_data_uses_local_cache(monkeypatch, tmp_path: Path) -> None:
+    save_path = tmp_path / "save.json"
+    save_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(gui, "layout_cache_dir", lambda: tmp_path / "layout-cache")
+    spring_calls = []
+
+    def fake_spring_layout(graph, seed, k, iterations, pos=None):
+        del graph, seed, k, iterations, pos
+        spring_calls.append("called")
+        return {"A": np.array([0.0, 0.0]), "B": np.array([1.0, 1.0])}
+
+    monkeypatch.setattr(gui.nx, "spring_layout", fake_spring_layout)
+    first_render = gui.build_graph_render_data(
+        [
+            {"id": "A", "label": "A", "weight": 0, "is_starter": True},
+            {"id": "B", "label": "B", "weight": 1, "is_starter": False},
+        ],
+        [{"source": "A", "target": "B", "weight": 1, "elements": ["C"]}],
+        layout_iterations=10,
+        spring_scale=2.0,
+        cache_save_path=save_path,
+    )
+    assert spring_calls == ["called", "called"]
+
+    monkeypatch.setattr(
+        gui.nx,
+        "spring_layout",
+        lambda *args, **kwargs: pytest.fail("spring layout should not run when cache is available"),
+    )
+    steps: list[tuple[int, str]] = []
+    second_render = gui.build_graph_render_data(
+        [
+            {"id": "A", "label": "A", "weight": 0, "is_starter": True},
+            {"id": "B", "label": "B", "weight": 1, "is_starter": False},
+        ],
+        [{"source": "A", "target": "B", "weight": 1, "elements": ["C"]}],
+        progress_callback=lambda percent, message: steps.append((percent, message)),
+        layout_iterations=10,
+        spring_scale=2.0,
+        cache_save_path=save_path,
+    )
+    assert first_render["positions"] == second_render["positions"]
+    assert (
+        gui.GENERATION_STAGE_PROGRESS["Loading cached layout"],
+        "Loading cached layout",
+    ) in steps
 
 
 def test_build_subgraph_render_data() -> None:
@@ -638,6 +690,27 @@ def test_window_layout_settings_and_rebuild(monkeypatch, qapp, sample_result) ->
     window._rebuild_layout()
     assert "iterations" in infos[-1][-1]
     window.close()
+
+
+def test_layout_cache_helpers(tmp_path: Path, monkeypatch) -> None:
+    save_path = tmp_path / "save.json"
+    save_path.write_text("{}", encoding="utf-8")
+    assert gui.layout_cache_dir().name == "layouts"
+    monkeypatch.setattr(gui, "layout_cache_dir", lambda: tmp_path / "layout-cache")
+
+    assert gui.load_cached_layout(save_path, ["Water"], 80, 1.2) is None
+    assert gui.layout_cache_dir() == tmp_path / "layout-cache"
+    gui.save_cached_layout(save_path, ["Water"], [(1.5, 2.5)], 80, 1.2)
+    assert gui.load_cached_layout(save_path, ["Water"], 80, 1.2) == [(1.5, 2.5)]
+    assert gui.load_cached_layout(save_path, ["Fire"], 80, 1.2) is None
+    cache_file = gui._layout_cache_file(save_path, 80, 1.2)
+    cache_file.write_text(
+        '{"version": 0, "node_ids": ["Water"], "positions": [[1.5, 2.5]]}',
+        encoding="utf-8",
+    )
+    assert gui.load_cached_layout(save_path, ["Water"], 80, 1.2) is None
+    cache_file.write_text("{", encoding="utf-8")
+    assert gui.load_cached_layout(save_path, ["Water"], 80, 1.2) is None
 
 
 def test_window_mark_done_branches(monkeypatch, qapp, sample_result) -> None:

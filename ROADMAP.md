@@ -75,7 +75,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Vraie barre de progression en pourcentage
 - [x] Etapes encore plus fines
 - [x] Temps total de generation affiche
-- [ ] Cache local du layout pour eviter de tout recalculer
+- [x] Cache local du layout pour eviter de tout recalculer
 
 ## 6. Gestion des combinaisons candidates
 

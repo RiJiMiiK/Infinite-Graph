@@ -4,8 +4,11 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import sys
 import time
+from contextlib import suppress
 from pathlib import Path
 from typing import Callable
 
@@ -52,7 +55,9 @@ GENERATION_STAGE_PROGRESS = {
     "Computing graph statistics": 35,
     "Computing missing combinations": 50,
     "Preparing graph structure": 58,
+    "Checking layout cache": 59,
     "Initializing spring layout": 60,
+    "Loading cached layout": 95,
     "Finalizing graph geometry": 96,
     "Preparing interface update": 100,
 }
@@ -65,6 +70,7 @@ INTERFACE_PROGRESS = {
     "Updating statistics": 99,
     "Updating summary": 100,
 }
+LAYOUT_CACHE_VERSION = 1
 
 
 class ListTableModel(QAbstractTableModel):
@@ -147,6 +153,7 @@ def build_graph_render_data(
     progress_callback: Callable[[int, str], None] | None = None,
     layout_iterations: int = 80,
     spring_scale: float = 1.2,
+    cache_save_path: Path | None = None,
 ) -> dict[str, object]:
     ordered_nodes = sorted(nodes, key=lambda item: str(item["id"]))
     names = [str(node["id"]) for node in ordered_nodes]
@@ -159,54 +166,14 @@ def build_graph_render_data(
     graph.add_nodes_from(names)
     graph.add_edges_from((str(edge["source"]), str(edge["target"])) for edge in edges)
 
-    total_iterations = max(1, layout_iterations)
-    batch_size = 5
-    spring_positions = None
-    started_at = time.perf_counter()
-    if progress_callback is not None:
-        progress_callback(
-            GENERATION_STAGE_PROGRESS["Initializing spring layout"],
-            "Initializing spring layout",
-        )
-    for current_iteration in range(0, total_iterations, batch_size):
-        iterations = min(batch_size, total_iterations - current_iteration)
-        spring_positions = nx.spring_layout(
-            graph,
-            seed=42,
-            k=None if len(names) < 2 else spring_scale / np.sqrt(len(names)),
-            iterations=iterations,
-            pos=spring_positions,
-        )
-        if progress_callback is not None:
-            completed = current_iteration + iterations
-            elapsed = time.perf_counter() - started_at
-            eta = (
-                0.0
-                if completed == 0
-                else max(0.0, elapsed * (total_iterations - completed) / completed)
-            )
-            progress = LAYOUT_PROGRESS_START + int(
-                (completed / total_iterations) * (LAYOUT_PROGRESS_END - LAYOUT_PROGRESS_START)
-            )
-            progress_callback(
-                min(progress, LAYOUT_PROGRESS_END),
-                f"Computing spring layout: {completed}/{total_iterations} iterations "
-                f"(elapsed {elapsed:.1f}s, ETA {eta:.1f}s)"
-            )
-
-    assert spring_positions is not None
-    if progress_callback is not None:
-        progress_callback(
-            GENERATION_STAGE_PROGRESS["Finalizing graph geometry"],
-            "Finalizing graph geometry",
-        )
-    positions = [
-        (
-            float(spring_positions[name][0] * 2000.0),
-            float(spring_positions[name][1] * 2000.0),
-        )
-        for name in names
-    ]
+    positions = _compute_layout_positions(
+        graph,
+        names,
+        layout_iterations,
+        spring_scale,
+        progress_callback,
+        cache_save_path,
+    )
 
     index_by_name = {name: idx for idx, name in enumerate(names)}
     adj = []
@@ -239,6 +206,180 @@ def build_graph_render_data(
         "node_ids": names,
         "node_weights": [node["weight"] for node in ordered_nodes],
     }
+
+
+def _compute_layout_positions(
+    graph: nx.DiGraph,
+    names: list[str],
+    layout_iterations: int,
+    spring_scale: float,
+    progress_callback: Callable[[int, str], None] | None,
+    cache_save_path: Path | None,
+) -> list[tuple[float, float]]:
+    total_iterations = max(1, layout_iterations)
+    batch_size = 5
+    if progress_callback is not None:
+        progress_callback(
+            GENERATION_STAGE_PROGRESS["Checking layout cache"],
+            "Checking layout cache",
+        )
+
+    if cache_save_path is not None:
+        cached_positions = load_cached_layout(
+            cache_save_path,
+            names,
+            layout_iterations,
+            spring_scale,
+        )
+        if cached_positions is not None:
+            if progress_callback is not None:
+                progress_callback(
+                    GENERATION_STAGE_PROGRESS["Loading cached layout"],
+                    "Loading cached layout",
+                )
+                progress_callback(
+                    GENERATION_STAGE_PROGRESS["Finalizing graph geometry"],
+                    "Finalizing graph geometry",
+                )
+            return cached_positions
+
+    spring_positions = _run_spring_layout(
+        graph,
+        names,
+        total_iterations,
+        batch_size,
+        spring_scale,
+        progress_callback,
+    )
+    positions = [
+        (
+            float(spring_positions[name][0] * 2000.0),
+            float(spring_positions[name][1] * 2000.0),
+        )
+        for name in names
+    ]
+    if progress_callback is not None:
+        progress_callback(
+            GENERATION_STAGE_PROGRESS["Finalizing graph geometry"],
+            "Finalizing graph geometry",
+        )
+    if cache_save_path is not None:
+        save_cached_layout(
+            cache_save_path,
+            names,
+            positions,
+            layout_iterations,
+            spring_scale,
+        )
+    return positions
+
+
+def _run_spring_layout(
+    graph: nx.DiGraph,
+    names: list[str],
+    total_iterations: int,
+    batch_size: int,
+    spring_scale: float,
+    progress_callback: Callable[[int, str], None] | None,
+) -> dict[str, np.ndarray]:
+    spring_positions = None
+    started_at = time.perf_counter()
+    if progress_callback is not None:
+        progress_callback(
+            GENERATION_STAGE_PROGRESS["Initializing spring layout"],
+            "Initializing spring layout",
+        )
+    for current_iteration in range(0, total_iterations, batch_size):
+        iterations = min(batch_size, total_iterations - current_iteration)
+        spring_positions = nx.spring_layout(
+            graph,
+            seed=42,
+            k=None if len(names) < 2 else spring_scale / np.sqrt(len(names)),
+            iterations=iterations,
+            pos=spring_positions,
+        )
+        if progress_callback is not None:
+            completed = current_iteration + iterations
+            elapsed = time.perf_counter() - started_at
+            eta = (
+                0.0
+                if completed == 0
+                else max(0.0, elapsed * (total_iterations - completed) / completed)
+            )
+            progress = LAYOUT_PROGRESS_START + int(
+                (completed / total_iterations) * (LAYOUT_PROGRESS_END - LAYOUT_PROGRESS_START)
+            )
+            progress_callback(
+                min(progress, LAYOUT_PROGRESS_END),
+                f"Computing spring layout: {completed}/{total_iterations} iterations "
+                f"(elapsed {elapsed:.1f}s, ETA {eta:.1f}s)"
+            )
+    assert spring_positions is not None
+    return spring_positions
+
+
+def layout_cache_dir() -> Path:
+    root_dir = Path(__file__).resolve().parents[2]
+    return root_dir / ".cache" / "infinite_graph" / "layouts"
+
+
+def _layout_cache_file(
+    save_path: Path,
+    layout_iterations: int,
+    spring_scale: float,
+) -> Path:
+    file_stat = save_path.stat()
+    cache_key = hashlib.sha256(
+        (
+            f"{LAYOUT_CACHE_VERSION}|{save_path.resolve()}|{file_stat.st_size}|"
+            f"{file_stat.st_mtime_ns}|{layout_iterations}|{spring_scale:.6f}"
+        ).encode("utf-8")
+    ).hexdigest()
+    return layout_cache_dir() / f"{cache_key}.json"
+
+
+def load_cached_layout(
+    save_path: Path,
+    node_ids: list[str],
+    layout_iterations: int,
+    spring_scale: float,
+) -> list[tuple[float, float]] | None:
+    cache_file = _layout_cache_file(save_path, layout_iterations, spring_scale)
+    if not cache_file.is_file():
+        return None
+
+    with suppress(OSError, ValueError, TypeError, KeyError):
+        cache_payload = json.loads(cache_file.read_text(encoding="utf-8"))
+        if cache_payload["version"] != LAYOUT_CACHE_VERSION:
+            return None
+        if cache_payload["node_ids"] != node_ids:
+            return None
+        return [
+            (float(position[0]), float(position[1]))
+            for position in cache_payload["positions"]
+        ]
+    return None
+
+
+def save_cached_layout(
+    save_path: Path,
+    node_ids: list[str],
+    positions: list[tuple[float, float]],
+    layout_iterations: int,
+    spring_scale: float,
+) -> None:
+    cache_file = _layout_cache_file(save_path, layout_iterations, spring_scale)
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+    cache_file.write_text(
+        json.dumps(
+            {
+                "version": LAYOUT_CACHE_VERSION,
+                "node_ids": node_ids,
+                "positions": positions,
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def build_subgraph_render_data(
@@ -513,6 +654,7 @@ class GenerateWorker(QObject):
                 progress_callback=self.progress.emit,
                 layout_iterations=self.layout_iterations,
                 spring_scale=self.spring_scale,
+                cache_save_path=Path(self.input_path),
             )
             self.progress.emit(
                 GENERATION_STAGE_PROGRESS["Preparing interface update"],
@@ -1088,6 +1230,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             self._current_result["graph_edges"],
             layout_iterations=layout_iterations,
             spring_scale=spring_scale,
+            cache_save_path=self._current_save_path,
         )
         self._full_render_data = render_data
         self.graph_view.update_graph(render_data)
