@@ -188,10 +188,13 @@ def build_graph_render_data(
         "sizes": sizes,
         "brushes": symbol_brush,
         "labels": labels,
+        "node_ids": names,
     }
 
 
 class GraphViewWidget(pg.PlotWidget):
+    nodeSelected = Signal(object)
+
     def __init__(self) -> None:
         super().__init__()
         self.setBackground("w")
@@ -204,6 +207,8 @@ class GraphViewWidget(pg.PlotWidget):
         self.graph_item = pg.GraphItem()
         self.addItem(self.graph_item)
         self._labels: list[pg.TextItem] = []
+        self._render_data: dict[str, object] = {}
+        self._selected_node_id: str | None = None
 
     def update_graph(self, render_data: dict[str, object]) -> None:
         self.clear()
@@ -211,25 +216,15 @@ class GraphViewWidget(pg.PlotWidget):
         for label in self._labels:
             self.removeItem(label)
         self._labels = []
+        self._render_data = render_data
+        self._selected_node_id = None
 
         positions = render_data["positions"]
         if not positions:
+            self.nodeSelected.emit(None)
             return
 
-        pos_array = np.array(positions, dtype=float)
-        adj = render_data["adj"]
-        adj_array = np.array(adj, dtype=int) if adj else np.empty((0, 2), dtype=int)
-
-        self.graph_item.setData(
-            pos=pos_array,
-            adj=adj_array,
-            size=np.array(render_data["sizes"], dtype=float),
-            symbol="o",
-            pxMode=True,
-            pen=pg.mkPen(100, 116, 139, 80, width=0.6),
-            symbolPen=None,
-            symbolBrush=render_data["brushes"],
-        )
+        self._apply_graph_style()
 
         for label in render_data["labels"]:
             text_item = pg.TextItem(label["text"], color="#0f172a", anchor=(0.5, 1.2))
@@ -238,6 +233,67 @@ class GraphViewWidget(pg.PlotWidget):
             self._labels.append(text_item)
 
         self.autoRange()
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton and self._render_data.get("positions"):
+            scene_pos = self.mapToScene(event.position().toPoint())
+            view_pos = self.getViewBox().mapSceneToView(scene_pos)
+            self.select_node_at((float(view_pos.x()), float(view_pos.y())))
+        super().mousePressEvent(event)
+
+    def select_node_by_id(self, node_id: str | None) -> None:
+        available_ids = set(self._render_data.get("node_ids", []))
+        self._selected_node_id = node_id if node_id in available_ids else None
+        if self._render_data.get("positions"):
+            self._apply_graph_style()
+        self.nodeSelected.emit(self._selected_node_id)
+
+    def select_node_at(
+        self,
+        position: tuple[float, float],
+        max_distance: float = 80.0,
+    ) -> str | None:
+        node_ids = self._render_data.get("node_ids", [])
+        positions = self._render_data.get("positions", [])
+        if not node_ids or not positions:
+            self.select_node_by_id(None)
+            return None
+
+        selected_id = None
+        best_distance = max_distance**2
+        for node_id, node_position in zip(node_ids, positions):
+            dx = float(node_position[0]) - position[0]
+            dy = float(node_position[1]) - position[1]
+            distance = dx * dx + dy * dy
+            if distance <= best_distance:
+                selected_id = str(node_id)
+                best_distance = distance
+
+        self.select_node_by_id(selected_id)
+        return selected_id
+
+    def _apply_graph_style(self) -> None:
+        pos_array = np.array(self._render_data["positions"], dtype=float)
+        adj = self._render_data["adj"]
+        adj_array = np.array(adj, dtype=int) if adj else np.empty((0, 2), dtype=int)
+        sizes = list(self._render_data["sizes"])
+        brushes = list(self._render_data["brushes"])
+        node_ids = list(self._render_data.get("node_ids", []))
+        if self._selected_node_id in node_ids:
+            selected_index = node_ids.index(self._selected_node_id)
+            sizes[selected_index] = float(sizes[selected_index]) + 8.0
+            brushes[selected_index] = pg.mkBrush("#f59e0b")
+
+        self.graph_item.setData(
+            pos=pos_array,
+            adj=adj_array,
+            size=np.array(sizes, dtype=float),
+            symbol="o",
+            pxMode=True,
+            pen=pg.mkPen(100, 116, 139, 80, width=0.6),
+            symbolPen=None,
+            symbolBrush=brushes,
+        )
 
 
 class GenerateWorker(QObject):
@@ -299,6 +355,7 @@ class InfiniteGraphWindow(QMainWindow):
         self.edge_table = QTableView()
         self.stats_canvas = StatsCanvas()
         self.missing_weight_list = QListWidget()
+        self.selected_node_label = QLabel("Noeud selectionne : aucun")
         self._worker_thread: QThread | None = None
         self._worker: GenerateWorker | None = None
         self._current_result: dict[str, object] | None = None
@@ -377,7 +434,9 @@ class InfiniteGraphWindow(QMainWindow):
         tab = QWidget()
         layout = QVBoxLayout(tab)
         layout.setContentsMargins(0, 0, 0, 0)
+        self.graph_view.nodeSelected.connect(self._on_graph_node_selected)
         layout.addWidget(self.graph_view)
+        layout.addWidget(self.selected_node_label)
         return tab
 
     def _build_info_tab(self) -> QWidget:
@@ -450,6 +509,7 @@ class InfiniteGraphWindow(QMainWindow):
         self._current_save_path = Path(self.input_edit.text().strip())
         self._set_candidate_buttons_enabled(True)
         self.graph_view.update_graph(render_data)
+        self.selected_node_label.setText("Noeud selectionne : aucun")
 
         node_rows = []
         for node in sorted(
@@ -533,6 +593,20 @@ class InfiniteGraphWindow(QMainWindow):
         self.cheapest_button.setEnabled(enabled)
         self.done_button.setEnabled(enabled)
         self.discard_button.setEnabled(enabled)
+
+    def _on_graph_node_selected(self, node_id: object) -> None:
+        node_name = str(node_id) if node_id is not None else ""
+        if not node_name:
+            self.selected_node_label.setText("Noeud selectionne : aucun")
+            self.node_table.clearSelection()
+            return
+
+        self.selected_node_label.setText(f"Noeud selectionne : {node_name}")
+        for row_index, row in enumerate(self.node_model.rows):
+            if row[0] == node_name:
+                self.node_table.selectRow(row_index)
+                self.node_table.scrollTo(self.node_model.index(row_index, 0))
+                break
 
     def _pick_random_combination(self) -> None:
         if not self._current_result:

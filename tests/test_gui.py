@@ -121,6 +121,56 @@ def test_graph_view_widget_update_graph(qapp) -> None:
     assert len(widget._labels) == 0
 
 
+def test_graph_view_widget_node_selection(qapp) -> None:
+    widget = gui.GraphViewWidget()
+    selected = []
+    widget.nodeSelected.connect(selected.append)
+    widget.update_graph(
+        {
+            "positions": [(0.0, 0.0), (100.0, 0.0)],
+            "adj": [],
+            "sizes": [10, 10],
+            "brushes": [gui.pg.mkBrush("#ffffff"), gui.pg.mkBrush("#000000")],
+            "labels": [],
+            "node_ids": ["Water", "Fire"],
+        }
+    )
+    assert widget.select_node_at((5.0, 0.0)) == "Water"
+    assert selected[-1] == "Water"
+    widget.select_node_by_id("Fire")
+    assert selected[-1] == "Fire"
+    assert widget.select_node_at((1000.0, 1000.0)) is None
+    assert selected[-1] is None
+
+
+def test_graph_view_widget_mouse_press_and_empty_selection(qapp, monkeypatch) -> None:
+    widget = gui.GraphViewWidget()
+    called = []
+    monkeypatch.setattr(widget, "select_node_at", lambda position: called.append(position))
+    widget.update_graph(
+        {
+            "positions": [(0.0, 0.0)],
+            "adj": [],
+            "sizes": [10],
+            "brushes": [gui.pg.mkBrush("#ffffff")],
+            "labels": [],
+            "node_ids": ["Water"],
+        }
+    )
+    event = QMouseEvent(
+        QEvent.Type.MouseButtonPress,
+        QPointF(1, 1),
+        Qt.MouseButton.LeftButton,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    widget.mousePressEvent(event)
+    assert called
+
+    empty_widget = gui.GraphViewWidget()
+    assert empty_widget.select_node_at((0.0, 0.0)) is None
+
+
 def test_generate_worker_success_and_failure(monkeypatch, sample_result) -> None:
     monkeypatch.setattr(gui, "process_save", lambda *args, **kwargs: sample_result)
     monkeypatch.setattr(
@@ -281,6 +331,12 @@ def test_window_candidate_buttons_and_selection(monkeypatch, qapp, sample_result
     assert not window.random_button.isEnabled()
     window._set_candidate_buttons_enabled(True)
     assert window.done_button.isEnabled()
+    window.node_model.update_rows([["Fire", 0], ["Water", 0]])
+    window._on_graph_node_selected("Fire")
+    assert "Fire" in window.selected_node_label.text()
+    assert window.node_table.selectionModel().hasSelection() is True
+    window._on_graph_node_selected(None)
+    assert "aucun" in window.selected_node_label.text()
     window.close()
 
 
