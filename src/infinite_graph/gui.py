@@ -193,6 +193,54 @@ def build_graph_render_data(
     }
 
 
+def build_subgraph_render_data(
+    render_data: dict[str, object],
+    center_node_id: str,
+    max_depth: int,
+) -> dict[str, object] | None:
+    node_ids = list(render_data.get("node_ids", []))
+    if center_node_id not in node_ids or max_depth < 0:
+        return None
+
+    adjacency: dict[int, set[int]] = {index: set() for index in range(len(node_ids))}
+    for source_index, target_index in render_data.get("adj", []):
+        if 0 <= source_index < len(node_ids) and 0 <= target_index < len(node_ids):
+            adjacency[source_index].add(target_index)
+            adjacency[target_index].add(source_index)
+
+    center_index = node_ids.index(center_node_id)
+    visited = {center_index}
+    frontier = {center_index}
+    for _ in range(max_depth):
+        next_frontier = set()
+        for node_index in frontier:
+            next_frontier.update(adjacency.get(node_index, set()) - visited)
+        visited.update(next_frontier)
+        frontier = next_frontier
+        if not frontier:
+            break
+
+    kept_indices = sorted(visited)
+    index_map = {old_index: new_index for new_index, old_index in enumerate(kept_indices)}
+    labels = render_data.get("labels", [])
+    filtered_labels = []
+    if len(labels) == len(node_ids):
+        filtered_labels = [labels[index] for index in kept_indices]
+
+    return {
+        "positions": [render_data["positions"][index] for index in kept_indices],
+        "adj": [
+            (index_map[source_index], index_map[target_index])
+            for source_index, target_index in render_data.get("adj", [])
+            if source_index in index_map and target_index in index_map
+        ],
+        "sizes": [render_data["sizes"][index] for index in kept_indices],
+        "brushes": [render_data["brushes"][index] for index in kept_indices],
+        "labels": filtered_labels,
+        "node_ids": [node_ids[index] for index in kept_indices],
+    }
+
+
 class GraphViewWidget(pg.PlotWidget):
     nodeSelected = Signal(object)
 
@@ -397,10 +445,15 @@ class InfiniteGraphWindow(QMainWindow):
         self.selected_node_details = QTextEdit()
         self.graph_search_edit = QLineEdit()
         self.graph_search_button = QPushButton("Rechercher")
+        self.subgraph_center_edit = QLineEdit()
+        self.subgraph_depth_edit = QLineEdit("1")
+        self.subgraph_button = QPushButton("Sous-graphe")
+        self.subgraph_reset_button = QPushButton("Reinitialiser")
         self._worker_thread: QThread | None = None
         self._worker: GenerateWorker | None = None
         self._current_result: dict[str, object] | None = None
         self._current_save_path: Path | None = None
+        self._full_render_data: dict[str, object] | None = None
 
         self._build_ui()
 
@@ -483,6 +536,20 @@ class InfiniteGraphWindow(QMainWindow):
         self.graph_search_button.clicked.connect(self._search_graph_node)
         search_layout.addWidget(self.graph_search_edit)
         search_layout.addWidget(self.graph_search_button)
+
+        subgraph_row = QWidget()
+        subgraph_layout = QHBoxLayout(subgraph_row)
+        subgraph_layout.setContentsMargins(0, 0, 0, 0)
+        self.subgraph_center_edit.setPlaceholderText("Centre du sous-graphe")
+        self.subgraph_depth_edit.setPlaceholderText("Profondeur")
+        self.subgraph_depth_edit.setFixedWidth(90)
+        self.subgraph_button.clicked.connect(self._apply_subgraph_filter)
+        self.subgraph_reset_button.clicked.connect(self._reset_subgraph_filter)
+        subgraph_layout.addWidget(self.subgraph_center_edit)
+        subgraph_layout.addWidget(self.subgraph_depth_edit)
+        subgraph_layout.addWidget(self.subgraph_button)
+        subgraph_layout.addWidget(self.subgraph_reset_button)
+
         self.selected_node_details.setReadOnly(True)
         self.selected_node_details.setMinimumWidth(280)
         self.selected_node_details.setPlainText("Aucun noeud selectionne.")
@@ -499,6 +566,7 @@ class InfiniteGraphWindow(QMainWindow):
         splitter.setSizes([1100, 320])
 
         layout.addWidget(search_row)
+        layout.addWidget(subgraph_row)
         layout.addWidget(splitter)
         return tab
 
@@ -570,10 +638,13 @@ class InfiniteGraphWindow(QMainWindow):
     def _on_generation_finished(self, result: dict, render_data: dict) -> None:
         self._current_result = result
         self._current_save_path = Path(self.input_edit.text().strip())
+        self._full_render_data = render_data
         self._set_candidate_buttons_enabled(True)
         self.graph_view.update_graph(render_data)
         self.selected_node_label.setText("Noeud selectionne : aucun")
         self.selected_node_details.setPlainText("Aucun noeud selectionne.")
+        self.subgraph_center_edit.clear()
+        self.subgraph_depth_edit.setText("1")
 
         node_rows = []
         for node in sorted(
@@ -696,6 +767,53 @@ class InfiniteGraphWindow(QMainWindow):
             "Information",
             f"Element introuvable dans le graphe : {query}",
         )
+
+    def _apply_subgraph_filter(self) -> None:
+        if not self._current_result or not self._full_render_data:
+            return
+
+        center_node = self.subgraph_center_edit.text().strip()
+        if not center_node:
+            center_node = self.graph_view._selected_node_id or ""
+            if center_node:
+                self.subgraph_center_edit.setText(center_node)
+        if not center_node:
+            QMessageBox.information(
+                self,
+                "Information",
+                "Saisis un centre de sous-graphe ou selectionne un noeud.",
+            )
+            return
+
+        depth_text = self.subgraph_depth_edit.text().strip() or "1"
+        if not depth_text.isdigit():
+            QMessageBox.information(
+                self,
+                "Information",
+                "La profondeur du sous-graphe doit etre un entier positif ou nul.",
+            )
+            return
+
+        filtered = build_subgraph_render_data(
+            self._full_render_data,
+            center_node,
+            int(depth_text),
+        )
+        if filtered is None:
+            QMessageBox.information(
+                self,
+                "Information",
+                f"Impossible de construire un sous-graphe pour : {center_node}",
+            )
+            return
+
+        self.graph_view.update_graph(filtered)
+        self.graph_view.select_node_by_id(center_node)
+
+    def _reset_subgraph_filter(self) -> None:
+        if not self._full_render_data:
+            return
+        self.graph_view.update_graph(self._full_render_data)
 
     def _build_selected_node_details(self, node_name: str) -> str:
         if not self._current_result:

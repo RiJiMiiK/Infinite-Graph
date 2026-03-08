@@ -97,6 +97,33 @@ def test_build_graph_render_data_with_progress(monkeypatch) -> None:
     assert steps[-1].startswith("Computing spring layout: 80/80")
 
 
+def test_build_subgraph_render_data() -> None:
+    render_data = {
+        "positions": [(0.0, 0.0), (100.0, 0.0), (200.0, 0.0)],
+        "adj": [(0, 1), (1, 2)],
+        "sizes": [10, 10, 10],
+        "brushes": [gui.pg.mkBrush("#fff"), gui.pg.mkBrush("#000"), gui.pg.mkBrush("#333")],
+        "labels": [
+            {"text": "Water", "x": 0.0, "y": 0.0},
+            {"text": "Fire", "x": 100.0, "y": 0.0},
+            {"text": "Steam", "x": 200.0, "y": 0.0},
+        ],
+        "node_ids": ["Water", "Fire", "Steam"],
+    }
+    filtered = gui.build_subgraph_render_data(render_data, "Fire", 1)
+    assert filtered["node_ids"] == ["Water", "Fire", "Steam"]
+    assert filtered["adj"] == [(0, 1), (1, 2)]
+
+    filtered = gui.build_subgraph_render_data(render_data, "Water", 0)
+    assert filtered["node_ids"] == ["Water"]
+    assert filtered["adj"] == []
+    isolated = dict(render_data)
+    isolated["adj"] = []
+    assert gui.build_subgraph_render_data(isolated, "Water", 5)["node_ids"] == ["Water"]
+    assert gui.build_subgraph_render_data(render_data, "Ghost", 1) is None
+    assert gui.build_subgraph_render_data(render_data, "Water", -1) is None
+
+
 def test_graph_view_widget_update_graph(qapp) -> None:
     widget = gui.GraphViewWidget()
     widget.update_graph({"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []})
@@ -393,6 +420,51 @@ def test_window_search_graph_node(monkeypatch, qapp, sample_result) -> None:
     window.graph_search_edit.setText("unknown")
     window._search_graph_node()
     assert "introuvable" in infos[-1][-1]
+    window.close()
+
+
+def test_window_subgraph_filter(monkeypatch, qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    infos = []
+    updates = []
+    selections = []
+    monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
+    monkeypatch.setattr(window.graph_view, "update_graph", lambda render_data: updates.append(render_data))
+    monkeypatch.setattr(window.graph_view, "select_node_by_id", lambda node_id: selections.append(node_id))
+
+    window._apply_subgraph_filter()
+    window._reset_subgraph_filter()
+    window._current_result = sample_result
+    window._full_render_data = {
+        "positions": [(0.0, 0.0), (100.0, 0.0), (200.0, 0.0)],
+        "adj": [(0, 1), (1, 2)],
+        "sizes": [10, 10, 10],
+        "brushes": [gui.pg.mkBrush("#fff"), gui.pg.mkBrush("#000"), gui.pg.mkBrush("#333")],
+        "labels": [],
+        "node_ids": ["Water", "Fire", "Steam"],
+    }
+
+    window._apply_subgraph_filter()
+    assert "selectionne un noeud" in infos[-1][-1]
+
+    window.graph_view._selected_node_id = "Fire"
+    window._apply_subgraph_filter()
+    assert window.subgraph_center_edit.text() == "Fire"
+    assert updates[-1]["node_ids"] == ["Water", "Fire", "Steam"]
+    assert selections[-1] == "Fire"
+
+    window.subgraph_center_edit.setText("Water")
+    window.subgraph_depth_edit.setText("bad")
+    window._apply_subgraph_filter()
+    assert "entier positif" in infos[-1][-1]
+
+    window.subgraph_depth_edit.setText("1")
+    window.subgraph_center_edit.setText("Ghost")
+    window._apply_subgraph_filter()
+    assert "Impossible de construire" in infos[-1][-1]
+
+    window._reset_subgraph_filter()
+    assert updates[-1]["node_ids"] == ["Water", "Fire", "Steam"]
     window.close()
 
 
