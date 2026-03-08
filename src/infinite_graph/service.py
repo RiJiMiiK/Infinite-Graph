@@ -59,6 +59,7 @@ def process_save(
         "known_pairs": known_recipe_pairs(save["recipes"]),
         "discarded_pairs": discarded_pairs,
         "done_pairs": set(),
+        "skipped_pairs": set(),
         "statistics": statistics,
         "missing": missing,
         "missing_limit": missing_limit,

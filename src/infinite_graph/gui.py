@@ -1,18 +1,14 @@
 """Qt GUI for browsing and analyzing Infinite Craft saves."""
-
 from __future__ import annotations
-
 import sys
 import time
 from pathlib import Path
-
 from PySide6.QtCore import QObject, Qt, QThread, QStringListModel, Signal
 from PySide6.QtWidgets import (
     QApplication, QCompleter, QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
     QListWidget, QMainWindow, QMessageBox, QProgressBar, QPushButton, QSplitter,
     QTableView, QTabWidget, QTextEdit, QVBoxLayout, QWidget,
 )
-
 from .analyzer import (
     candidate_result_weight,
     find_cheapest_combination,
@@ -31,6 +27,7 @@ from .gui_support import (
     StatsCanvas,
     _layout_cache_file,
     build_graph_render_data,
+    build_summary_text,
     build_subgraph_render_data,
     build_weight_filtered_render_data,
     layout_cache_dir,
@@ -38,8 +35,8 @@ from .gui_support import (
     nx,
     pg,
     save_cached_layout,
+    update_missing_statistics_for_pair,
 )
-
 __all__ = ["CopyLineEdit", "GENERATION_STAGE_PROGRESS", "GenerateWorker", "GraphViewWidget"]
 __all__ += ["INTERFACE_PROGRESS", "LAYOUT_PROGRESS_END", "InfiniteGraphWindow", "ListTableModel"]
 __all__ += ["StatsCanvas", "_layout_cache_file", "build_graph_render_data"]
@@ -112,6 +109,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.generate_button = QPushButton("Generer")
         self.random_button = QPushButton("Random")
         self.cheapest_button = QPushButton("Cheapest")
+        self.next_button = QPushButton("Next")
         self.done_button = QPushButton("Done")
         self.undo_done_button = QPushButton("Undo Done")
         self.discard_button = QPushButton("Discard")
@@ -150,6 +148,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self._current_save_path: Path | None = None
         self._full_render_data: dict[str, object] | None = None
         self._last_generation_elapsed_seconds = 0.0
+        self._last_suggestion_mode: str | None = None
 
         self._build_ui()
 
@@ -177,6 +176,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.generate_button.clicked.connect(self._generate)
         self.random_button.clicked.connect(self._pick_random_combination)
         self.cheapest_button.clicked.connect(self._pick_cheapest_combination)
+        self.next_button.clicked.connect(self._pick_next_combination)
         self.done_button.clicked.connect(self._mark_current_combination_done)
         self.undo_done_button.clicked.connect(self._undo_current_combination_done)
         self.discard_button.clicked.connect(self._discard_current_combination)
@@ -206,6 +206,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         candidate_row_layout.addWidget(self.element2_edit)
         candidate_row_layout.addWidget(self.random_button)
         candidate_row_layout.addWidget(self.cheapest_button)
+        candidate_row_layout.addWidget(self.next_button)
         candidate_row_layout.addWidget(self.done_button)
         candidate_row_layout.addWidget(self.undo_done_button)
         candidate_row_layout.addWidget(self.discard_button)
@@ -403,6 +404,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self._current_save_path = Path(self.input_edit.text().strip())
         self._full_render_data = render_data
         self._last_generation_elapsed_seconds = max(0.0, float(elapsed_seconds))
+        self._last_suggestion_mode = None
         self._update_element_completion([str(element) for element in result["elements"]])
         self._set_candidate_buttons_enabled(True)
         self._on_generation_progress(
@@ -470,22 +472,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             "Updating summary",
         )
         self.summary_label.setText(
-            "\n".join(
-                [
-                    f"Elements charges : {len(result['elements'])}",
-                    f"Recettes chargees : {len(result['recipes'])}",
-                    f"Entrees element ignorees : {result['ignored_element_entries']}",
-                    f"Entrees item ignorees : {result['ignored_item_entries']}",
-                    f"Entrees recette ignorees : {result['ignored_recipe_entries']}",
-                    f"Noeuds du graphe : {len(result['graph_nodes'])}",
-                    f"Edges du graphe : {len(result['graph_edges'])}",
-                    f"Combinaisons manquantes calculees : {len(result['missing'])}",
-                    f"Combinaisons discardees : {len(result['discarded_pairs'])}",
-                    f"Combinaisons done session : {len(result['done_pairs'])}",
-                    f"Element cible : {result['focus_element'] or 'aucun'}",
-                    f"Temps total de generation : {self._last_generation_elapsed_seconds:.2f}s",
-                ]
-            )
+            build_summary_text(result, self._last_generation_elapsed_seconds)
         )
         self.progress_bar.setValue(100)
         if result["load_warnings"]:
@@ -520,6 +507,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
     def _set_candidate_buttons_enabled(self, enabled: bool) -> None:
         self.random_button.setEnabled(enabled)
         self.cheapest_button.setEnabled(enabled)
+        self.next_button.setEnabled(enabled)
         self.done_button.setEnabled(enabled)
         self.undo_done_button.setEnabled(enabled)
         self.discard_button.setEnabled(enabled)
@@ -538,24 +526,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
     def _refresh_summary(self) -> None:
         if not self._current_result:
             return
-
-        self.summary_label.setText(
-            "\n".join(
-                [
-                    f"Elements charges : {len(self._current_result['elements'])}",
-                    f"Recettes chargees : {len(self._current_result['recipes'])}",
-                    f"Entrees element ignorees : {self._current_result['ignored_element_entries']}",
-                    f"Entrees item ignorees : {self._current_result['ignored_item_entries']}",
-                    f"Entrees recette ignorees : {self._current_result['ignored_recipe_entries']}",
-                    f"Noeuds du graphe : {len(self._current_result['graph_nodes'])}",
-                    f"Edges du graphe : {len(self._current_result['graph_edges'])}",
-                    f"Combinaisons manquantes calculees : {len(self._current_result['missing'])}",
-                    f"Combinaisons discardees : {len(self._current_result['discarded_pairs'])}",
-                    f"Combinaisons done session : {len(self._current_result['done_pairs'])}",
-                    f"Element cible : {self._current_result['focus_element'] or 'aucun'}",
-                ]
-            )
-        )
+        self.summary_label.setText(build_summary_text(self._current_result))
 
     def _update_missing_statistics_for_pair(self, pair: tuple[str, str], delta: int) -> None:
         if not self._current_result:
@@ -564,22 +535,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         target_weight = candidate_result_weight(
             pair[0], pair[1], self._current_result["node_weights"]
         )
-        if target_weight is None:
-            return
-
-        updated = []
-        found = False
-        for weight, count in self._current_result["statistics"]["missing_counts_by_result_weight"]:
-            if weight == target_weight:
-                found = True
-                new_count = count + delta
-                if new_count > 0:
-                    updated.append((weight, new_count))
-            else:
-                updated.append((weight, count))
-        if not found and delta > 0:
-            updated.append((target_weight, delta))
-        self._current_result["statistics"]["missing_counts_by_result_weight"] = sorted(updated)
+        update_missing_statistics_for_pair(self._current_result, delta, target_weight)
         self._refresh_missing_weight_list()
 
     def _on_graph_node_selected(self, node_id: object) -> None:
@@ -800,13 +756,21 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             self._current_result["elements"],
             self._current_result["recipes"],
             discarded_pairs=self._current_result["discarded_pairs"],
-            done_pairs=self._current_result["done_pairs"],
+            done_pairs=self._current_result["done_pairs"] | self._current_result["skipped_pairs"],
         )
+        if pair is None:
+            pair = find_random_combination(
+                self._current_result["elements"],
+                self._current_result["recipes"],
+                discarded_pairs=self._current_result["discarded_pairs"],
+                done_pairs=self._current_result["done_pairs"],
+            )
         if pair is None:
             QMessageBox.information(self, "Information", "Aucune combinaison non faite disponible.")
             return
         self.element1_edit.setText(pair[0])
         self.element2_edit.setText(pair[1])
+        self._last_suggestion_mode = "random"
 
     def _pick_cheapest_combination(self) -> None:
         if not self._current_result:
@@ -816,13 +780,47 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             self._current_result["recipes"],
             self._current_result["node_weights"],
             discarded_pairs=self._current_result["discarded_pairs"],
-            done_pairs=self._current_result["done_pairs"],
+            done_pairs=self._current_result["done_pairs"] | self._current_result["skipped_pairs"],
         )
+        if pair is None:
+            pair = find_cheapest_combination(
+                self._current_result["elements"],
+                self._current_result["recipes"],
+                self._current_result["node_weights"],
+                discarded_pairs=self._current_result["discarded_pairs"],
+                done_pairs=self._current_result["done_pairs"],
+            )
         if pair is None:
             QMessageBox.information(self, "Information", "Aucune combinaison non faite disponible.")
             return
         self.element1_edit.setText(pair[0])
         self.element2_edit.setText(pair[1])
+        self._last_suggestion_mode = "cheapest"
+
+    def _pick_next_combination(self) -> None:
+        if not self._current_result:
+            return
+        if self._last_suggestion_mode is None:
+            QMessageBox.information(self, "Information", "Genere d'abord une suggestion.")
+            return
+
+        left = self.element1_edit.text().strip()
+        right = self.element2_edit.text().strip()
+        if left and right:
+            pair = normalize_pair(left, right)
+            if (
+                left in self._current_result["elements"]
+                and right in self._current_result["elements"]
+                and pair not in self._current_result["known_pairs"]
+                and pair not in self._current_result["discarded_pairs"]
+                and pair not in self._current_result["done_pairs"]
+            ):
+                self._current_result["skipped_pairs"].add(pair)
+
+        if self._last_suggestion_mode == "random":
+            self._pick_random_combination()
+        else:
+            self._pick_cheapest_combination()
 
     def _mark_current_combination_done(self) -> None:
         if not self._current_result:
@@ -858,6 +856,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             )
             return
 
+        self._current_result["skipped_pairs"].discard(pair)
         self._current_result["done_pairs"].add(pair)
         self._current_result["missing"] = [
             item for item in self._current_result["missing"] if item != pair
@@ -896,6 +895,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             return
 
         self._current_result["done_pairs"].remove(pair)
+        self._current_result["skipped_pairs"].discard(pair)
         if (
             pair not in self._current_result["known_pairs"]
             and pair not in self._current_result["discarded_pairs"]
@@ -934,6 +934,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             QMessageBox.information(self, "Information", "Cette combinaison est deja discardee.")
             return
 
+        self._current_result["skipped_pairs"].discard(pair)
         add_discarded_pair(self._current_save_path, pair)
         self._current_result["discarded_pairs"].add(pair)
         self._current_result["missing"] = [
@@ -978,6 +979,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
 
         remove_discarded_pair(self._current_save_path, pair)
         self._current_result["discarded_pairs"].remove(pair)
+        self._current_result["skipped_pairs"].discard(pair)
         if (
             pair not in self._current_result["known_pairs"]
             and pair not in self._current_result["done_pairs"]

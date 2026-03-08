@@ -31,6 +31,7 @@ def sample_result() -> dict[str, object]:
         "known_pairs": {("Fire", "Water")},
         "discarded_pairs": {("Earth", "Wind")},
         "done_pairs": set(),
+        "skipped_pairs": set(),
         "statistics": {
             "recipe_counts_by_result_weight": [(1, 1)],
             "node_counts_by_weight": [(0, 2)],
@@ -516,10 +517,13 @@ def test_window_candidate_buttons_and_selection(monkeypatch, qapp, sample_result
     window = gui.InfiniteGraphWindow()
     window._pick_random_combination()
     window._pick_cheapest_combination()
+    window._pick_next_combination()
     window._current_result = sample_result
     infos = []
     monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
     monkeypatch.setattr(gui, "find_random_combination", lambda *args, **kwargs: None)
+    window._pick_next_combination()
+    assert "Genere d'abord" in infos[-1][-1]
     window._pick_random_combination()
     assert infos
     monkeypatch.setattr(gui, "find_random_combination", lambda *args, **kwargs: ("A", "B"))
@@ -531,10 +535,49 @@ def test_window_candidate_buttons_and_selection(monkeypatch, qapp, sample_result
     monkeypatch.setattr(gui, "find_cheapest_combination", lambda *args, **kwargs: ("C", "D"))
     window._pick_cheapest_combination()
     assert window.element2_edit.text() == "D"
+    random_calls = []
+    cheapest_calls = []
+
+    def fake_random(*args, **kwargs):
+        random_calls.append(set(kwargs["done_pairs"]))
+        return None if len(random_calls) == 1 else ("R", "S")
+
+    def fake_cheapest(*args, **kwargs):
+        cheapest_calls.append(set(kwargs["done_pairs"]))
+        return None if len(cheapest_calls) == 1 else ("T", "U")
+
+    monkeypatch.setattr(gui, "find_random_combination", fake_random)
+    monkeypatch.setattr(gui, "find_cheapest_combination", fake_cheapest)
+    sample_result["skipped_pairs"] = {("Earth", "Water")}
+    window._pick_random_combination()
+    window._pick_cheapest_combination()
+    assert ("Earth", "Water") in random_calls[0]
+    assert ("Earth", "Water") not in random_calls[1]
+    assert ("Earth", "Water") in cheapest_calls[0]
+    assert ("Earth", "Water") not in cheapest_calls[1]
+    monkeypatch.setattr(gui, "find_random_combination", lambda *args, **kwargs: ("E", "F"))
+    window.element1_edit.setText("Earth")
+    window.element2_edit.setText("Water")
+    window._last_suggestion_mode = "random"
+    window._pick_next_combination()
+    assert ("Earth", "Water") in sample_result["skipped_pairs"]
+    assert window.element1_edit.text() == "E"
+    sample_result["done_pairs"].add(("A", "B"))
+    sample_result["discarded_pairs"].add(("C", "D"))
+    window.element1_edit.setText("A")
+    window.element2_edit.setText("B")
+    window._pick_next_combination()
+    window.element1_edit.setText("C")
+    window.element2_edit.setText("D")
+    window._last_suggestion_mode = "cheapest"
+    monkeypatch.setattr(gui, "find_cheapest_combination", lambda *args, **kwargs: ("G", "H"))
+    window._pick_next_combination()
+    assert window.element1_edit.text() == "G"
 
     window._set_candidate_buttons_enabled(False)
     assert not window.random_button.isEnabled()
     window._set_candidate_buttons_enabled(True)
+    assert window.next_button.isEnabled()
     assert window.done_button.isEnabled()
     assert window.undo_done_button.isEnabled()
     assert window.undo_discard_button.isEnabled()

@@ -99,7 +99,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Auto-completion des noms d'elements
 - [x] Bouton `Undo Done`
 - [x] Bouton `Undo Discard`
-- [ ] Bouton pour passer directement a la suggestion suivante
+- [x] Bouton pour passer directement a la suggestion suivante
 - [ ] Historique local des dernieres suggestions
 - [ ] Validation en direct des noms saisis
 
