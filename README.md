@@ -2,6 +2,19 @@
 
 Petit projet Python pour visualiser une sauvegarde d'Infinite Craft sous forme de graphe et lister les combinaisons qui n'ont pas encore ete faites.
 
+## Vision
+
+Infinite Graph a pour but de servir d'outil d'exploration pour une sauvegarde Infinite Craft.
+
+L'idee n'est pas seulement d'afficher un graphe, mais de :
+
+- comprendre la structure des elements deja decouverts
+- estimer leur profondeur via un poids minimal
+- identifier rapidement des combinaisons encore non tentees
+- suivre localement les combinaisons deja essayees ou jugees inutiles
+
+Le projet est pense comme un outil desktop interactif, centre sur l'analyse et la prise de decision, plutot qu'un simple export statique.
+
 ## Fonctionnalites
 
 - lecture d'une sauvegarde JSON
@@ -53,6 +66,13 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
+
+## Fichiers du projet
+
+- `ROADMAP.md` : roadmap detaillee
+- `CHANGELOG.md` : historique des evolutions
+- `discarded.json` : combinaisons globalement ignorees
+- `LICENSE` : licence du projet
 
 Dans l'interface :
 
