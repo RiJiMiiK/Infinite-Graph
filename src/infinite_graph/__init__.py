@@ -1,0 +1,2 @@
+"""Infinite Graph package."""
+
