@@ -537,6 +537,7 @@ def test_window_candidate_buttons_and_selection(monkeypatch, qapp, sample_result
     window._set_candidate_buttons_enabled(True)
     assert window.done_button.isEnabled()
     assert window.undo_done_button.isEnabled()
+    assert window.undo_discard_button.isEnabled()
     window._current_result = sample_result
     window.node_model.update_rows([["Fire", 0], ["Water", 0]])
     window._on_graph_node_selected("Fire")
@@ -862,6 +863,40 @@ def test_window_discard_branches(monkeypatch, qapp, sample_result) -> None:
     window._discard_current_combination()
     assert not_found_result["statistics"]["missing_counts_by_result_weight"] == [(2, 1)]
     assert window.missing_weight_list.count() == 1
+    window.close()
+
+
+def test_window_undo_discard_branches(monkeypatch, qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    infos = []
+    warns = []
+    removed = []
+    monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
+    monkeypatch.setattr(gui.QMessageBox, "warning", lambda *args: warns.append(args))
+    monkeypatch.setattr(gui, "remove_discarded_pair", lambda path, pair: removed.append((path, pair)))
+
+    window._undo_current_combination_discard()
+    window._current_result = sample_result
+    window._current_save_path = Path("save.json")
+    window._undo_current_combination_discard()
+    window.element1_edit.setText("X")
+    window.element2_edit.setText("Y")
+    window._undo_current_combination_discard()
+    window.element1_edit.setText("Earth")
+    window.element2_edit.setText("Water")
+    window._undo_current_combination_discard()
+    sample_result["discarded_pairs"].add(("Earth", "Water"))
+    sample_result["missing"] = [("Earth", "Earth")]
+    sample_result["statistics"]["missing_counts_by_result_weight"] = [(1, 1)]
+    window.element1_edit.setText("Water")
+    window.element2_edit.setText("Earth")
+    window._undo_current_combination_discard()
+    assert removed == [(Path("save.json"), ("Earth", "Water"))]
+    assert ("Earth", "Water") not in sample_result["discarded_pairs"]
+    assert ("Earth", "Water") in sample_result["missing"]
+    assert sample_result["statistics"]["missing_counts_by_result_weight"] == [(1, 2)]
+    assert window.element1_edit.text() == ""
+    assert infos and warns
     window.close()
 
 

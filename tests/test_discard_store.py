@@ -36,3 +36,15 @@ def test_add_discarded_pair_rewrites_global_format(monkeypatch, tmp_path: Path) 
     discard_store.add_discarded_pair(None, ("Fire", "Water"))
     data = json.loads(path.read_text(encoding="utf-8"))
     assert data == {"discarded": [["Fire", "Water"]]}
+
+
+def test_remove_discarded_pair_rewrites_global_format(monkeypatch, tmp_path: Path) -> None:
+    path = tmp_path / "discarded.json"
+    monkeypatch.setattr(discard_store, "_discard_path", lambda: path)
+    discard_store.add_discarded_pair(None, ("Water", "Fire"))
+    discard_store.add_discarded_pair(None, ("Water", "Earth"))
+    discard_store.remove_discarded_pair(None, ("Fire", "Water"))
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data == {"discarded": [["Earth", "Water"]]}
+    discard_store.remove_discarded_pair(None, ("Fire", "Wind"))
+    assert json.loads(path.read_text(encoding="utf-8")) == {"discarded": [["Earth", "Water"]]}

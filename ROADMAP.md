@@ -98,7 +98,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Pas de pop-up pour `Done`
 - [x] Auto-completion des noms d'elements
 - [x] Bouton `Undo Done`
-- [ ] Bouton `Undo Discard`
+- [x] Bouton `Undo Discard`
 - [ ] Bouton pour passer directement a la suggestion suivante
 - [ ] Historique local des dernieres suggestions
 - [ ] Validation en direct des noms saisis
@@ -164,7 +164,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 
 - [ ] Auto-completion pour `Element 1` et `Element 2`
 - [x] `Undo Done`
-- [ ] `Undo Discard`
+- [x] `Undo Discard`
 - [ ] Selection d'un noeud dans le graphe avec details
 
 ### Priorite moyenne

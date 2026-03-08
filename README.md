@@ -61,6 +61,28 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+## Conventions de code
+
+Le projet suit explicitement :
+
+- `PEP 8` pour le style Python general
+- `PEP 257` pour les conventions de docstrings
+- `PEP 20` pour les principes de lisibilite et de conception
+
+Outils actuellement utilises dans le repo :
+
+- `black` pour le formatage
+- `isort` pour les imports
+- `pylint` pour les checks statiques
+
+Politique de taille des modules :
+
+- alerte a partir de `800` lignes
+- echec a partir de `1000` lignes
+- exception documentee temporaire pour `src/infinite_graph/gui.py`
+
+Cette regle est une convention interne du projet inspiree par les objectifs de maintenabilite, modularite et analysabilite.
+
 ## Utilisation GUI
 
 ```bash

@@ -41,3 +41,14 @@ source = ["main", "src"]
 [tool.coverage.report]
 fail_under = 100
 show_missing = true
+
+[tool.infinite_graph.code_style]
+python_style = "PEP 8"
+docstring_style = "PEP 257"
+design_principles = "PEP 20"
+formatters = ["black", "isort"]
+linter = "pylint"
+
+[tool.infinite_graph.module_size_policy]
+warning_lines = 800
+max_lines = 1000
