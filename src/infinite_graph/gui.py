@@ -247,6 +247,7 @@ class GraphViewWidget(pg.PlotWidget):
         self._selected_node_id = node_id if node_id in available_ids else None
         if self._render_data.get("positions"):
             self._apply_graph_style()
+            self._center_on_selected_node()
         self.nodeSelected.emit(self._selected_node_id)
 
     def select_node_at(
@@ -315,6 +316,23 @@ class GraphViewWidget(pg.PlotWidget):
                 neighbors.add(node_ids[source_index])
         return neighbors
 
+    def _center_on_selected_node(self) -> None:
+        node_ids = list(self._render_data.get("node_ids", []))
+        positions = list(self._render_data.get("positions", []))
+        if self._selected_node_id not in node_ids or not positions:
+            return
+
+        selected_index = node_ids.index(self._selected_node_id)
+        center_x, center_y = positions[selected_index]
+        x_range, y_range = self.getViewBox().viewRange()
+        width = max(abs(float(x_range[1]) - float(x_range[0])), 200.0)
+        height = max(abs(float(y_range[1]) - float(y_range[0])), 200.0)
+        self.getViewBox().setRange(
+            xRange=(float(center_x) - width / 2.0, float(center_x) + width / 2.0),
+            yRange=(float(center_y) - height / 2.0, float(center_y) + height / 2.0),
+            padding=0.0,
+        )
+
 
 class GenerateWorker(QObject):
     progress = Signal(str)
@@ -377,6 +395,8 @@ class InfiniteGraphWindow(QMainWindow):
         self.missing_weight_list = QListWidget()
         self.selected_node_label = QLabel("Noeud selectionne : aucun")
         self.selected_node_details = QTextEdit()
+        self.graph_search_edit = QLineEdit()
+        self.graph_search_button = QPushButton("Rechercher")
         self._worker_thread: QThread | None = None
         self._worker: GenerateWorker | None = None
         self._current_result: dict[str, object] | None = None
@@ -456,6 +476,13 @@ class InfiniteGraphWindow(QMainWindow):
         layout = QVBoxLayout(tab)
         layout.setContentsMargins(0, 0, 0, 0)
         self.graph_view.nodeSelected.connect(self._on_graph_node_selected)
+        search_row = QWidget()
+        search_layout = QHBoxLayout(search_row)
+        search_layout.setContentsMargins(0, 0, 0, 0)
+        self.graph_search_edit.setPlaceholderText("Rechercher un element dans le graphe")
+        self.graph_search_button.clicked.connect(self._search_graph_node)
+        search_layout.addWidget(self.graph_search_edit)
+        search_layout.addWidget(self.graph_search_button)
         self.selected_node_details.setReadOnly(True)
         self.selected_node_details.setMinimumWidth(280)
         self.selected_node_details.setPlainText("Aucun noeud selectionne.")
@@ -471,6 +498,7 @@ class InfiniteGraphWindow(QMainWindow):
         splitter.addWidget(details_container)
         splitter.setSizes([1100, 320])
 
+        layout.addWidget(search_row)
         layout.addWidget(splitter)
         return tab
 
@@ -645,6 +673,29 @@ class InfiniteGraphWindow(QMainWindow):
                 self.node_table.selectRow(row_index)
                 self.node_table.scrollTo(self.node_model.index(row_index, 0))
                 break
+
+    def _search_graph_node(self) -> None:
+        if not self._current_result:
+            return
+
+        query = self.graph_search_edit.text().strip()
+        if not query:
+            QMessageBox.information(self, "Information", "Saisis un element a rechercher.")
+            return
+
+        normalized_query = query.casefold()
+        for node in self._current_result["graph_nodes"]:
+            node_name = str(node["label"])
+            if node_name.casefold() == normalized_query:
+                self.graph_search_edit.setText(node_name)
+                self.graph_view.select_node_by_id(node_name)
+                return
+
+        QMessageBox.information(
+            self,
+            "Information",
+            f"Element introuvable dans le graphe : {query}",
+        )
 
     def _build_selected_node_details(self, node_name: str) -> str:
         if not self._current_result:

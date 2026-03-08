@@ -124,7 +124,9 @@ def test_graph_view_widget_update_graph(qapp) -> None:
 def test_graph_view_widget_node_selection(qapp) -> None:
     widget = gui.GraphViewWidget()
     selected = []
+    ranges = []
     widget.nodeSelected.connect(selected.append)
+    widget.getViewBox().setRange = lambda *args, **kwargs: ranges.append((args, kwargs))
     widget.update_graph(
         {
             "positions": [(0.0, 0.0), (100.0, 0.0), (200.0, 0.0)],
@@ -141,6 +143,7 @@ def test_graph_view_widget_node_selection(qapp) -> None:
     )
     assert widget.select_node_at((5.0, 0.0)) == "Water"
     assert selected[-1] == "Water"
+    assert ranges
     assert widget._neighbor_node_ids() == {"Fire", "Steam"}
     widget.select_node_by_id("Fire")
     assert selected[-1] == "Fire"
@@ -176,6 +179,13 @@ def test_graph_view_widget_mouse_press_and_empty_selection(qapp, monkeypatch) ->
 
     empty_widget = gui.GraphViewWidget()
     assert empty_widget.select_node_at((0.0, 0.0)) is None
+
+
+def test_graph_view_widget_center_on_selected_node_without_match(qapp) -> None:
+    widget = gui.GraphViewWidget()
+    widget._render_data = {"node_ids": ["Water"], "positions": [(10.0, 20.0)]}
+    widget._selected_node_id = "Fire"
+    widget._center_on_selected_node()
 
 
 def test_generate_worker_success_and_failure(monkeypatch, sample_result) -> None:
@@ -360,6 +370,29 @@ def test_window_candidate_buttons_and_selection(monkeypatch, qapp, sample_result
 def test_window_build_selected_node_details_without_result(qapp) -> None:
     window = gui.InfiniteGraphWindow()
     assert window._build_selected_node_details("Ghost") == "Nom : Ghost"
+    window.close()
+
+
+def test_window_search_graph_node(monkeypatch, qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    infos = []
+    selected = []
+    monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
+    monkeypatch.setattr(window.graph_view, "select_node_by_id", lambda node_id: selected.append(node_id))
+
+    window._search_graph_node()
+    window._current_result = sample_result
+    window._search_graph_node()
+    assert infos[-1][-1] == "Saisis un element a rechercher."
+
+    window.graph_search_edit.setText("fire")
+    window._search_graph_node()
+    assert selected[-1] == "Fire"
+    assert window.graph_search_edit.text() == "Fire"
+
+    window.graph_search_edit.setText("unknown")
+    window._search_graph_node()
+    assert "introuvable" in infos[-1][-1]
     window.close()
 
 
