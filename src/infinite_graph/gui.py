@@ -279,6 +279,11 @@ class GraphViewWidget(pg.PlotWidget):
         sizes = list(self._render_data["sizes"])
         brushes = list(self._render_data["brushes"])
         node_ids = list(self._render_data.get("node_ids", []))
+        neighbor_ids = self._neighbor_node_ids()
+        for index, node_id in enumerate(node_ids):
+            if node_id in neighbor_ids:
+                sizes[index] = float(sizes[index]) + 4.0
+                brushes[index] = pg.mkBrush("#facc15")
         if self._selected_node_id in node_ids:
             selected_index = node_ids.index(self._selected_node_id)
             sizes[selected_index] = float(sizes[selected_index]) + 8.0
@@ -294,6 +299,20 @@ class GraphViewWidget(pg.PlotWidget):
             symbolPen=None,
             symbolBrush=brushes,
         )
+
+    def _neighbor_node_ids(self) -> set[str]:
+        node_ids = list(self._render_data.get("node_ids", []))
+        if self._selected_node_id not in node_ids:
+            return set()
+
+        selected_index = node_ids.index(self._selected_node_id)
+        neighbors = set()
+        for source_index, target_index in self._render_data.get("adj", []):
+            if source_index == selected_index and 0 <= target_index < len(node_ids):
+                neighbors.add(node_ids[target_index])
+            if target_index == selected_index and 0 <= source_index < len(node_ids):
+                neighbors.add(node_ids[source_index])
+        return neighbors
 
 
 class GenerateWorker(QObject):

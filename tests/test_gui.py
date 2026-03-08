@@ -127,20 +127,27 @@ def test_graph_view_widget_node_selection(qapp) -> None:
     widget.nodeSelected.connect(selected.append)
     widget.update_graph(
         {
-            "positions": [(0.0, 0.0), (100.0, 0.0)],
-            "adj": [],
-            "sizes": [10, 10],
-            "brushes": [gui.pg.mkBrush("#ffffff"), gui.pg.mkBrush("#000000")],
+            "positions": [(0.0, 0.0), (100.0, 0.0), (200.0, 0.0)],
+            "adj": [(0, 1), (2, 0)],
+            "sizes": [10, 10, 10],
+            "brushes": [
+                gui.pg.mkBrush("#ffffff"),
+                gui.pg.mkBrush("#000000"),
+                gui.pg.mkBrush("#333333"),
+            ],
             "labels": [],
-            "node_ids": ["Water", "Fire"],
+            "node_ids": ["Water", "Fire", "Steam"],
         }
     )
     assert widget.select_node_at((5.0, 0.0)) == "Water"
     assert selected[-1] == "Water"
+    assert widget._neighbor_node_ids() == {"Fire", "Steam"}
     widget.select_node_by_id("Fire")
     assert selected[-1] == "Fire"
+    assert widget._neighbor_node_ids() == {"Water"}
     assert widget.select_node_at((1000.0, 1000.0)) is None
     assert selected[-1] is None
+    assert widget._neighbor_node_ids() == set()
 
 
 def test_graph_view_widget_mouse_press_and_empty_selection(qapp, monkeypatch) -> None:
