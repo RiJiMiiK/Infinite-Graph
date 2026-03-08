@@ -1,0 +1,28 @@
+{
+  "elements": [
+    "Water",
+    "Fire",
+    "Wind",
+    "Earth",
+    {
+      "name": "Mist"
+    }
+  ],
+  "recipes": [
+    {
+      "first": "Water",
+      "second": "Wind",
+      "output": "Mist"
+    },
+    {
+      "left": "Mist",
+      "right": "Fire",
+      "result": "Smoke"
+    },
+    {
+      "a": "Smoke",
+      "b": "Earth",
+      "res": "Ash"
+    }
+  ]
+}

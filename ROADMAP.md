@@ -39,7 +39,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Propagation amelioree avec priorite aux plus petits poids
 - [x] Ajouter des tests unitaires sur le calcul des poids
 - [x] Ajouter des tests sur la fusion des edges
-- [ ] Ajouter des tests de regression sur des mini-saves
+- [x] Ajouter des tests de regression sur des mini-saves
 
 ## 4. Interface graphique
 

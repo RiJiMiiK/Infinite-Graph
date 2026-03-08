@@ -1,0 +1,68 @@
+{
+  "items": [
+    {
+      "id": 0,
+      "text": "Water",
+      "recipes": []
+    },
+    {
+      "id": 1,
+      "text": "Fire",
+      "recipes": []
+    },
+    {
+      "id": 2,
+      "text": "Wind",
+      "recipes": []
+    },
+    {
+      "id": 3,
+      "text": "Earth",
+      "recipes": []
+    },
+    {
+      "id": 4,
+      "text": "Steam",
+      "recipes": [
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "id": 5,
+      "text": "Mud",
+      "recipes": [
+        [
+          0,
+          3
+        ]
+      ]
+    },
+    {
+      "id": 6,
+      "text": "Dust",
+      "recipes": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": 7,
+      "text": "Life",
+      "recipes": [
+        [
+          5,
+          1
+        ],
+        [
+          5,
+          2
+        ]
+      ]
+    }
+  ]
+}
