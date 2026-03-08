@@ -692,6 +692,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.random_button = QPushButton("Random")
         self.cheapest_button = QPushButton("Cheapest")
         self.done_button = QPushButton("Done")
+        self.undo_done_button = QPushButton("Undo Done")
         self.discard_button = QPushButton("Discard")
         self.progress_bar = QProgressBar()
         self.summary_label = QLabel(
@@ -755,6 +756,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.random_button.clicked.connect(self._pick_random_combination)
         self.cheapest_button.clicked.connect(self._pick_cheapest_combination)
         self.done_button.clicked.connect(self._mark_current_combination_done)
+        self.undo_done_button.clicked.connect(self._undo_current_combination_done)
         self.discard_button.clicked.connect(self._discard_current_combination)
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
@@ -782,6 +784,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         candidate_row_layout.addWidget(self.random_button)
         candidate_row_layout.addWidget(self.cheapest_button)
         candidate_row_layout.addWidget(self.done_button)
+        candidate_row_layout.addWidget(self.undo_done_button)
         candidate_row_layout.addWidget(self.discard_button)
 
         controls_layout.addRow("Sauvegarde", file_row)
@@ -1094,7 +1097,65 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.random_button.setEnabled(enabled)
         self.cheapest_button.setEnabled(enabled)
         self.done_button.setEnabled(enabled)
+        self.undo_done_button.setEnabled(enabled)
         self.discard_button.setEnabled(enabled)
+
+    def _refresh_missing_weight_list(self) -> None:
+        if not self._current_result:
+            return
+
+        self.missing_weight_list.clear()
+        for weight, count in self._current_result["statistics"]["missing_counts_by_result_weight"]:
+            self.missing_weight_list.addItem(
+                f"Poids {weight}: {count} recipes non faites possibles"
+            )
+
+    def _refresh_summary(self) -> None:
+        if not self._current_result:
+            return
+
+        self.summary_label.setText(
+            "\n".join(
+                [
+                    f"Elements charges : {len(self._current_result['elements'])}",
+                    f"Recettes chargees : {len(self._current_result['recipes'])}",
+                    f"Entrees element ignorees : {self._current_result['ignored_element_entries']}",
+                    f"Entrees item ignorees : {self._current_result['ignored_item_entries']}",
+                    f"Entrees recette ignorees : {self._current_result['ignored_recipe_entries']}",
+                    f"Noeuds du graphe : {len(self._current_result['graph_nodes'])}",
+                    f"Edges du graphe : {len(self._current_result['graph_edges'])}",
+                    f"Combinaisons manquantes calculees : {len(self._current_result['missing'])}",
+                    f"Combinaisons discardees : {len(self._current_result['discarded_pairs'])}",
+                    f"Combinaisons done session : {len(self._current_result['done_pairs'])}",
+                    f"Element cible : {self._current_result['focus_element'] or 'aucun'}",
+                ]
+            )
+        )
+
+    def _update_missing_statistics_for_pair(self, pair: tuple[str, str], delta: int) -> None:
+        if not self._current_result:
+            return
+
+        target_weight = candidate_result_weight(
+            pair[0], pair[1], self._current_result["node_weights"]
+        )
+        if target_weight is None:
+            return
+
+        updated = []
+        found = False
+        for weight, count in self._current_result["statistics"]["missing_counts_by_result_weight"]:
+            if weight == target_weight:
+                found = True
+                new_count = count + delta
+                if new_count > 0:
+                    updated.append((weight, new_count))
+            else:
+                updated.append((weight, count))
+        if not found and delta > 0:
+            updated.append((target_weight, delta))
+        self._current_result["statistics"]["missing_counts_by_result_weight"] = sorted(updated)
+        self._refresh_missing_weight_list()
 
     def _on_graph_node_selected(self, node_id: object) -> None:
         node_name = str(node_id) if node_id is not None else ""
@@ -1376,23 +1437,48 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self._current_result["missing"] = [
             item for item in self._current_result["missing"] if item != pair
         ]
-        self.summary_label.setText(
-            "\n".join(
-                [
-                    f"Elements charges : {len(self._current_result['elements'])}",
-                    f"Recettes chargees : {len(self._current_result['recipes'])}",
-                    f"Entrees element ignorees : {self._current_result['ignored_element_entries']}",
-                    f"Entrees item ignorees : {self._current_result['ignored_item_entries']}",
-                    f"Entrees recette ignorees : {self._current_result['ignored_recipe_entries']}",
-                    f"Noeuds du graphe : {len(self._current_result['graph_nodes'])}",
-                    f"Edges du graphe : {len(self._current_result['graph_edges'])}",
-                    f"Combinaisons manquantes calculees : {len(self._current_result['missing'])}",
-                    f"Combinaisons discardees : {len(self._current_result['discarded_pairs'])}",
-                    f"Combinaisons done session : {len(self._current_result['done_pairs'])}",
-                    f"Element cible : {self._current_result['focus_element'] or 'aucun'}",
-                ]
+        self._update_missing_statistics_for_pair(pair, -1)
+        self._refresh_summary()
+        self.element1_edit.clear()
+        self.element2_edit.clear()
+
+    def _undo_current_combination_done(self) -> None:
+        if not self._current_result:
+            return
+
+        left = self.element1_edit.text().strip()
+        right = self.element2_edit.text().strip()
+        if not left or not right:
+            QMessageBox.information(
+                self, "Information", "Renseigne une combinaison marquee done a annuler."
             )
-        )
+            return
+
+        if (
+            left not in self._current_result["elements"]
+            or right not in self._current_result["elements"]
+        ):
+            QMessageBox.warning(self, "Erreur", "Les elements saisis n'existent pas dans la save.")
+            return
+
+        pair = normalize_pair(left, right)
+        if pair not in self._current_result["done_pairs"]:
+            QMessageBox.information(
+                self,
+                "Information",
+                "Cette combinaison n'est pas marquee done pour cette session.",
+            )
+            return
+
+        self._current_result["done_pairs"].remove(pair)
+        if (
+            pair not in self._current_result["known_pairs"]
+            and pair not in self._current_result["discarded_pairs"]
+            and pair not in self._current_result["missing"]
+        ):
+            self._current_result["missing"].append(pair)
+        self._update_missing_statistics_for_pair(pair, 1)
+        self._refresh_summary()
         self.element1_edit.clear()
         self.element2_edit.clear()
 
@@ -1429,47 +1515,8 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             item for item in self._current_result["missing"] if item != pair
         ]
 
-        target_weight = candidate_result_weight(
-            pair[0], pair[1], self._current_result["node_weights"]
-        )
-        if target_weight is not None:
-            updated = []
-            found = False
-            for weight, count in self._current_result["statistics"][
-                "missing_counts_by_result_weight"
-            ]:
-                if weight == target_weight:
-                    found = True
-                    if count > 1:
-                        updated.append((weight, count - 1))
-                else:
-                    updated.append((weight, count))
-            if not found:
-                updated = self._current_result["statistics"]["missing_counts_by_result_weight"]
-            self._current_result["statistics"]["missing_counts_by_result_weight"] = updated
-            self.missing_weight_list.clear()
-            for weight, count in updated:
-                self.missing_weight_list.addItem(
-                    f"Poids {weight}: {count} recipes non faites possibles"
-                )
-
-        self.summary_label.setText(
-            "\n".join(
-                [
-                    f"Elements charges : {len(self._current_result['elements'])}",
-                    f"Recettes chargees : {len(self._current_result['recipes'])}",
-                    f"Entrees element ignorees : {self._current_result['ignored_element_entries']}",
-                    f"Entrees item ignorees : {self._current_result['ignored_item_entries']}",
-                    f"Entrees recette ignorees : {self._current_result['ignored_recipe_entries']}",
-                    f"Noeuds du graphe : {len(self._current_result['graph_nodes'])}",
-                    f"Edges du graphe : {len(self._current_result['graph_edges'])}",
-                    f"Combinaisons manquantes calculees : {len(self._current_result['missing'])}",
-                    f"Combinaisons discardees : {len(self._current_result['discarded_pairs'])}",
-                    f"Combinaisons done session : {len(self._current_result['done_pairs'])}",
-                    f"Element cible : {self._current_result['focus_element'] or 'aucun'}",
-                ]
-            )
-        )
+        self._update_missing_statistics_for_pair(pair, -1)
+        self._refresh_summary()
         self.element1_edit.clear()
         self.element2_edit.clear()
         QMessageBox.information(
