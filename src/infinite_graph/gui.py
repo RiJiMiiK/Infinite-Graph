@@ -17,9 +17,18 @@ import numpy as np
 import pyqtgraph as pg
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, QObject, Qt, QThread, Signal
+from PySide6.QtCore import (
+    QAbstractTableModel,
+    QModelIndex,
+    QObject,
+    Qt,
+    QThread,
+    QStringListModel,
+    Signal,
+)
 from PySide6.QtWidgets import (
     QApplication,
+    QCompleter,
     QFileDialog,
     QFormLayout,
     QHBoxLayout,
@@ -676,6 +685,9 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.focus_edit = QLineEdit()
         self.element1_edit = CopyLineEdit()
         self.element2_edit = CopyLineEdit()
+        self.element_completer_model = QStringListModel()
+        self.element1_completer = QCompleter(self.element_completer_model, self)
+        self.element2_completer = QCompleter(self.element_completer_model, self)
         self.generate_button = QPushButton("Generer")
         self.random_button = QPushButton("Random")
         self.cheapest_button = QPushButton("Cheapest")
@@ -761,6 +773,10 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.element2_edit.setReadOnly(False)
         self.element1_edit.setClearButtonEnabled(True)
         self.element2_edit.setClearButtonEnabled(True)
+        self._configure_element_completer(self.element1_completer)
+        self._configure_element_completer(self.element2_completer)
+        self.element1_edit.setCompleter(self.element1_completer)
+        self.element2_edit.setCompleter(self.element2_completer)
         candidate_row_layout.addWidget(self.element1_edit)
         candidate_row_layout.addWidget(self.element2_edit)
         candidate_row_layout.addWidget(self.random_button)
@@ -785,6 +801,16 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
 
         self.setCentralWidget(central)
         self._set_candidate_buttons_enabled(False)
+        self._update_element_completion([])
+
+    @staticmethod
+    def _configure_element_completer(completer: QCompleter) -> None:
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setCompletionMode(QCompleter.PopupCompletion)
+        completer.setFilterMode(Qt.MatchContains)
+
+    def _update_element_completion(self, elements: list[str]) -> None:
+        self.element_completer_model.setStringList(sorted(elements, key=str.casefold))
 
     def _build_graph_tab(self) -> QWidget:
         tab = QWidget()
@@ -950,6 +976,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self._current_save_path = Path(self.input_edit.text().strip())
         self._full_render_data = render_data
         self._last_generation_elapsed_seconds = max(0.0, float(elapsed_seconds))
+        self._update_element_completion([str(element) for element in result["elements"]])
         self._set_candidate_buttons_enabled(True)
         self._on_generation_progress(
             INTERFACE_PROGRESS["Updating graph view"],
@@ -1049,6 +1076,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.summary_label.setText("La generation a echoue.")
         self.progress_bar.setValue(0)
         self.stage_label.setText("Current step: failed (0%)")
+        self._update_element_completion([])
         self._set_candidate_buttons_enabled(False)
         QMessageBox.critical(self, "Erreur", message)
 

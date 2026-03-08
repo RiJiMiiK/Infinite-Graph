@@ -460,6 +460,7 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     assert "Combinaisons discardees" in window.summary_label.text()
     assert "Temps total de generation : 12.34s" in window.summary_label.text()
     assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
+    assert "Water" in window.element_completer_model.stringList()
     assert window.progress_bar.value() == 100
     assert "12.34s" in window.stage_label.text()
 
@@ -478,6 +479,7 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     monkeypatch.setattr(gui.QMessageBox, "critical", lambda *args: errors.append(args))
     window._on_generation_failed("bad")
     assert errors
+    assert window.element_completer_model.stringList() == []
 
     fake_thread = _FakeThread()
     window._worker_thread = fake_thread
@@ -487,6 +489,17 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     assert fake_thread.wait_called is True
     assert window._worker_thread is None
     window._cleanup_worker()
+    window.close()
+
+
+def test_window_element_completion_setup_and_update(qapp) -> None:
+    window = gui.InfiniteGraphWindow()
+    assert window.element1_edit.completer() is window.element1_completer
+    assert window.element2_edit.completer() is window.element2_completer
+    assert window.element1_completer.caseSensitivity() == gui.Qt.CaseInsensitive
+    assert window.element1_completer.filterMode() == gui.Qt.MatchContains
+    window._update_element_completion(["Steam", "water", "Fire"])
+    assert window.element_completer_model.stringList() == ["Fire", "Steam", "water"]
     window.close()
 
 
