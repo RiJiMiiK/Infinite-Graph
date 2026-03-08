@@ -478,7 +478,7 @@ class GraphViewWidget(pg.PlotWidget):
 
 class GenerateWorker(QObject):
     progress = Signal(int, str)
-    finished = Signal(dict, dict)
+    finished = Signal(dict, dict, float)
     failed = Signal(str)
 
     def __init__(
@@ -495,6 +495,7 @@ class GenerateWorker(QObject):
         self.spring_scale = spring_scale
 
     def run(self) -> None:
+        started_at = time.perf_counter()
         try:
             self.progress.emit(0, "Starting generation")
 
@@ -520,7 +521,7 @@ class GenerateWorker(QObject):
         except Exception as exc:
             self.failed.emit(str(exc))
             return
-        self.finished.emit(result, render_data)
+        self.finished.emit(result, render_data, time.perf_counter() - started_at)
 
 
 class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-attributes
@@ -571,6 +572,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self._current_result: dict[str, object] | None = None
         self._current_save_path: Path | None = None
         self._full_render_data: dict[str, object] | None = None
+        self._last_generation_elapsed_seconds = 0.0
 
         self._build_ui()
 
@@ -796,10 +798,16 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.progress_bar.setValue(bounded_percent)
         self.stage_label.setText(f"Current step: {message} ({bounded_percent}%)")
 
-    def _on_generation_finished(self, result: dict, render_data: dict) -> None:
+    def _on_generation_finished(
+        self,
+        result: dict,
+        render_data: dict,
+        elapsed_seconds: float = 0.0,
+    ) -> None:
         self._current_result = result
         self._current_save_path = Path(self.input_edit.text().strip())
         self._full_render_data = render_data
+        self._last_generation_elapsed_seconds = max(0.0, float(elapsed_seconds))
         self._set_candidate_buttons_enabled(True)
         self._on_generation_progress(
             INTERFACE_PROGRESS["Updating graph view"],
@@ -879,16 +887,21 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
                     f"Combinaisons discardees : {len(result['discarded_pairs'])}",
                     f"Combinaisons done session : {len(result['done_pairs'])}",
                     f"Element cible : {result['focus_element'] or 'aucun'}",
+                    f"Temps total de generation : {self._last_generation_elapsed_seconds:.2f}s",
                 ]
             )
         )
         self.progress_bar.setValue(100)
         if result["load_warnings"]:
             self.stage_label.setText(
-                "Current step: done with warnings (100%) - " + " | ".join(result["load_warnings"])
+                "Current step: done with warnings "
+                f"(100%, {self._last_generation_elapsed_seconds:.2f}s) - "
+                + " | ".join(result["load_warnings"])
             )
         else:
-            self.stage_label.setText("Current step: done (100%)")
+            self.stage_label.setText(
+                f"Current step: done (100%, {self._last_generation_elapsed_seconds:.2f}s)"
+            )
 
     def _on_generation_failed(self, message: str) -> None:
         self.summary_label.setText("La generation a echoue.")

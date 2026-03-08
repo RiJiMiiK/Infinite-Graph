@@ -278,13 +278,18 @@ def test_generate_worker_success_and_failure(monkeypatch, sample_result) -> None
     )
     worker = gui.GenerateWorker("save.json", None, 80, 1.2)
     finished: list[dict[str, object]] = []
+    elapsed_values: list[float] = []
     failures: list[str] = []
     progress: list[tuple[int, str]] = []
-    worker.finished.connect(lambda result, render: finished.append(result))
+    worker.finished.connect(
+        lambda result, render, elapsed: (finished.append(result), elapsed_values.append(elapsed))
+    )
     worker.failed.connect(failures.append)
     worker.progress.connect(lambda percent, message: progress.append((percent, message)))
     worker.run()
     assert finished
+    assert elapsed_values
+    assert elapsed_values[-1] >= 0.0
     assert not failures
     assert progress[0] == (0, "Starting generation")
     assert (gui.GENERATION_STAGE_PROGRESS["Loading save file"], "Loading save file") in progress
@@ -396,21 +401,26 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     window._on_generation_finished(
         sample_result,
         {"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []},
+        12.34,
     )
     assert window._current_result is sample_result
     assert window.random_button.isEnabled()
     assert "Combinaisons discardees" in window.summary_label.text()
+    assert "Temps total de generation : 12.34s" in window.summary_label.text()
     assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
     assert window.progress_bar.value() == 100
+    assert "12.34s" in window.stage_label.text()
 
     warned_result = dict(sample_result)
     warned_result["load_warnings"] = ["warn"]
     window._on_generation_finished(
         warned_result,
         {"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []},
+        1.5,
     )
     assert "done with warnings" in window.stage_label.text()
     assert window.progress_bar.value() == 100
+    assert "1.50s" in window.stage_label.text()
 
     errors = []
     monkeypatch.setattr(gui.QMessageBox, "critical", lambda *args: errors.append(args))
