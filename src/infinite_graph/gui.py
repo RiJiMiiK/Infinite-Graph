@@ -123,6 +123,8 @@ def build_graph_render_data(
     nodes: list[dict[str, object]],
     edges: list[dict[str, object]],
     progress_callback: Callable[[str], None] | None = None,
+    layout_iterations: int = 80,
+    spring_scale: float = 1.2,
 ) -> dict[str, object]:
     ordered_nodes = sorted(nodes, key=lambda item: str(item["id"]))
     names = [str(node["id"]) for node in ordered_nodes]
@@ -130,7 +132,7 @@ def build_graph_render_data(
     graph.add_nodes_from(names)
     graph.add_edges_from((str(edge["source"]), str(edge["target"])) for edge in edges)
 
-    total_iterations = 80
+    total_iterations = max(1, layout_iterations)
     batch_size = 5
     spring_positions = None
     started_at = time.perf_counter()
@@ -139,7 +141,7 @@ def build_graph_render_data(
         spring_positions = nx.spring_layout(
             graph,
             seed=42,
-            k=None if len(names) < 2 else 1.2 / np.sqrt(len(names)),
+            k=None if len(names) < 2 else spring_scale / np.sqrt(len(names)),
             iterations=iterations,
             pos=spring_positions,
         )
@@ -438,10 +440,18 @@ class GenerateWorker(QObject):
     finished = Signal(dict, dict)
     failed = Signal(str)
 
-    def __init__(self, input_path: str, focus_element: str | None) -> None:
+    def __init__(
+        self,
+        input_path: str,
+        focus_element: str | None,
+        layout_iterations: int,
+        spring_scale: float,
+    ) -> None:
         super().__init__()
         self.input_path = input_path
         self.focus_element = focus_element
+        self.layout_iterations = layout_iterations
+        self.spring_scale = spring_scale
 
     def run(self) -> None:
         try:
@@ -455,6 +465,8 @@ class GenerateWorker(QObject):
                 result["graph_nodes"],
                 result["graph_edges"],
                 progress_callback=self.progress.emit,
+                layout_iterations=self.layout_iterations,
+                spring_scale=self.spring_scale,
             )
             self.progress.emit("Preparing interface update")
         except Exception as exc:
@@ -503,6 +515,9 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.min_weight_edit = QLineEdit()
         self.max_weight_edit = QLineEdit()
         self.weight_filter_button = QPushButton("Filtrer poids")
+        self.layout_iterations_edit = QLineEdit("80")
+        self.layout_scale_edit = QLineEdit("1.2")
+        self.layout_apply_button = QPushButton("Appliquer layout")
         self._worker_thread: QThread | None = None
         self._worker: GenerateWorker | None = None
         self._current_result: dict[str, object] | None = None
@@ -617,6 +632,19 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         weight_layout.addWidget(self.weight_filter_button)
         weight_layout.addStretch(1)
 
+        layout_row = QWidget()
+        layout_controls = QHBoxLayout(layout_row)
+        layout_controls.setContentsMargins(0, 0, 0, 0)
+        self.layout_iterations_edit.setPlaceholderText("Iterations")
+        self.layout_scale_edit.setPlaceholderText("Spring scale")
+        self.layout_iterations_edit.setFixedWidth(120)
+        self.layout_scale_edit.setFixedWidth(120)
+        self.layout_apply_button.clicked.connect(self._rebuild_layout)
+        layout_controls.addWidget(self.layout_iterations_edit)
+        layout_controls.addWidget(self.layout_scale_edit)
+        layout_controls.addWidget(self.layout_apply_button)
+        layout_controls.addStretch(1)
+
         self.selected_node_details.setReadOnly(True)
         self.selected_node_details.setMinimumWidth(280)
         self.selected_node_details.setPlainText("Aucun noeud selectionne.")
@@ -635,6 +663,7 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         layout.addWidget(search_row)
         layout.addWidget(subgraph_row)
         layout.addWidget(weight_row)
+        layout.addWidget(layout_row)
         layout.addWidget(splitter)
         return tab
 
@@ -688,9 +717,21 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
         self.progress_bar.setVisible(True)
         self.summary_label.setText("Generation en cours...")
         self.stage_label.setText("Current step: starting")
+        try:
+            layout_iterations, spring_scale = self._layout_settings()
+        except ValueError as exc:
+            self.generate_button.setEnabled(True)
+            self.progress_bar.setVisible(False)
+            QMessageBox.information(self, "Information", str(exc))
+            return
 
         self._worker_thread = QThread(self)
-        self._worker = GenerateWorker(input_value, self.focus_edit.text().strip() or None)
+        self._worker = GenerateWorker(
+            input_value,
+            self.focus_edit.text().strip() or None,
+            layout_iterations,
+            spring_scale,
+        )
         self._worker.moveToThread(self._worker_thread)
         self._worker_thread.started.connect(self._worker.run)
         self._worker.progress.connect(self._on_generation_progress)
@@ -926,6 +967,45 @@ class InfiniteGraphWindow(QMainWindow):  # pylint: disable=too-many-instance-att
             max_weight,
         )
         self.graph_view.update_graph(filtered)
+
+    def _layout_settings(self) -> tuple[int, float]:
+        iterations_text = self.layout_iterations_edit.text().strip() or "80"
+        scale_text = self.layout_scale_edit.text().strip() or "1.2"
+        if not iterations_text.isdigit():
+            raise ValueError("Les iterations du layout doivent etre un entier positif.")
+        try:
+            spring_scale = float(scale_text)
+        except ValueError as exc:
+            raise ValueError("Le spring scale du layout doit etre un nombre positif.") from exc
+
+        layout_iterations = int(iterations_text)
+        if layout_iterations <= 0:
+            raise ValueError("Les iterations du layout doivent etre un entier positif.")
+        if spring_scale <= 0:
+            raise ValueError("Le spring scale du layout doit etre un nombre positif.")
+        return layout_iterations, spring_scale
+
+    def _rebuild_layout(self) -> None:
+        if not self._current_result:
+            return
+        try:
+            layout_iterations, spring_scale = self._layout_settings()
+        except ValueError as exc:
+            QMessageBox.information(self, "Information", str(exc))
+            return
+
+        self.stage_label.setText("Current step: recomputing layout")
+        render_data = build_graph_render_data(
+            self._current_result["graph_nodes"],
+            self._current_result["graph_edges"],
+            layout_iterations=layout_iterations,
+            spring_scale=spring_scale,
+        )
+        self._full_render_data = render_data
+        self.graph_view.update_graph(render_data)
+        self.selected_node_label.setText("Noeud selectionne : aucun")
+        self.selected_node_details.setPlainText("Aucun noeud selectionne.")
+        self.stage_label.setText("Current step: done")
 
     def _build_selected_node_details(self, node_name: str) -> str:
         if not self._current_result:

@@ -90,11 +90,13 @@ def test_build_graph_render_data_with_progress(monkeypatch) -> None:
         ],
         [{"source": "A", "target": "B", "weight": 1, "elements": ["C"]}],
         progress_callback=steps.append,
+        layout_iterations=10,
+        spring_scale=2.0,
     )
     assert len(render["positions"]) == 2
     assert render["adj"] == [(0, 1)]
     assert render["labels"]
-    assert steps[-1].startswith("Computing spring layout: 80/80")
+    assert steps[-1].startswith("Computing spring layout: 10/10")
 
 
 def test_build_subgraph_render_data() -> None:
@@ -247,9 +249,17 @@ def test_generate_worker_success_and_failure(monkeypatch, sample_result) -> None
     monkeypatch.setattr(
         gui,
         "build_graph_render_data",
-        lambda nodes, edges, progress_callback=None: {"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []},
+        lambda *args, **kwargs: {
+            "positions": [],
+            "adj": [],
+            "sizes": [],
+            "brushes": [],
+            "labels": [],
+            "node_ids": [],
+            "node_weights": [],
+        },
     )
-    worker = gui.GenerateWorker("save.json", None)
+    worker = gui.GenerateWorker("save.json", None, 80, 1.2)
     finished: list[dict[str, object]] = []
     failures: list[str] = []
     progress: list[str] = []
@@ -262,7 +272,7 @@ def test_generate_worker_success_and_failure(monkeypatch, sample_result) -> None
     assert "Loading save file" in progress
 
     monkeypatch.setattr(gui, "process_save", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
-    worker = gui.GenerateWorker("save.json", None)
+    worker = gui.GenerateWorker("save.json", None, 80, 1.2)
     worker.failed.connect(failures.append)
     worker.run()
     assert "boom" in failures[-1]
@@ -298,9 +308,17 @@ class _FakeThread:
 
 
 class _FakeWorker:
-    def __init__(self, input_path: str, focus_element: str | None) -> None:
+    def __init__(
+        self,
+        input_path: str,
+        focus_element: str | None,
+        layout_iterations: int,
+        spring_scale: float,
+    ) -> None:
         self.input_path = input_path
         self.focus_element = focus_element
+        self.layout_iterations = layout_iterations
+        self.spring_scale = spring_scale
         self.progress = _FakeSignal()
         self.finished = _FakeSignal()
         self.failed = _FakeSignal()
@@ -316,7 +334,9 @@ class _FakeWorker:
 def test_window_generate_and_input_pick(monkeypatch, qapp, sample_result) -> None:
     window = gui.InfiniteGraphWindow()
     errors = []
+    infos = []
     monkeypatch.setattr(gui.QMessageBox, "critical", lambda *args: errors.append(args))
+    monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
     window._generate()
     assert errors
 
@@ -329,9 +349,16 @@ def test_window_generate_and_input_pick(monkeypatch, qapp, sample_result) -> Non
     assert isinstance(window._worker, _FakeWorker)
     assert window._worker.input_path == "save.json"
     assert window._worker.focus_element == "Water"
+    assert window._worker.layout_iterations == 80
+    assert window._worker.spring_scale == 1.2
     assert not window.progress_bar.isHidden()
     window._worker_thread = object()
     window._generate()
+
+    window._worker_thread = None
+    window.layout_iterations_edit.setText("bad")
+    window._generate()
+    assert infos[-1][-1] == "Les iterations du layout doivent etre un entier positif."
 
     monkeypatch.setattr(gui.QFileDialog, "getOpenFileName", lambda *args, **kwargs: ("picked.json", ""))
     window._pick_input()
@@ -529,6 +556,55 @@ def test_window_weight_filter(monkeypatch, qapp) -> None:
     window.max_weight_edit.setText("0")
     window._apply_weight_filter()
     assert updates[-1]["node_ids"] == ["Water"]
+    window.close()
+
+
+def test_window_layout_settings_and_rebuild(monkeypatch, qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    infos = []
+    updates = []
+    monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
+    monkeypatch.setattr(
+        gui,
+        "build_graph_render_data",
+        lambda *args, **kwargs: {
+            "positions": [(0.0, 0.0)],
+            "adj": [],
+            "sizes": [10],
+            "brushes": [gui.pg.mkBrush("#fff")],
+            "labels": [],
+            "node_ids": ["Water"],
+            "node_weights": [0],
+        },
+    )
+    monkeypatch.setattr(window.graph_view, "update_graph", lambda render_data: updates.append(render_data))
+
+    assert window._layout_settings() == (80, 1.2)
+    window.layout_iterations_edit.setText("bad")
+    with pytest.raises(ValueError, match="iterations"):
+        window._layout_settings()
+
+    window.layout_iterations_edit.setText("80")
+    window.layout_scale_edit.setText("bad")
+    with pytest.raises(ValueError, match="spring scale"):
+        window._layout_settings()
+
+    window.layout_scale_edit.setText("0")
+    with pytest.raises(ValueError, match="spring scale"):
+        window._layout_settings()
+
+    window.layout_scale_edit.setText("1.2")
+    window._rebuild_layout()
+    window._current_result = sample_result
+    window.layout_iterations_edit.setText("10")
+    window.layout_scale_edit.setText("2.5")
+    window._rebuild_layout()
+    assert updates[-1]["node_ids"] == ["Water"]
+    assert window.stage_label.text() == "Current step: done"
+
+    window.layout_iterations_edit.setText("0")
+    window._rebuild_layout()
+    assert "iterations" in infos[-1][-1]
     window.close()
 
 
