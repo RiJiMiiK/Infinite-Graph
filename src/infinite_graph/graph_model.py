@@ -1,3 +1,5 @@
+"""Graph model utilities for nodes, edges and derived statistics."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -42,7 +44,7 @@ def compute_node_weights(
         for recipe in dependents.get(element, []):
             left_weight = weights.get(recipe["left"], inf)
             right_weight = weights.get(recipe["right"], inf)
-            if left_weight == inf or right_weight == inf:
+            if inf in (left_weight, right_weight):
                 continue
 
             candidate = int(left_weight + right_weight + 1)
@@ -51,10 +53,7 @@ def compute_node_weights(
                 weights[result] = candidate
                 heappush(heap, (candidate, result))
 
-    return {
-        element: None if value == inf else int(value)
-        for element, value in weights.items()
-    }
+    return {element: None if value == inf else int(value) for element, value in weights.items()}
 
 
 def build_edge_data(

@@ -10,7 +10,7 @@ import numpy as np
 import pyqtgraph as pg
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, QObject, QThread, Qt, Signal
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QObject, Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -24,13 +24,18 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QSplitter,
-    QTabWidget,
     QTableView,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
-from .analyzer import candidate_result_weight, find_cheapest_combination, find_random_combination, normalize_pair
+from .analyzer import (
+    candidate_result_weight,
+    find_cheapest_combination,
+    find_random_combination,
+    normalize_pair,
+)
 from .discard_store import add_discarded_pair
 from .service import process_save
 
@@ -57,7 +62,9 @@ class ListTableModel(QAbstractTableModel):
             return None
         return str(self.rows[index.row()][index.column()])
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> object:
+    def headerData(
+        self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole
+    ) -> object:
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
@@ -134,7 +141,11 @@ def build_graph_render_data(
         if progress_callback is not None:
             completed = current_iteration + iterations
             elapsed = time.perf_counter() - started_at
-            eta = 0.0 if completed == 0 else max(0.0, elapsed * (total_iterations - completed) / completed)
+            eta = (
+                0.0
+                if completed == 0
+                else max(0.0, elapsed * (total_iterations - completed) / completed)
+            )
             progress_callback(
                 f"Computing spring layout: {completed}/{total_iterations} iterations "
                 f"(elapsed {elapsed:.1f}s, ETA {eta:.1f}s)"
@@ -275,7 +286,9 @@ class InfiniteGraphWindow(QMainWindow):
         self.done_button = QPushButton("Done")
         self.discard_button = QPushButton("Discard")
         self.progress_bar = QProgressBar()
-        self.summary_label = QLabel("Charge une sauvegarde Infinite Craft pour construire le graphe.")
+        self.summary_label = QLabel(
+            "Charge une sauvegarde Infinite Craft pour construire le graphe."
+        )
         self.summary_label.setWordWrap(True)
         self.stage_label = QLabel("Idle")
 
@@ -472,7 +485,9 @@ class InfiniteGraphWindow(QMainWindow):
         )
         self.missing_weight_list.clear()
         for weight, count in statistics["missing_counts_by_result_weight"]:
-            self.missing_weight_list.addItem(f"Poids {weight}: {count} recipes non faites possibles")
+            self.missing_weight_list.addItem(
+                f"Poids {weight}: {count} recipes non faites possibles"
+            )
 
         self.summary_label.setText(
             "\n".join(
@@ -549,26 +564,37 @@ class InfiniteGraphWindow(QMainWindow):
         left = self.element1_edit.text().strip()
         right = self.element2_edit.text().strip()
         if not left or not right:
-            QMessageBox.information(self, "Information", "Renseigne ou genere d'abord une combinaison.")
+            QMessageBox.information(
+                self, "Information", "Renseigne ou genere d'abord une combinaison."
+            )
             return
 
-        if left not in self._current_result["elements"] or right not in self._current_result["elements"]:
+        if (
+            left not in self._current_result["elements"]
+            or right not in self._current_result["elements"]
+        ):
             QMessageBox.warning(self, "Erreur", "Les elements saisis n'existent pas dans la save.")
             return
 
         pair = normalize_pair(left, right)
         if pair in self._current_result["known_pairs"]:
-            QMessageBox.information(self, "Information", "Cette combinaison existe deja dans la save.")
+            QMessageBox.information(
+                self, "Information", "Cette combinaison existe deja dans la save."
+            )
             return
         if pair in self._current_result["discarded_pairs"]:
             QMessageBox.information(self, "Information", "Cette combinaison est discardee.")
             return
         if pair in self._current_result["done_pairs"]:
-            QMessageBox.information(self, "Information", "Cette combinaison est deja marquee done pour cette session.")
+            QMessageBox.information(
+                self, "Information", "Cette combinaison est deja marquee done pour cette session."
+            )
             return
 
         self._current_result["done_pairs"].add(pair)
-        self._current_result["missing"] = [item for item in self._current_result["missing"] if item != pair]
+        self._current_result["missing"] = [
+            item for item in self._current_result["missing"] if item != pair
+        ]
         self.summary_label.setText(
             "\n".join(
                 [
@@ -593,10 +619,15 @@ class InfiniteGraphWindow(QMainWindow):
         left = self.element1_edit.text().strip()
         right = self.element2_edit.text().strip()
         if not left or not right:
-            QMessageBox.information(self, "Information", "Renseigne ou genere d'abord une combinaison.")
+            QMessageBox.information(
+                self, "Information", "Renseigne ou genere d'abord une combinaison."
+            )
             return
 
-        if left not in self._current_result["elements"] or right not in self._current_result["elements"]:
+        if (
+            left not in self._current_result["elements"]
+            or right not in self._current_result["elements"]
+        ):
             QMessageBox.warning(self, "Erreur", "Les elements saisis n'existent pas dans la save.")
             return
 
@@ -610,13 +641,19 @@ class InfiniteGraphWindow(QMainWindow):
 
         add_discarded_pair(self._current_save_path, pair)
         self._current_result["discarded_pairs"].add(pair)
-        self._current_result["missing"] = [item for item in self._current_result["missing"] if item != pair]
+        self._current_result["missing"] = [
+            item for item in self._current_result["missing"] if item != pair
+        ]
 
-        target_weight = candidate_result_weight(pair[0], pair[1], self._current_result["node_weights"])
+        target_weight = candidate_result_weight(
+            pair[0], pair[1], self._current_result["node_weights"]
+        )
         if target_weight is not None:
             updated = []
             found = False
-            for weight, count in self._current_result["statistics"]["missing_counts_by_result_weight"]:
+            for weight, count in self._current_result["statistics"][
+                "missing_counts_by_result_weight"
+            ]:
                 if weight == target_weight:
                     found = True
                     if count > 1:
@@ -628,7 +665,9 @@ class InfiniteGraphWindow(QMainWindow):
             self._current_result["statistics"]["missing_counts_by_result_weight"] = updated
             self.missing_weight_list.clear()
             for weight, count in updated:
-                self.missing_weight_list.addItem(f"Poids {weight}: {count} recipes non faites possibles")
+                self.missing_weight_list.addItem(
+                    f"Poids {weight}: {count} recipes non faites possibles"
+                )
 
         self.summary_label.setText(
             "\n".join(
@@ -646,7 +685,9 @@ class InfiniteGraphWindow(QMainWindow):
         )
         self.element1_edit.clear()
         self.element2_edit.clear()
-        QMessageBox.information(self, "Information", f"Combinaison discardee: {pair[0]} + {pair[1]}")
+        QMessageBox.information(
+            self, "Information", f"Combinaison discardee: {pair[0]} + {pair[1]}"
+        )
 
 
 def main() -> None:

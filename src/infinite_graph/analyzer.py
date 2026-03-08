@@ -10,10 +10,7 @@ def normalize_pair(left: str, right: str) -> tuple[str, str]:
 
 
 def known_recipe_pairs(recipes: Iterable[dict[str, str]]) -> set[tuple[str, str]]:
-    return {
-        normalize_pair(recipe["left"], recipe["right"])
-        for recipe in recipes
-    }
+    return {normalize_pair(recipe["left"], recipe["right"]) for recipe in recipes}
 
 
 def candidate_result_weight(

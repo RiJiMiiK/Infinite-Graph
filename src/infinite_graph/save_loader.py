@@ -74,7 +74,11 @@ def _load_infinite_craft_save(data: dict[str, Any]) -> dict[str, list]:
             continue
         result_name = item.get("text")
         raw_recipes = item.get("recipes", [])
-        if not isinstance(result_name, str) or not result_name.strip() or not isinstance(raw_recipes, list):
+        if (
+            not isinstance(result_name, str)
+            or not result_name.strip()
+            or not isinstance(raw_recipes, list)
+        ):
             continue
 
         for raw_recipe in raw_recipes:
