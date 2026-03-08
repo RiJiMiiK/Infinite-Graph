@@ -31,3 +31,13 @@ disable = [
   "broad-exception-caught",
   "no-member"
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["main", "src"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true

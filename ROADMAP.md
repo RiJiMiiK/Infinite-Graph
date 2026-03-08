@@ -23,7 +23,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Erreur explicite si un starter est manquant
 - [x] Mieux gerer les saves partiellement corrompues
 - [x] Signaler les recettes invalides ignorees
-- [ ] Ajouter des tests unitaires de parsing
+- [x] Ajouter des tests unitaires de parsing
 
 ## 3. Modele du graphe
 
@@ -37,8 +37,8 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Poids d'un resultat = `poids(A) + poids(B) + 1`
 - [x] Conservation du poids minimal si plusieurs recettes produisent le meme resultat
 - [x] Propagation amelioree avec priorite aux plus petits poids
-- [ ] Ajouter des tests unitaires sur le calcul des poids
-- [ ] Ajouter des tests sur la fusion des edges
+- [x] Ajouter des tests unitaires sur le calcul des poids
+- [x] Ajouter des tests sur la fusion des edges
 - [ ] Ajouter des tests de regression sur des mini-saves
 
 ## 4. Interface graphique
@@ -126,18 +126,18 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 
 ## 9. Qualite logicielle
 
-- [ ] Tests unitaires sur le chargement des saves
-- [ ] Tests unitaires sur la validation des starters
-- [ ] Tests unitaires sur le calcul des poids
-- [ ] Tests unitaires sur la fusion des edges
-- [ ] Tests unitaires sur `Random`
-- [ ] Tests unitaires sur `Cheapest`
-- [ ] Tests unitaires sur `Done`
-- [ ] Tests unitaires sur `Discard`
-- [ ] Tests de persistance sur `discarded.json`
-- [ ] Tests GUI minimaux
-- [ ] Ajout d'un formatter
-- [ ] Ajout d'un linter
+- [x] Tests unitaires sur le chargement des saves
+- [x] Tests unitaires sur la validation des starters
+- [x] Tests unitaires sur le calcul des poids
+- [x] Tests unitaires sur la fusion des edges
+- [x] Tests unitaires sur `Random`
+- [x] Tests unitaires sur `Cheapest`
+- [x] Tests unitaires sur `Done`
+- [x] Tests unitaires sur `Discard`
+- [x] Tests de persistance sur `discarded.json`
+- [x] Tests GUI minimaux
+- [x] Ajout d'un formatter
+- [x] Ajout d'un linter
 - [ ] Ajout d'une CI GitHub Actions
 
 ## 10. Performance
