@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QSplitter,
     QTableView,
     QTabWidget,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -375,6 +376,7 @@ class InfiniteGraphWindow(QMainWindow):
         self.stats_canvas = StatsCanvas()
         self.missing_weight_list = QListWidget()
         self.selected_node_label = QLabel("Noeud selectionne : aucun")
+        self.selected_node_details = QTextEdit()
         self._worker_thread: QThread | None = None
         self._worker: GenerateWorker | None = None
         self._current_result: dict[str, object] | None = None
@@ -454,8 +456,22 @@ class InfiniteGraphWindow(QMainWindow):
         layout = QVBoxLayout(tab)
         layout.setContentsMargins(0, 0, 0, 0)
         self.graph_view.nodeSelected.connect(self._on_graph_node_selected)
-        layout.addWidget(self.graph_view)
-        layout.addWidget(self.selected_node_label)
+        self.selected_node_details.setReadOnly(True)
+        self.selected_node_details.setMinimumWidth(280)
+        self.selected_node_details.setPlainText("Aucun noeud selectionne.")
+
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.addWidget(self.graph_view)
+
+        details_container = QWidget()
+        details_layout = QVBoxLayout(details_container)
+        details_layout.setContentsMargins(0, 0, 0, 0)
+        details_layout.addWidget(self.selected_node_label)
+        details_layout.addWidget(self.selected_node_details, 1)
+        splitter.addWidget(details_container)
+        splitter.setSizes([1100, 320])
+
+        layout.addWidget(splitter)
         return tab
 
     def _build_info_tab(self) -> QWidget:
@@ -529,6 +545,7 @@ class InfiniteGraphWindow(QMainWindow):
         self._set_candidate_buttons_enabled(True)
         self.graph_view.update_graph(render_data)
         self.selected_node_label.setText("Noeud selectionne : aucun")
+        self.selected_node_details.setPlainText("Aucun noeud selectionne.")
 
         node_rows = []
         for node in sorted(
@@ -617,15 +634,56 @@ class InfiniteGraphWindow(QMainWindow):
         node_name = str(node_id) if node_id is not None else ""
         if not node_name:
             self.selected_node_label.setText("Noeud selectionne : aucun")
+            self.selected_node_details.setPlainText("Aucun noeud selectionne.")
             self.node_table.clearSelection()
             return
 
         self.selected_node_label.setText(f"Noeud selectionne : {node_name}")
+        self.selected_node_details.setPlainText(self._build_selected_node_details(node_name))
         for row_index, row in enumerate(self.node_model.rows):
             if row[0] == node_name:
                 self.node_table.selectRow(row_index)
                 self.node_table.scrollTo(self.node_model.index(row_index, 0))
                 break
+
+    def _build_selected_node_details(self, node_name: str) -> str:
+        if not self._current_result:
+            return f"Nom : {node_name}"
+
+        node_data = next(
+            (
+                node
+                for node in self._current_result["graph_nodes"]
+                if str(node["id"]) == node_name
+            ),
+            None,
+        )
+        incoming: list[str] = []
+        outgoing: list[str] = []
+        related_edges: list[str] = []
+        for edge in self._current_result["graph_edges"]:
+            if edge["target"] == node_name:
+                incoming.append(str(edge["source"]))
+                related_edges.append(
+                    f"{edge['source']} -> {edge['target']} (co-elements: {', '.join(edge['elements'])})"
+                )
+            elif edge["source"] == node_name:
+                outgoing.append(str(edge["target"]))
+                related_edges.append(
+                    f"{edge['source']} -> {edge['target']} (co-elements: {', '.join(edge['elements'])})"
+                )
+
+        lines = [f"Nom : {node_name}"]
+        if node_data is not None:
+            lines.append(f"Poids : {'?' if node_data['weight'] is None else node_data['weight']}")
+            lines.append(f"Starter : {'oui' if node_data['is_starter'] else 'non'}")
+        lines.append(f"Voisins entrants : {', '.join(sorted(set(incoming))) or 'aucun'}")
+        lines.append(f"Voisins sortants : {', '.join(sorted(set(outgoing))) or 'aucun'}")
+        lines.append(f"Edges liees : {len(related_edges)}")
+        if related_edges:
+            lines.append("")
+            lines.extend(related_edges[:20])
+        return "\n".join(lines)
 
     def _pick_random_combination(self) -> None:
         if not self._current_result:

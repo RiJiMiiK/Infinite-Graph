@@ -57,7 +57,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Liste du nombre de recettes non faites possibles par poids
 - [x] Selection d'un noeud dans le graphe
 - [x] Mise en surbrillance de ses voisins
-- [ ] Panneau d'informations pour le noeud selectionne
+- [x] Panneau d'informations pour le noeud selectionne
 - [ ] Recherche d'un element dans la vue
 - [ ] Centrage automatique sur un element
 - [ ] Filtrage du graphe par sous-graphe

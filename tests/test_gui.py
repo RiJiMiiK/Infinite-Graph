@@ -289,6 +289,7 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     assert window._current_result is sample_result
     assert window.random_button.isEnabled()
     assert "Combinaisons discardees" in window.summary_label.text()
+    assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
 
     warned_result = dict(sample_result)
     warned_result["load_warnings"] = ["warn"]
@@ -338,12 +339,27 @@ def test_window_candidate_buttons_and_selection(monkeypatch, qapp, sample_result
     assert not window.random_button.isEnabled()
     window._set_candidate_buttons_enabled(True)
     assert window.done_button.isEnabled()
+    window._current_result = sample_result
     window.node_model.update_rows([["Fire", 0], ["Water", 0]])
     window._on_graph_node_selected("Fire")
     assert "Fire" in window.selected_node_label.text()
     assert window.node_table.selectionModel().hasSelection() is True
+    details = window.selected_node_details.toPlainText()
+    assert "Nom : Fire" in details
+    assert "Poids : 0" in details
+    assert "Starter : oui" in details
+    window._on_graph_node_selected("Water")
+    details = window.selected_node_details.toPlainText()
+    assert "Voisins sortants : Fire" in details
     window._on_graph_node_selected(None)
     assert "aucun" in window.selected_node_label.text()
+    assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
+    window.close()
+
+
+def test_window_build_selected_node_details_without_result(qapp) -> None:
+    window = gui.InfiniteGraphWindow()
+    assert window._build_selected_node_details("Ghost") == "Nom : Ghost"
     window.close()
 
 
