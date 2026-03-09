@@ -59,7 +59,7 @@ def build_graph_render_data(
     sizes = []
     for node in ordered_nodes:
         weight = node["weight"]
-        symbol_brush.append(pg.mkBrush("#10b981" if node["is_starter"] else "#2563eb"))
+        symbol_brush.append(pg.mkBrush("#34d399" if node["is_starter"] else "#60a5fa"))
         sizes.append(16 if weight is None else max(6, 16 - min(int(weight), 10) * 0.5))
 
     labels = []

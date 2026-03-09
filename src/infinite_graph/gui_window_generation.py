@@ -51,7 +51,7 @@ class WindowGenerationMixin:
         self._worker_thread = gui_module.QThread(self)
         self._worker = gui_module.GenerateWorker(
             input_value,
-            self.focus_edit.text().strip() or None,
+            None,
             layout_iterations,
             spring_scale,
         )

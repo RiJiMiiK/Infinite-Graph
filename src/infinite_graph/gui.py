@@ -87,6 +87,132 @@ export_discarded_pairs = _export_discarded_pairs
 import_discarded_pairs = _import_discarded_pairs
 remove_discarded_pair = _remove_discarded_pair
 
+WINDOW_STYLE = """
+QMainWindow {
+    background: #0f172a;
+}
+QWidget {
+    color: #e2e8f0;
+    font-size: 13px;
+}
+QGroupBox {
+    background: #111c33;
+    border: 1px solid #22314f;
+    border-radius: 14px;
+    margin-top: 12px;
+    padding: 10px 12px 12px 12px;
+    font-weight: 600;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 6px;
+    color: #cbd5e1;
+}
+QLabel {
+    color: #cbd5e1;
+}
+QLineEdit,
+QTextEdit,
+QListWidget,
+QTableView {
+    background: #0b1220;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 6px 8px;
+    selection-background-color: #1d4ed8;
+    selection-color: #eff6ff;
+}
+QTextEdit,
+QListWidget,
+QTableView {
+    background: #09111f;
+}
+QPushButton {
+    background: #16233a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 7px 12px;
+    color: #e2e8f0;
+    font-weight: 600;
+}
+QPushButton:hover {
+    background: #1d2d4a;
+    border-color: #475569;
+}
+QPushButton:pressed {
+    background: #263652;
+}
+QPushButton:disabled {
+    background: #0f172a;
+    color: #64748b;
+    border-color: #1e293b;
+}
+QPushButton#primaryButton {
+    background: #1d4ed8;
+    color: #eff6ff;
+    border-color: #1d4ed8;
+}
+QPushButton#primaryButton:hover {
+    background: #1e40af;
+    border-color: #1e40af;
+}
+QPushButton#dangerButton {
+    background: #3b1219;
+    color: #fecaca;
+    border-color: #7f1d1d;
+}
+QPushButton#dangerButton:hover {
+    background: #4c161d;
+    border-color: #991b1b;
+}
+QProgressBar {
+    background: #1e293b;
+    border: 0;
+    border-radius: 8px;
+    text-align: center;
+    min-height: 18px;
+    color: #e2e8f0;
+}
+QProgressBar::chunk {
+    background: #2563eb;
+    border-radius: 8px;
+}
+QTabWidget::pane {
+    background: #111c33;
+    border: 1px solid #22314f;
+    border-radius: 14px;
+    top: -1px;
+}
+QTabBar::tab {
+    background: #16233a;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    padding: 8px 14px;
+    margin-right: 6px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    font-weight: 600;
+}
+QTabBar::tab:selected {
+    background: #111c33;
+    color: #f8fafc;
+    border-bottom-color: #111c33;
+}
+QHeaderView::section {
+    background: #16233a;
+    color: #cbd5e1;
+    border: 0;
+    border-right: 1px solid #334155;
+    border-bottom: 1px solid #334155;
+    padding: 8px;
+    font-weight: 600;
+}
+QFrame {
+    border-radius: 12px;
+}
+"""
+
 
 class InfiniteGraphWindow(
     WindowBuildMixin,
@@ -114,6 +240,7 @@ class InfiniteGraphWindow(
         self._last_suggested_pair: tuple[str, str] | None = None
         self._current_candidate_origin: str | None = None
 
+        self.setStyleSheet(WINDOW_STYLE)
         self._build_ui()
 
     def __getattr__(self, name: str) -> object:

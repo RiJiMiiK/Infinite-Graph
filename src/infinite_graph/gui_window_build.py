@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCompleter,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -25,13 +26,9 @@ class WindowBuildMixin:
 
         controls = self._build_controls_section()
         layout.addWidget(controls)
-        layout.addWidget(self.stage_label)
+        self.current_candidate_toggle_button.clicked.connect(self._toggle_candidate_details)
+        self.history_toggle_button.clicked.connect(self._toggle_history_panel)
         self.summary_toggle_button.clicked.connect(self._toggle_summary_panel)
-        summary_panel_layout = QVBoxLayout(self.summary_panel)
-        summary_panel_layout.setContentsMargins(8, 8, 8, 8)
-        summary_panel_layout.addWidget(self.summary_label)
-        layout.addWidget(self.summary_toggle_button)
-        layout.addWidget(self.summary_panel)
 
         tabs = QTabWidget()
         tabs.addTab(self._build_graph_tab(), "Graphe")
@@ -45,17 +42,71 @@ class WindowBuildMixin:
 
     def _build_controls_section(self) -> QWidget:
         controls = QWidget()
-        controls_layout = QFormLayout(controls)
+        controls_layout = QHBoxLayout(controls)
         controls_layout.setContentsMargins(0, 0, 0, 0)
-        controls_layout.addRow("Sauvegarde", self._build_file_row())
-        controls_layout.addRow("Element cible", self.focus_edit)
-        controls_layout.addRow("Element 1 / Element 2", self._build_candidate_row())
-        controls_layout.addRow("Statut", self.candidate_status_label)
-        controls_layout.addRow("Compteur", self.candidate_count_label)
-        controls_layout.addRow("Current candidate", self.current_candidate_details)
-        controls_layout.addRow("Historique", self._build_history_widget())
-        controls_layout.addRow("", self._build_action_row())
+        controls_layout.setSpacing(8)
+        load_group = self._build_load_group()
+        current_candidate_group = self._build_current_candidate_group()
+        history_group = self._build_history_group()
+        load_group.setSizePolicy(
+            load_group.sizePolicy().horizontalPolicy(),
+            load_group.sizePolicy().verticalPolicy(),
+        )
+        current_candidate_group.setSizePolicy(
+            current_candidate_group.sizePolicy().horizontalPolicy(),
+            current_candidate_group.sizePolicy().verticalPolicy(),
+        )
+        history_group.setSizePolicy(
+            history_group.sizePolicy().horizontalPolicy(),
+            history_group.sizePolicy().verticalPolicy(),
+        )
+        controls_layout.addWidget(load_group, 2)
+        controls_layout.addWidget(current_candidate_group, 5)
+        controls_layout.addWidget(history_group, 3)
+        controls_layout.setAlignment(Qt.AlignTop)
         return controls
+
+    def _build_load_group(self) -> QGroupBox:
+        group = QGroupBox("Chargement")
+        group_layout = QFormLayout(group)
+        self.stage_label.setWordWrap(True)
+        summary_panel_layout = QVBoxLayout(self.summary_panel)
+        summary_panel_layout.setContentsMargins(8, 8, 8, 8)
+        summary_panel_layout.addWidget(self.summary_label)
+        group_layout.addRow("Sauvegarde", self._build_file_row())
+        group_layout.addRow("", self._build_action_row())
+        group_layout.addRow("Etat", self.stage_label)
+        group_layout.addRow("", self.summary_toggle_button)
+        group_layout.addRow("", self.summary_panel)
+        return group
+
+    def _build_current_candidate_group(self) -> QGroupBox:
+        group = QGroupBox("Combinaison courante")
+        group_layout = QFormLayout(group)
+        group_layout.addRow("Elements", self._build_candidate_row())
+        group_layout.addRow("Suggestions", self._build_suggestion_buttons_row())
+        group_layout.addRow("Actions", self._build_decision_buttons_row())
+        group_layout.addRow("Statut", self.candidate_status_label)
+        group_layout.addRow("Restant", self.candidate_count_label)
+        details_panel = QWidget()
+        details_layout = QVBoxLayout(details_panel)
+        details_layout.setContentsMargins(0, 0, 0, 0)
+        details_layout.setSpacing(4)
+        details_layout.addWidget(self.current_candidate_toggle_button)
+        details_layout.addWidget(self.current_candidate_details)
+        self.current_candidate_details.setVisible(False)
+        group_layout.addRow("Details", details_panel)
+        return group
+
+    def _build_history_group(self) -> QGroupBox:
+        group = QGroupBox("Historique local")
+        group_layout = QVBoxLayout(group)
+        history_panel_layout = QVBoxLayout(self.history_panel)
+        history_panel_layout.setContentsMargins(6, 6, 6, 6)
+        history_panel_layout.addWidget(self._build_history_widget())
+        group_layout.addWidget(self.history_toggle_button)
+        group_layout.addWidget(self.history_panel)
+        return group
 
     def _build_file_row(self) -> QWidget:
         file_row = QWidget()
@@ -106,14 +157,28 @@ class WindowBuildMixin:
         self.element2_edit.setCompleter(self.element2_completer)
         candidate_row_layout.addWidget(self.element1_edit)
         candidate_row_layout.addWidget(self.element2_edit)
-        candidate_row_layout.addWidget(self.random_button)
-        candidate_row_layout.addWidget(self.cheapest_button)
-        candidate_row_layout.addWidget(self.next_button)
-        candidate_row_layout.addWidget(self.done_button)
-        candidate_row_layout.addWidget(self.undo_done_button)
-        candidate_row_layout.addWidget(self.discard_button)
-        candidate_row_layout.addWidget(self.undo_discard_button)
         return candidate_row
+
+    def _build_suggestion_buttons_row(self) -> QWidget:
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.addWidget(self.random_button)
+        row_layout.addWidget(self.cheapest_button)
+        row_layout.addWidget(self.next_button)
+        row_layout.addStretch(1)
+        return row
+
+    def _build_decision_buttons_row(self) -> QWidget:
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.addWidget(self.done_button)
+        row_layout.addWidget(self.undo_done_button)
+        row_layout.addWidget(self.discard_button)
+        row_layout.addWidget(self.undo_discard_button)
+        row_layout.addStretch(1)
+        return row
 
     def _build_history_widget(self) -> QWidget:
         self.suggestion_history_list.setMaximumHeight(120)
@@ -134,6 +199,22 @@ class WindowBuildMixin:
         self.summary_panel.setVisible(is_hidden)
         self.summary_toggle_button.setText(
             "Masquer details" if is_hidden else "Afficher details"
+        )
+
+    def _toggle_candidate_details(self) -> None:
+        is_hidden = self.current_candidate_details.isHidden()
+        self.current_candidate_details.setVisible(is_hidden)
+        self.current_candidate_toggle_button.setText(
+            "Masquer details candidat"
+            if is_hidden
+            else "Afficher details candidat"
+        )
+
+    def _toggle_history_panel(self) -> None:
+        is_hidden = self.history_panel.isHidden()
+        self.history_panel.setVisible(is_hidden)
+        self.history_toggle_button.setText(
+            "Masquer historique" if is_hidden else "Afficher historique"
         )
 
     def _build_graph_tab(self) -> QWidget:

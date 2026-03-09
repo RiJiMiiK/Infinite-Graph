@@ -417,12 +417,11 @@ def test_window_generate_and_input_pick(monkeypatch, qapp, sample_result) -> Non
     monkeypatch.setattr(gui, "QThread", _FakeThread)
     monkeypatch.setattr(gui, "GenerateWorker", _FakeWorker)
     window.input_edit.setText("save.json")
-    window.focus_edit.setText("Water")
     window._generate()
     assert isinstance(window._worker_thread, _FakeThread)
     assert isinstance(window._worker, _FakeWorker)
     assert window._worker.input_path == "save.json"
-    assert window._worker.focus_element == "Water"
+    assert window._worker.focus_element is None
     assert window._worker.layout_iterations == 80
     assert window._worker.spring_scale == 1.2
     assert not window.progress_bar.isHidden()

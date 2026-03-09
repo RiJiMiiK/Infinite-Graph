@@ -36,6 +36,9 @@ def sample_result() -> dict[str, object]:
 def test_window_live_element_validation(qapp, sample_result) -> None:
     window = gui.InfiniteGraphWindow()
     assert "aucune save chargee" in window.candidate_count_label.text()
+    assert "QGroupBox" in window.styleSheet()
+    assert window.generate_button.objectName() == "primaryButton"
+    assert window.discard_button.objectName() == "dangerButton"
 
     window.element1_edit.setText("water")
     window._validate_combination_inputs()
@@ -69,7 +72,19 @@ def test_window_summary_panel_toggle_and_generation_state(monkeypatch, qapp, sam
     errors = []
     monkeypatch.setattr(gui.QMessageBox, "critical", lambda *args: errors.append(args))
     assert window.summary_panel.isHidden() is True
+    assert window.current_candidate_details.isHidden() is True
+    assert window.history_panel.isHidden() is True
     assert window.summary_toggle_button.text() == "Afficher details"
+    assert window.current_candidate_toggle_button.text() == "Afficher details candidat"
+    assert window.history_toggle_button.text() == "Afficher historique"
+
+    window._toggle_candidate_details()
+    assert window.current_candidate_details.isHidden() is False
+    assert window.current_candidate_toggle_button.text() == "Masquer details candidat"
+
+    window._toggle_history_panel()
+    assert window.history_panel.isHidden() is False
+    assert window.history_toggle_button.text() == "Masquer historique"
 
     window._toggle_summary_panel()
     assert window.summary_panel.isHidden() is False

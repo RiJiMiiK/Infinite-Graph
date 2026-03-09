@@ -52,11 +52,17 @@ class StatsCanvas(FigureCanvasQTAgg):
 
 class GraphViewWidget(pg.PlotWidget):
     nodeSelected = Signal(object)
+    BACKGROUND_COLOR = "#0b1220"
+    GRID_ALPHA = 0.16
+    LABEL_COLOR = "#dbe4ff"
+    EDGE_PEN = (148, 163, 184, 110)
+    NEIGHBOR_HIGHLIGHT = "#fde047"
+    SELECTED_HIGHLIGHT = "#fb923c"
 
     def __init__(self) -> None:
         super().__init__()
-        self.setBackground("w")
-        self.showGrid(x=True, y=True, alpha=0.08)
+        self.setBackground(self.BACKGROUND_COLOR)
+        self.showGrid(x=True, y=True, alpha=self.GRID_ALPHA)
         self.setMenuEnabled(False)
         self.setMouseEnabled(x=True, y=True)
         self.getViewBox().setDefaultPadding(0.05)
@@ -85,7 +91,11 @@ class GraphViewWidget(pg.PlotWidget):
         self._apply_graph_style()
 
         for label in render_data["labels"]:
-            text_item = pg.TextItem(label["text"], color="#0f172a", anchor=(0.5, 1.2))
+            text_item = pg.TextItem(
+                label["text"],
+                color=self.LABEL_COLOR,
+                anchor=(0.5, 1.2),
+            )
             text_item.setPos(label["x"], label["y"])
             self.addItem(text_item)
             self._labels.append(text_item)
@@ -142,11 +152,11 @@ class GraphViewWidget(pg.PlotWidget):
         for index, node_id in enumerate(node_ids):
             if node_id in neighbor_ids:
                 sizes[index] = float(sizes[index]) + 4.0
-                brushes[index] = pg.mkBrush("#facc15")
+                brushes[index] = pg.mkBrush(self.NEIGHBOR_HIGHLIGHT)
         if self._selected_node_id in node_ids:
             selected_index = node_ids.index(self._selected_node_id)
             sizes[selected_index] = float(sizes[selected_index]) + 8.0
-            brushes[selected_index] = pg.mkBrush("#f59e0b")
+            brushes[selected_index] = pg.mkBrush(self.SELECTED_HIGHLIGHT)
 
         self.graph_item.setData(
             pos=pos_array,
@@ -154,7 +164,7 @@ class GraphViewWidget(pg.PlotWidget):
             size=np.array(sizes, dtype=float),
             symbol="o",
             pxMode=True,
-            pen=pg.mkPen(100, 116, 139, 80, width=0.6),
+            pen=pg.mkPen(*self.EDGE_PEN, width=0.7),
             symbolPen=None,
             symbolBrush=brushes,
         )

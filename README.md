@@ -1,6 +1,6 @@
 # Infinite Graph
 
-Petit projet Python pour visualiser une sauvegarde d'Infinite Craft sous forme de graphe et lister les combinaisons qui n'ont pas encore ete faites.
+Outil desktop Python pour analyser une sauvegarde d'Infinite Craft, visualiser son graphe, et piloter les combinaisons encore candidates.
 
 ## Vision
 
@@ -17,15 +17,19 @@ Le projet est pense comme un outil desktop interactif, centre sur l'analyse et l
 
 ## Fonctionnalites
 
-- lecture d'une sauvegarde JSON
-- support du vrai format de sauvegarde Infinite Craft (`items`)
-- interface graphique Qt
-- affichage natif du graphe dans l'application avec `pyqtgraph`
-- format simple alternatif toujours supporte
-- validation obligatoire des starters `Water`, `Fire`, `Wind`, `Earth`
-- calcul d'un poids minimal pour chaque noeud
-- fusion des recettes en edges uniques avec liste des co-elements
-- prise en compte d'un fichier global `discarded.json` pour exclure des combinaisons impossibles, quelle que soit la save chargee
+- lecture d'une sauvegarde Infinite Craft reelle ou d'un format JSON simplifie
+- interface graphique Qt complete
+- graphe natif avec `pyqtgraph`, zoom, deplacement, selection de noeud et mise en surbrillance des voisins
+- theme global sombre, avec vue graphe egalement en dark mode
+- calcul du poids minimal des noeuds et fusion des edges
+- suggestions de combinaisons avec `Random`, `Cheapest`, `Next`, `Done`, `Discard`, `Undo Done`, `Undo Discard`
+- historique local des dernieres suggestions
+- panneau `current candidate` avec statut, origine, poids estime et compteur restant
+- gestion globale des combinaisons ignorees via `discarded.json`
+- import, export, reset et consultation des `discarded`
+- statistiques sur les poids des recettes, noeuds et combinaisons candidates
+- generation asynchrone avec progression detaillee, temps total et cache local du layout
+- sous-graphe, filtre par poids et reglages de layout dans l'onglet graphe
 
 ## Formats supportes
 
@@ -103,15 +107,29 @@ python main.py
 Dans l'interface :
 
 - choisis le fichier de sauvegarde
-- optionnellement renseigne un `Element cible` pour ne chercher que les paires manquantes de cet element
-- utilise `Random`, `Cheapest`, `Done` et `Discard` pour gerer les combinaisons candidates
 - clique sur `Generer`
+- utilise `Random`, `Cheapest` et `Next` pour faire tourner les suggestions
+- utilise `Done`, `Undo Done`, `Discard` et `Undo Discard` pour gerer les combinaisons candidates
+- consulte le panneau `current candidate` pour voir l'etat de la paire courante
+- ouvre l'historique si tu veux recharger une suggestion precedente
 - consulte les trois onglets : graphe, infos, statistiques
 - dans l'onglet graphe, utilise la souris pour zoomer et deplacer la vue
+
+## Onglets
+
+- `Graphe` : rendu natif, recherche, recentrage, sous-graphe, filtre par poids, details du noeud selectionne
+- `Infos` : tables des noeuds, edges et combinaisons `discarded`
+- `Statistiques` : courbes par poids et liste des recettes candidates restantes par poids
 
 ## Limite actuelle
 
 Sur une vraie sauvegarde Infinite Craft, il peut y avoir des dizaines de millions de paires possibles. L'application travaille donc sur une selection exploitable de combinaisons candidates pour l'interface. Cela reste une liste de paires non testees, pas une prediction des resultats.
+
+Pour les tres gros graphes :
+
+- les donnees completes restent chargees pour les tables et statistiques
+- le rendu visuel peut etre reduit a un sous-graphe plus exploitable
+- les positions de layout sont mises en cache localement
 
 ## Modele du graphe
 

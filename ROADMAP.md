@@ -177,3 +177,15 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [ ] Tests GUI plus pousses
 - [ ] Outils de gestion du fichier `discarded.json`
 - [ ] Meilleure presentation du graphe pour les tres gros jeux de donnees
+
+## 13. Futures ameliorations UX
+
+- [ ] Uniformiser tout le wording de l'interface
+- [ ] Responsive layout desktop / petite fenetre
+- [ ] Preferences UI persistantes
+- [ ] Recherche / filtre dans les tables `Infos`
+- [ ] Actions contextuelles depuis le graphe
+- [ ] Export image du graphe
+- [ ] Vrai polish des statistiques
+- [ ] Nettoyage lexical complet de l'interface
+- [ ] Gestion d'erreurs plus orientee UX

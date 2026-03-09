@@ -39,7 +39,10 @@ def create_controls_bundle(parent) -> SimpleNamespace:
         stage_label=QLabel("Idle"),
         candidate_status_label=QLabel("Statut combinaison : aucune"),
         candidate_count_label=QLabel("Combinaisons candidates restantes : aucune save chargee"),
+        current_candidate_toggle_button=QPushButton("Afficher details candidat"),
         current_candidate_details=QTextEdit(),
+        history_toggle_button=QPushButton("Afficher historique"),
+        history_panel=QFrame(),
         summary_toggle_button=QPushButton("Afficher details"),
         summary_panel=QFrame(),
         suggestion_history_list=QListWidget(),
@@ -47,9 +50,14 @@ def create_controls_bundle(parent) -> SimpleNamespace:
     bundle.summary_label.setWordWrap(True)
     bundle.candidate_status_label.setWordWrap(True)
     bundle.candidate_count_label.setWordWrap(True)
+    bundle.generate_button.setObjectName("primaryButton")
+    bundle.discard_button.setObjectName("dangerButton")
     bundle.current_candidate_details.setReadOnly(True)
-    bundle.current_candidate_details.setMaximumHeight(110)
+    bundle.current_candidate_details.setMaximumHeight(90)
     bundle.current_candidate_details.setPlainText("Aucune combinaison courante.")
+    bundle.summary_toggle_button.setMaximumWidth(220)
+    bundle.history_panel.setFrameShape(QFrame.StyledPanel)
+    bundle.history_panel.setVisible(False)
     bundle.summary_panel.setFrameShape(QFrame.StyledPanel)
     bundle.summary_panel.setVisible(False)
     bundle.element1_completer = QCompleter(bundle.element_completer_model, parent)
@@ -78,7 +86,7 @@ def create_graph_bundle() -> SimpleNamespace:
 
 
 def create_info_bundle() -> SimpleNamespace:
-    return SimpleNamespace(
+    bundle = SimpleNamespace(
         node_model=ListTableModel(["Element", "Poids"]),
         edge_model=ListTableModel(["Source", "Cible", "Poids", "Liste d'elements"]),
         discarded_model=ListTableModel(["Element 1", "Element 2"]),
@@ -90,6 +98,8 @@ def create_info_bundle() -> SimpleNamespace:
         export_discarded_button=QPushButton("Exporter discarded"),
         import_discarded_button=QPushButton("Importer discarded"),
     )
+    bundle.reset_discarded_button.setObjectName("dangerButton")
+    return bundle
 
 
 def create_stats_bundle() -> SimpleNamespace:
