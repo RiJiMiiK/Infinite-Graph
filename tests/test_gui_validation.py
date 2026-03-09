@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from src.infinite_graph import gui
+from src.infinite_graph import gui_window_combinations
 
 
 @pytest.fixture()
@@ -93,4 +94,40 @@ def test_window_refresh_discarded_table_without_result(qapp) -> None:
     window.discarded_model.update_rows([["Earth", "Wind"]])
     window._refresh_discarded_table()
     assert window.discarded_model.rowCount() == 0
+    window.close()
+
+
+def test_window_indexed_candidate_helpers(qapp, sample_result, monkeypatch) -> None:
+    window = gui.InfiniteGraphWindow()
+
+    assert window._indexed_candidate_allowed(("Earth", "Water"), include_skipped=False) is False
+    assert window._pick_random_indexed_candidate(include_skipped=False) is None
+    assert window._pick_cheapest_indexed_candidate(include_skipped=False) is None
+
+    sample_result["candidate_pairs"] = [
+        ("Earth", "Wind"),
+        ("Earth", "Earth"),
+        ("Earth", "Water"),
+    ]
+    sample_result["candidate_pairs_by_weight"] = [
+        ("Fire", "Water"),
+        ("Earth", "Wind"),
+        ("Earth", "Earth"),
+        ("Earth", "Water"),
+    ]
+    sample_result["done_pairs"] = {("Earth", "Earth")}
+    sample_result["skipped_pairs"] = {("Earth", "Water")}
+    window._current_result = sample_result
+
+    assert window._indexed_candidate_allowed(("Fire", "Water"), include_skipped=False) is False
+    assert window._indexed_candidate_allowed(("Earth", "Wind"), include_skipped=False) is False
+    assert window._indexed_candidate_allowed(("Earth", "Earth"), include_skipped=False) is False
+    assert window._indexed_candidate_allowed(("Earth", "Water"), include_skipped=False) is False
+    assert window._indexed_candidate_allowed(("Earth", "Water"), include_skipped=True) is True
+
+    monkeypatch.setattr(gui_window_combinations.random, "choice", lambda seq: seq[-1])
+    assert window._pick_random_indexed_candidate(include_skipped=False) is None
+    assert window._pick_random_indexed_candidate(include_skipped=True) == ("Earth", "Water")
+    assert window._pick_cheapest_indexed_candidate(include_skipped=False) is None
+    assert window._pick_cheapest_indexed_candidate(include_skipped=True) == ("Earth", "Water")
     window.close()

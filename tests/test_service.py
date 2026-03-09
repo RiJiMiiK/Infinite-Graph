@@ -35,3 +35,5 @@ def test_process_save_reports_progress_and_returns_expected_data(monkeypatch, tm
     assert result["render_scope"] == "complete_graph"
     assert result["render_graph_nodes"] == result["graph_nodes"]
     assert result["render_graph_edges"] == result["graph_edges"]
+    assert ("Earth", "Earth") in result["candidate_pairs"]
+    assert result["candidate_pairs_by_weight"][0] == ("Earth", "Earth")

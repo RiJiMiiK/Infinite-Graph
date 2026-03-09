@@ -1,5 +1,6 @@
 """Combination suggestion helpers for the main window."""
 
+import random
 import sys
 from pathlib import Path
 
@@ -10,6 +11,39 @@ from .analyzer import normalize_pair
 
 
 class WindowCombinationsMixin:
+    def _indexed_candidate_allowed(self, pair: tuple[str, str], include_skipped: bool) -> bool:
+        if not self._current_result:
+            return False
+        if pair in self._current_result["known_pairs"]:
+            return False
+        if pair in self._current_result["discarded_pairs"]:
+            return False
+        if pair in self._current_result["done_pairs"]:
+            return False
+        if not include_skipped and pair in self._current_result["skipped_pairs"]:
+            return False
+        return True
+
+    def _pick_random_indexed_candidate(self, include_skipped: bool) -> tuple[str, str] | None:
+        if not self._current_result:
+            return None
+        candidates = [
+            pair
+            for pair in self._current_result.get("candidate_pairs", [])
+            if self._indexed_candidate_allowed(pair, include_skipped)
+        ]
+        if not candidates:
+            return None
+        return random.choice(candidates)
+
+    def _pick_cheapest_indexed_candidate(self, include_skipped: bool) -> tuple[str, str] | None:
+        if not self._current_result:
+            return None
+        for pair in self._current_result.get("candidate_pairs_by_weight", []):
+            if self._indexed_candidate_allowed(pair, include_skipped):
+                return pair
+        return None
+
     def _restore_discarded_pair(self, pair: tuple[str, str]) -> None:
         if not self._current_result or self._current_save_path is None:
             return
@@ -84,12 +118,19 @@ class WindowCombinationsMixin:
         gui_module = sys.modules[f"{__package__}.gui"]
         if not self._current_result:
             return
-        pair = gui_module.find_random_combination(
-            self._current_result["elements"],
-            self._current_result["recipes"],
-            discarded_pairs=self._current_result["discarded_pairs"],
-            done_pairs=self._current_result["done_pairs"] | self._current_result["skipped_pairs"],
-        )
+        pair = self._pick_random_indexed_candidate(include_skipped=False)
+        if pair is None:
+            pair = self._pick_random_indexed_candidate(include_skipped=True)
+        if pair is None:
+            pair = gui_module.find_random_combination(
+                self._current_result["elements"],
+                self._current_result["recipes"],
+                discarded_pairs=self._current_result["discarded_pairs"],
+                done_pairs=(
+                    self._current_result["done_pairs"]
+                    | self._current_result["skipped_pairs"]
+                ),
+            )
         if pair is None:
             pair = gui_module.find_random_combination(
                 self._current_result["elements"],
@@ -109,13 +150,20 @@ class WindowCombinationsMixin:
         gui_module = sys.modules[f"{__package__}.gui"]
         if not self._current_result:
             return
-        pair = gui_module.find_cheapest_combination(
-            self._current_result["elements"],
-            self._current_result["recipes"],
-            self._current_result["node_weights"],
-            discarded_pairs=self._current_result["discarded_pairs"],
-            done_pairs=self._current_result["done_pairs"] | self._current_result["skipped_pairs"],
-        )
+        pair = self._pick_cheapest_indexed_candidate(include_skipped=False)
+        if pair is None:
+            pair = self._pick_cheapest_indexed_candidate(include_skipped=True)
+        if pair is None:
+            pair = gui_module.find_cheapest_combination(
+                self._current_result["elements"],
+                self._current_result["recipes"],
+                self._current_result["node_weights"],
+                discarded_pairs=self._current_result["discarded_pairs"],
+                done_pairs=(
+                    self._current_result["done_pairs"]
+                    | self._current_result["skipped_pairs"]
+                ),
+            )
         if pair is None:
             pair = gui_module.find_cheapest_combination(
                 self._current_result["elements"],

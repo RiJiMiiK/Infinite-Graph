@@ -102,3 +102,17 @@ def test_find_random_combination_direct_and_fallback(monkeypatch) -> None:
         attempts=2,
     ) == ("B", "B")
     assert analyzer.find_random_combination([], recipes) is None
+
+
+def test_build_candidate_index_orders_cheapest_pairs() -> None:
+    index = analyzer.build_candidate_index(
+        ["Water", "Fire", "Wind", "Earth", "Steam"],
+        [{"left": "Water", "right": "Fire", "result": "Steam"}],
+        {"Water": 0, "Fire": 0, "Wind": 0, "Earth": 0, "Steam": 1},
+        discarded_pairs={("Earth", "Wind")},
+        done_pairs={("Earth", "Earth")},
+    )
+    assert index["known_pairs"] == {("Fire", "Water")}
+    assert ("Earth", "Wind") not in index["all_pairs"]
+    assert ("Earth", "Earth") not in index["all_pairs"]
+    assert index["cheapest_pairs"][0] == ("Earth", "Fire")

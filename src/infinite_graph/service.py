@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable
 
-from .analyzer import find_missing_combinations, known_recipe_pairs
+from .analyzer import build_candidate_index, find_missing_combinations
 from .discard_store import load_discarded_pairs
 from .graph_model import build_graph_data, build_weight_statistics
 from .save_loader import load_save
@@ -149,6 +149,13 @@ def process_save(
         focus_element=focus_element,
         discarded_pairs=discarded_pairs,
     )
+    candidate_index = build_candidate_index(
+        save["elements"],
+        save["recipes"],
+        graph_data["node_weights"],
+        focus_element=focus_element,
+        discarded_pairs=discarded_pairs,
+    )
     render_graph_nodes, render_graph_edges, render_scope = select_render_graph_data(
         graph_data["nodes"],
         graph_data["edges"],
@@ -168,7 +175,9 @@ def process_save(
         "render_graph_edges": render_graph_edges,
         "render_scope": render_scope,
         "node_weights": graph_data["node_weights"],
-        "known_pairs": known_recipe_pairs(save["recipes"]),
+        "known_pairs": candidate_index["known_pairs"],
+        "candidate_pairs": candidate_index["all_pairs"],
+        "candidate_pairs_by_weight": candidate_index["cheapest_pairs"],
         "discarded_pairs": discarded_pairs,
         "done_pairs": set(),
         "skipped_pairs": set(),

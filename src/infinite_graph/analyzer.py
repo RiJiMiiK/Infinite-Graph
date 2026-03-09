@@ -135,3 +135,47 @@ def find_random_combination(
         done_pairs=done_pairs,
     )
     return missing[0] if missing else None
+
+
+def build_candidate_index(
+    elements: list[str],
+    recipes: list[dict[str, str]],
+    node_weights: dict[str, int | None],
+    focus_element: str | None = None,
+    discarded_pairs: set[tuple[str, str]] | None = None,
+    done_pairs: set[tuple[str, str]] | None = None,
+) -> dict[str, object]:
+    known_pairs = known_recipe_pairs(recipes)
+    discarded_pairs = discarded_pairs or set()
+    done_pairs = done_pairs or set()
+    sorted_elements = sorted(set(elements))
+    candidates: list[tuple[str, str]] = []
+
+    if focus_element:
+        if focus_element in sorted_elements:
+            for element in sorted_elements:
+                pair = normalize_pair(focus_element, element)
+                if _candidate_allowed(pair, known_pairs, discarded_pairs, done_pairs):
+                    candidates.append(pair)
+    else:
+        for index, left in enumerate(sorted_elements):
+            for right in sorted_elements[index:]:
+                pair = (left, right)
+                if _candidate_allowed(pair, known_pairs, discarded_pairs, done_pairs):
+                    candidates.append(pair)
+
+    cheapest_pairs = sorted(
+        candidates,
+        key=lambda pair: (
+            candidate_result_weight(pair[0], pair[1], node_weights) is None,
+            candidate_result_weight(pair[0], pair[1], node_weights)
+            if candidate_result_weight(pair[0], pair[1], node_weights) is not None
+            else 10**9,
+            pair,
+        ),
+    )
+    return {
+        "all_pairs": candidates,
+        "cheapest_pairs": cheapest_pairs,
+        "known_pairs": known_pairs,
+    }
