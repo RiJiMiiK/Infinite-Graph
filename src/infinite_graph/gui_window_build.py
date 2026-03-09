@@ -4,6 +4,7 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QBoxLayout,
     QCompleter,
     QFormLayout,
     QGroupBox,
@@ -18,6 +19,9 @@ from PySide6.QtWidgets import (
 
 
 class WindowBuildMixin:
+    WIDE_LAYOUT_BREAKPOINT = 1320
+    STACKED_LAYOUT_BREAKPOINT = 980
+
     def _build_ui(self) -> None:
         central = QWidget()
         layout = QVBoxLayout(central)
@@ -39,15 +43,20 @@ class WindowBuildMixin:
         self.setCentralWidget(central)
         self._set_candidate_buttons_enabled(False)
         self._update_element_completion([])
+        self._update_responsive_layout(self.width())
 
     def _build_controls_section(self) -> QWidget:
         controls = QWidget()
-        controls_layout = QHBoxLayout(controls)
+        controls_layout = QBoxLayout(QBoxLayout.LeftToRight, controls)
         controls_layout.setContentsMargins(0, 0, 0, 0)
         controls_layout.setSpacing(8)
+        self._controls_layout = controls_layout
         load_group = self._build_load_group()
         current_candidate_group = self._build_current_candidate_group()
         history_group = self._build_history_group()
+        self._load_group = load_group
+        self._current_candidate_group = current_candidate_group
+        self._history_group = history_group
         load_group.setSizePolicy(
             load_group.sizePolicy().horizontalPolicy(),
             load_group.sizePolicy().verticalPolicy(),
@@ -120,8 +129,9 @@ class WindowBuildMixin:
 
     def _build_action_row(self) -> QWidget:
         action_row = QWidget()
-        action_row_layout = QHBoxLayout(action_row)
+        action_row_layout = QBoxLayout(QBoxLayout.LeftToRight, action_row)
         action_row_layout.setContentsMargins(0, 0, 0, 0)
+        self._action_row_layout = action_row_layout
         self.generate_button.clicked.connect(self._generate)
         self.random_button.clicked.connect(self._pick_random_combination)
         self.cheapest_button.clicked.connect(self._pick_cheapest_combination)
@@ -141,8 +151,9 @@ class WindowBuildMixin:
 
     def _build_candidate_row(self) -> QWidget:
         candidate_row = QWidget()
-        candidate_row_layout = QHBoxLayout(candidate_row)
+        candidate_row_layout = QBoxLayout(QBoxLayout.LeftToRight, candidate_row)
         candidate_row_layout.setContentsMargins(0, 0, 0, 0)
+        self._candidate_row_layout = candidate_row_layout
         self.element1_edit.setPlaceholderText("Element 1")
         self.element2_edit.setPlaceholderText("Element 2")
         self.element1_edit.setReadOnly(False)
@@ -161,8 +172,9 @@ class WindowBuildMixin:
 
     def _build_suggestion_buttons_row(self) -> QWidget:
         row = QWidget()
-        row_layout = QHBoxLayout(row)
+        row_layout = QBoxLayout(QBoxLayout.LeftToRight, row)
         row_layout.setContentsMargins(0, 0, 0, 0)
+        self._suggestion_row_layout = row_layout
         row_layout.addWidget(self.random_button)
         row_layout.addWidget(self.cheapest_button)
         row_layout.addWidget(self.next_button)
@@ -171,8 +183,9 @@ class WindowBuildMixin:
 
     def _build_decision_buttons_row(self) -> QWidget:
         row = QWidget()
-        row_layout = QHBoxLayout(row)
+        row_layout = QBoxLayout(QBoxLayout.LeftToRight, row)
         row_layout.setContentsMargins(0, 0, 0, 0)
+        self._decision_row_layout = row_layout
         row_layout.addWidget(self.done_button)
         row_layout.addWidget(self.undo_done_button)
         row_layout.addWidget(self.discard_button)
@@ -200,6 +213,7 @@ class WindowBuildMixin:
         self.summary_toggle_button.setText(
             "Hide details" if is_hidden else "Show details"
         )
+        self._save_ui_preferences_state()
 
     def _toggle_candidate_details(self) -> None:
         is_hidden = self.current_candidate_details.isHidden()
@@ -209,6 +223,7 @@ class WindowBuildMixin:
             if is_hidden
             else "Show candidate details"
         )
+        self._save_ui_preferences_state()
 
     def _toggle_history_panel(self) -> None:
         is_hidden = self.history_panel.isHidden()
@@ -216,6 +231,126 @@ class WindowBuildMixin:
         self.history_toggle_button.setText(
             "Hide history" if is_hidden else "Show history"
         )
+        self._save_ui_preferences_state()
+
+    def _update_responsive_layout(self, window_width: int) -> None:
+        if window_width >= self.WIDE_LAYOUT_BREAKPOINT:
+            self._controls_layout.setDirection(QBoxLayout.LeftToRight)
+            self._controls_layout.setStretch(0, 2)
+            self._controls_layout.setStretch(1, 5)
+            self._controls_layout.setStretch(2, 3)
+            row_direction = QBoxLayout.LeftToRight
+        else:
+            self._controls_layout.setDirection(QBoxLayout.TopToBottom)
+            self._controls_layout.setStretch(0, 0)
+            self._controls_layout.setStretch(1, 0)
+            self._controls_layout.setStretch(2, 0)
+            row_direction = (
+                QBoxLayout.TopToBottom
+                if window_width < self.STACKED_LAYOUT_BREAKPOINT
+                else QBoxLayout.LeftToRight
+            )
+
+        for row_layout in (
+            self._candidate_row_layout,
+            self._suggestion_row_layout,
+            self._decision_row_layout,
+            self._action_row_layout,
+        ):
+            row_layout.setDirection(row_direction)
+
+    def _load_ui_preferences_state(self) -> None:
+        gui_module = sys.modules[f"{__package__}.gui"]
+        self._ui_preferences = gui_module.load_ui_preferences()
+        preferences = self._ui_preferences
+
+        width = preferences.get("window_width")
+        height = preferences.get("window_height")
+        if isinstance(width, int) and isinstance(height, int):
+            self.resize(max(width, 960), max(height, 720))
+
+        if isinstance(preferences.get("layout_iterations"), int):
+            self.layout_iterations_edit.setText(str(preferences["layout_iterations"]))
+        if isinstance(preferences.get("layout_scale"), (int, float)):
+            self.layout_scale_edit.setText(str(preferences["layout_scale"]))
+
+        self._apply_saved_panel_state(
+            self.summary_panel,
+            self.summary_toggle_button,
+            bool(preferences.get("summary_panel_visible", False)),
+            "Hide details",
+            "Show details",
+        )
+        self._apply_saved_panel_state(
+            self.current_candidate_details,
+            self.current_candidate_toggle_button,
+            bool(preferences.get("candidate_details_visible", False)),
+            "Hide candidate details",
+            "Show candidate details",
+        )
+        self._apply_saved_panel_state(
+            self.history_panel,
+            self.history_toggle_button,
+            bool(preferences.get("history_panel_visible", False)),
+            "Hide history",
+            "Show history",
+        )
+
+        self._restore_splitter_sizes(
+            self._graph_main_splitter,
+            preferences.get("graph_main_splitter_sizes"),
+        )
+        self._restore_splitter_sizes(
+            self._graph_bottom_splitter,
+            preferences.get("graph_bottom_splitter_sizes"),
+        )
+        self._restore_splitter_sizes(
+            self._info_top_splitter,
+            preferences.get("info_top_splitter_sizes"),
+        )
+        self._restore_splitter_sizes(
+            self._info_splitter,
+            preferences.get("info_splitter_sizes"),
+        )
+        self._update_responsive_layout(self.width())
+
+    def _save_ui_preferences_state(self) -> None:
+        gui_module = sys.modules[f"{__package__}.gui"]
+        preferences = {
+            "window_width": int(self.width()),
+            "window_height": int(self.height()),
+            "summary_panel_visible": self.summary_panel.isVisible(),
+            "candidate_details_visible": self.current_candidate_details.isVisible(),
+            "history_panel_visible": self.history_panel.isVisible(),
+            "layout_iterations": self.layout_iterations_edit.text().strip() or "80",
+            "layout_scale": self.layout_scale_edit.text().strip() or "1.2",
+            "graph_main_splitter_sizes": self._graph_main_splitter.sizes(),
+            "graph_bottom_splitter_sizes": self._graph_bottom_splitter.sizes(),
+            "info_top_splitter_sizes": self._info_top_splitter.sizes(),
+            "info_splitter_sizes": self._info_splitter.sizes(),
+        }
+        gui_module.save_ui_preferences(preferences)
+        self._ui_preferences = preferences
+
+    @staticmethod
+    def _apply_saved_panel_state(
+        panel: QWidget,
+        button: QPushButton,
+        visible: bool,
+        visible_text: str,
+        hidden_text: str,
+    ) -> None:
+        panel.setVisible(visible)
+        button.setText(visible_text if visible else hidden_text)
+
+    @staticmethod
+    def _restore_splitter_sizes(splitter: QSplitter, sizes: object) -> None:
+        if (
+            isinstance(sizes, list)
+            and sizes
+            and all(isinstance(size, int) and size > 0 for size in sizes)
+        ):
+            splitter.setSizes(sizes)
 
     def _build_graph_tab(self) -> QWidget:
         tab = QWidget()
@@ -289,11 +424,19 @@ class WindowBuildMixin:
         controls_container_layout.addStretch(1)
 
         bottom_splitter = QSplitter(Qt.Horizontal)
+        self._graph_bottom_splitter = bottom_splitter
+        bottom_splitter.splitterMoved.connect(
+            lambda _pos, _index: self._save_ui_preferences_state()
+        )
         bottom_splitter.addWidget(details_container)
         bottom_splitter.addWidget(controls_container)
         bottom_splitter.setSizes([420, 680])
 
         main_splitter = QSplitter(Qt.Vertical)
+        self._graph_main_splitter = main_splitter
+        main_splitter.splitterMoved.connect(
+            lambda _pos, _index: self._save_ui_preferences_state()
+        )
         main_splitter.addWidget(self.graph_view)
         main_splitter.addWidget(bottom_splitter)
         main_splitter.setSizes([720, 360])
@@ -307,6 +450,10 @@ class WindowBuildMixin:
         layout.setContentsMargins(0, 0, 0, 0)
 
         top_splitter = QSplitter(Qt.Horizontal)
+        self._info_top_splitter = top_splitter
+        top_splitter.splitterMoved.connect(
+            lambda _pos, _index: self._save_ui_preferences_state()
+        )
         self.node_table.setModel(self.node_model)
         self.edge_table.setModel(self.edge_model)
         self.discarded_table.setModel(self.discarded_model)
@@ -337,6 +484,10 @@ class WindowBuildMixin:
         discarded_layout.addWidget(self.import_discarded_button)
 
         splitter = QSplitter(Qt.Vertical)
+        self._info_splitter = splitter
+        splitter.splitterMoved.connect(
+            lambda _pos, _index: self._save_ui_preferences_state()
+        )
         splitter.addWidget(top_splitter)
         splitter.addWidget(discarded_container)
         splitter.setSizes([700, 220])

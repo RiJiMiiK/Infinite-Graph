@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 
 from PySide6.QtCore import QThread as _QThread, Qt as _Qt
+from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog as _QFileDialog,
@@ -46,6 +47,11 @@ from .gui_layout import (
     nx,
     save_cached_layout,
 )
+from .gui_preferences import (
+    load_ui_preferences as _load_ui_preferences,
+    save_ui_preferences as _save_ui_preferences,
+    ui_preferences_path as _ui_preferences_path,
+)
 from .gui_table import ListTableModel as _ListTableModel
 from .gui_widgets import CopyLineEdit, GraphViewWidget, StatsCanvas as _StatsCanvas, pg
 from .gui_window_build import WindowBuildMixin
@@ -64,6 +70,7 @@ __all__ += ["QFileDialog", "QListWidgetItem", "QMessageBox", "QThread", "Qt", "p
 __all__ += ["find_random_combination", "find_cheapest_combination"]
 __all__ += ["add_discarded_pair", "clear_discarded_pairs", "export_discarded_pairs"]
 __all__ += ["import_discarded_pairs", "remove_discarded_pair"]
+__all__ += ["load_ui_preferences", "save_ui_preferences", "ui_preferences_path"]
 
 PUBLIC_REEXPORTS = (LAYOUT_PROGRESS_END, _layout_cache_file, layout_cache_dir)
 PUBLIC_REEXPORTS += (load_cached_layout, nx, pg, save_cached_layout)
@@ -86,6 +93,33 @@ clear_discarded_pairs = _clear_discarded_pairs
 export_discarded_pairs = _export_discarded_pairs
 import_discarded_pairs = _import_discarded_pairs
 remove_discarded_pair = _remove_discarded_pair
+
+
+def ui_preferences_path():
+    """Return the UI preferences file path used by the GUI."""
+    return _ui_preferences_path()
+
+
+def load_ui_preferences():
+    """Load persisted UI preferences using the public GUI hook."""
+    preferences_module = sys.modules[f"{__package__}.gui_preferences"]
+    original_path = preferences_module.ui_preferences_path
+    preferences_module.ui_preferences_path = ui_preferences_path
+    try:
+        return _load_ui_preferences()
+    finally:
+        preferences_module.ui_preferences_path = original_path
+
+
+def save_ui_preferences(preferences):
+    """Persist UI preferences using the public GUI hook."""
+    preferences_module = sys.modules[f"{__package__}.gui_preferences"]
+    original_path = preferences_module.ui_preferences_path
+    preferences_module.ui_preferences_path = ui_preferences_path
+    try:
+        _save_ui_preferences(preferences)
+    finally:
+        preferences_module.ui_preferences_path = original_path
 
 WINDOW_STYLE = """
 QMainWindow {
@@ -239,9 +273,11 @@ class InfiniteGraphWindow(
         self._last_suggestion_mode: str | None = None
         self._last_suggested_pair: tuple[str, str] | None = None
         self._current_candidate_origin: str | None = None
+        self._ui_preferences: dict[str, object] = {}
 
         self.setStyleSheet(WINDOW_STYLE)
         self._build_ui()
+        self._load_ui_preferences_state()
 
     def __getattr__(self, name: str) -> object:
         for bundle_name in ("controls", "graph_ui", "info_ui", "stats_ui"):
@@ -249,6 +285,14 @@ class InfiniteGraphWindow(
             if bundle is not None and hasattr(bundle, name):
                 return getattr(bundle, name)
         raise AttributeError(f"{type(self).__name__!s} has no attribute {name!r}")
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._update_responsive_layout(event.size().width())
+
+    def closeEvent(self, event) -> None:
+        self._save_ui_preferences_state()
+        super().closeEvent(event)
 
 
 def main() -> None:

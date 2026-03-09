@@ -159,8 +159,8 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 ## 12. Futures ameliorations UX
 
 - [x] Uniformiser tout le wording de l'interface
-- [ ] Responsive layout desktop / petite fenetre
-- [ ] Preferences UI persistantes
+- [x] Responsive layout desktop / petite fenetre
+- [x] Preferences UI persistantes
 - [ ] Recherche / filtre dans les tables `Infos`
 - [ ] Actions contextuelles depuis le graphe
 - [ ] Export image du graphe

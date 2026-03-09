@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import pytest
+from PySide6.QtCore import QSize
+from PySide6.QtGui import QResizeEvent
+from PySide6.QtWidgets import QBoxLayout
 
 from src.infinite_graph import gui
 from src.infinite_graph import gui_window_combinations
@@ -203,4 +206,73 @@ def test_window_current_candidate_panel(qapp, sample_result) -> None:
 def test_window_build_selected_node_details_without_result(qapp) -> None:
     window = gui.InfiniteGraphWindow()
     assert window._build_selected_node_details("Ghost") == "Name: Ghost"
+    window.close()
+
+
+def test_window_responsive_layout_directions(qapp) -> None:
+    window = gui.InfiniteGraphWindow()
+
+    window._update_responsive_layout(window.WIDE_LAYOUT_BREAKPOINT)
+    assert window._controls_layout.direction() == QBoxLayout.LeftToRight
+    assert window._candidate_row_layout.direction() == QBoxLayout.LeftToRight
+
+    window._update_responsive_layout(window.STACKED_LAYOUT_BREAKPOINT - 1)
+    assert window._controls_layout.direction() == QBoxLayout.TopToBottom
+    assert window._candidate_row_layout.direction() == QBoxLayout.TopToBottom
+    assert window._suggestion_row_layout.direction() == QBoxLayout.TopToBottom
+    assert window._decision_row_layout.direction() == QBoxLayout.TopToBottom
+    window.close()
+
+
+def test_window_resize_event_updates_responsive_layout(qapp, monkeypatch) -> None:
+    window = gui.InfiniteGraphWindow()
+    widths = []
+    monkeypatch.setattr(window, "_update_responsive_layout", lambda width: widths.append(width))
+    event = QResizeEvent(QSize(900, 700), QSize(1480, 940))
+    window.resizeEvent(event)
+    assert widths == [900]
+    window.close()
+
+
+def test_window_ui_preferences_roundtrip(qapp, monkeypatch) -> None:
+    stored_preferences = {}
+
+    monkeypatch.setattr(
+        gui,
+        "load_ui_preferences",
+        lambda: {
+            "window_width": 1200,
+            "window_height": 820,
+            "summary_panel_visible": True,
+            "candidate_details_visible": True,
+            "history_panel_visible": True,
+            "layout_iterations": 55,
+            "layout_scale": 1.7,
+            "graph_main_splitter_sizes": [500, 300],
+            "graph_bottom_splitter_sizes": [250, 350],
+            "info_top_splitter_sizes": [200, 600],
+            "info_splitter_sizes": [450, 180],
+        },
+    )
+    monkeypatch.setattr(gui, "save_ui_preferences", lambda preferences: stored_preferences.update(preferences))
+
+    window = gui.InfiniteGraphWindow()
+    assert window.summary_panel.isHidden() is False
+    assert window.current_candidate_details.isHidden() is False
+    assert window.history_panel.isHidden() is False
+    assert window.layout_iterations_edit.text() == "55"
+    assert window.layout_scale_edit.text() == "1.7"
+
+    window.summary_panel.setVisible(False)
+    window.current_candidate_details.setVisible(False)
+    window.history_panel.setVisible(False)
+    window.layout_iterations_edit.setText("99")
+    window.layout_scale_edit.setText("2.5")
+    window._save_ui_preferences_state()
+    assert stored_preferences["summary_panel_visible"] is False
+    assert stored_preferences["candidate_details_visible"] is False
+    assert stored_preferences["history_panel_visible"] is False
+    assert stored_preferences["layout_iterations"] == "99"
+    assert stored_preferences["layout_scale"] == "2.5"
+    assert "graph_main_splitter_sizes" in stored_preferences
     window.close()
