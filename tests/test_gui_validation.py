@@ -21,7 +21,11 @@ def sample_result() -> dict[str, object]:
         "discarded_pairs": {("Earth", "Wind")},
         "done_pairs": set(),
         "skipped_pairs": set(),
-        "statistics": {"missing_counts_by_result_weight": []},
+        "statistics": {
+            "recipe_counts_by_result_weight": [],
+            "node_counts_by_weight": [],
+            "missing_counts_by_result_weight": [],
+        },
         "missing": [],
         "missing_limit": 1000,
         "focus_element": None,
@@ -50,4 +54,35 @@ def test_window_live_element_validation(qapp, sample_result) -> None:
     window._validate_combination_inputs()
     assert window.element1_edit.styleSheet() == ""
     assert window.element1_edit.toolTip() == ""
+    window.close()
+
+
+def test_window_summary_panel_toggle_and_generation_state(monkeypatch, qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    errors = []
+    monkeypatch.setattr(gui.QMessageBox, "critical", lambda *args: errors.append(args))
+    assert window.summary_panel.isHidden() is True
+    assert window.summary_toggle_button.text() == "Afficher details"
+
+    window._toggle_summary_panel()
+    assert window.summary_panel.isHidden() is False
+    assert window.summary_toggle_button.text() == "Masquer details"
+
+    window._toggle_summary_panel()
+    assert window.summary_panel.isHidden() is True
+    assert window.summary_toggle_button.text() == "Afficher details"
+
+    window.input_edit.setText("save.json")
+    window._on_generation_finished(
+        sample_result,
+        {"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []},
+        1.0,
+    )
+    assert window.summary_panel.isHidden() is False
+    assert window.summary_toggle_button.text() == "Masquer details"
+
+    window._on_generation_failed("boom")
+    assert window.summary_panel.isHidden() is False
+    assert window.summary_toggle_button.text() == "Masquer details"
+    assert errors
     window.close()

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from PySide6.QtCore import QStringListModel
 from PySide6.QtWidgets import (
     QCompleter,
+    QFrame,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -36,9 +37,13 @@ def create_controls_bundle(parent) -> SimpleNamespace:
         progress_bar=QProgressBar(),
         summary_label=QLabel("Charge une sauvegarde Infinite Craft pour construire le graphe."),
         stage_label=QLabel("Idle"),
+        summary_toggle_button=QPushButton("Afficher details"),
+        summary_panel=QFrame(),
         suggestion_history_list=QListWidget(),
     )
     bundle.summary_label.setWordWrap(True)
+    bundle.summary_panel.setFrameShape(QFrame.StyledPanel)
+    bundle.summary_panel.setVisible(False)
     bundle.element1_completer = QCompleter(bundle.element_completer_model, parent)
     bundle.element2_completer = QCompleter(bundle.element_completer_model, parent)
     return bundle

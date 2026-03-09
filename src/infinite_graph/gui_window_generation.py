@@ -26,6 +26,8 @@ class WindowGenerationMixin:
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
         self.summary_label.setText("Generation en cours...")
+        self.summary_panel.setVisible(True)
+        self.summary_toggle_button.setText("Masquer details")
         self.stage_label.setText("Current step: Starting generation (0%)")
         try:
             layout_iterations, spring_scale = self._layout_settings()
@@ -138,6 +140,8 @@ class WindowGenerationMixin:
         self.summary_label.setText(
             build_summary_text(result, self._last_generation_elapsed_seconds)
         )
+        self.summary_panel.setVisible(True)
+        self.summary_toggle_button.setText("Masquer details")
         self.progress_bar.setValue(100)
         if result["load_warnings"]:
             self.stage_label.setText(
@@ -152,6 +156,8 @@ class WindowGenerationMixin:
 
     def _on_generation_failed(self, message: str) -> None:
         self.summary_label.setText("La generation a echoue.")
+        self.summary_panel.setVisible(True)
+        self.summary_toggle_button.setText("Masquer details")
         self.progress_bar.setValue(0)
         self.stage_label.setText("Current step: failed (0%)")
         self._update_element_completion([])

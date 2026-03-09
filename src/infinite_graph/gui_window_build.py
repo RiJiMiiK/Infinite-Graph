@@ -87,8 +87,13 @@ class WindowBuildMixin:
         controls_layout.addRow("", action_row)
 
         layout.addWidget(controls)
-        layout.addWidget(self.summary_label)
         layout.addWidget(self.stage_label)
+        self.summary_toggle_button.clicked.connect(self._toggle_summary_panel)
+        summary_panel_layout = QVBoxLayout(self.summary_panel)
+        summary_panel_layout.setContentsMargins(8, 8, 8, 8)
+        summary_panel_layout.addWidget(self.summary_label)
+        layout.addWidget(self.summary_toggle_button)
+        layout.addWidget(self.summary_panel)
 
         tabs = QTabWidget()
         tabs.addTab(self._build_graph_tab(), "Graphe")
@@ -108,6 +113,13 @@ class WindowBuildMixin:
 
     def _update_element_completion(self, elements: list[str]) -> None:
         self.element_completer_model.setStringList(sorted(elements, key=str.casefold))
+
+    def _toggle_summary_panel(self) -> None:
+        is_hidden = self.summary_panel.isHidden()
+        self.summary_panel.setVisible(is_hidden)
+        self.summary_toggle_button.setText(
+            "Masquer details" if is_hidden else "Afficher details"
+        )
 
     def _build_graph_tab(self) -> QWidget:
         tab = QWidget()
