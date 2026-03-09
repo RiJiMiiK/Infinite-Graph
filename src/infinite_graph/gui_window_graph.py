@@ -9,12 +9,12 @@ class WindowGraphMixin:
     def _on_graph_node_selected(self, node_id: object) -> None:
         node_name = str(node_id) if node_id is not None else ""
         if not node_name:
-            self.selected_node_label.setText("Noeud selectionne : aucun")
-            self.selected_node_details.setPlainText("Aucun noeud selectionne.")
+            self.selected_node_label.setText("Selected node: none")
+            self.selected_node_details.setPlainText("No node selected.")
             self.node_table.clearSelection()
             return
 
-        self.selected_node_label.setText(f"Noeud selectionne : {node_name}")
+        self.selected_node_label.setText(f"Selected node: {node_name}")
         self.selected_node_details.setPlainText(self._build_selected_node_details(node_name))
         for row_index, row in enumerate(self.node_model.rows):
             if row[0] == node_name:
@@ -28,7 +28,7 @@ class WindowGraphMixin:
 
         query = self.graph_search_edit.text().strip()
         if not query:
-            QMessageBox.information(self, "Information", "Saisis un element a rechercher.")
+            QMessageBox.information(self, "Information", "Enter an element to search.")
             return
 
         normalized_query = query.casefold()
@@ -42,7 +42,7 @@ class WindowGraphMixin:
         QMessageBox.information(
             self,
             "Information",
-            f"Element introuvable dans le graphe : {query}",
+            f"Element not found in the graph: {query}",
         )
 
     def _apply_subgraph_filter(self) -> None:
@@ -58,7 +58,7 @@ class WindowGraphMixin:
             QMessageBox.information(
                 self,
                 "Information",
-                "Saisis un centre de sous-graphe ou selectionne un noeud.",
+                "Enter a subgraph center or select a node.",
             )
             return
 
@@ -67,7 +67,7 @@ class WindowGraphMixin:
             QMessageBox.information(
                 self,
                 "Information",
-                "La profondeur du sous-graphe doit etre un entier positif ou nul.",
+                "Subgraph depth must be a non-negative integer.",
             )
             return
 
@@ -80,7 +80,7 @@ class WindowGraphMixin:
             QMessageBox.information(
                 self,
                 "Information",
-                f"Impossible de construire un sous-graphe pour : {center_node}",
+                f"Unable to build a subgraph for: {center_node}",
             )
             return
 
@@ -103,7 +103,7 @@ class WindowGraphMixin:
             QMessageBox.information(
                 self,
                 "Information",
-                "Saisis au moins un poids minimal ou maximal.",
+                "Enter at least a minimum or maximum weight.",
             )
             return
 
@@ -111,7 +111,7 @@ class WindowGraphMixin:
             QMessageBox.information(
                 self,
                 "Information",
-                "Les poids min et max doivent etre des entiers positifs ou nuls.",
+                "Min and max weights must be non-negative integers.",
             )
             return
 
@@ -121,7 +121,7 @@ class WindowGraphMixin:
             QMessageBox.information(
                 self,
                 "Information",
-                "Le poids minimal ne peut pas etre superieur au poids maximal.",
+                "Minimum weight cannot be greater than maximum weight.",
             )
             return
 
@@ -134,7 +134,7 @@ class WindowGraphMixin:
 
     def _build_selected_node_details(self, node_name: str) -> str:
         if not self._current_result:
-            return f"Nom : {node_name}"
+            return f"Name: {node_name}"
 
         node_data = next(
             (
@@ -161,13 +161,13 @@ class WindowGraphMixin:
                     f"{edge['source']} -> {edge['target']} (co-elements: {edge_text})"
                 )
 
-        lines = [f"Nom : {node_name}"]
+        lines = [f"Name: {node_name}"]
         if node_data is not None:
-            lines.append(f"Poids : {'?' if node_data['weight'] is None else node_data['weight']}")
-            lines.append(f"Starter : {'oui' if node_data['is_starter'] else 'non'}")
-        lines.append(f"Voisins entrants : {', '.join(sorted(set(incoming))) or 'aucun'}")
-        lines.append(f"Voisins sortants : {', '.join(sorted(set(outgoing))) or 'aucun'}")
-        lines.append(f"Edges liees : {len(related_edges)}")
+            lines.append(f"Weight: {'?' if node_data['weight'] is None else node_data['weight']}")
+            lines.append(f"Starter: {'yes' if node_data['is_starter'] else 'no'}")
+        lines.append(f"Incoming neighbors: {', '.join(sorted(set(incoming))) or 'none'}")
+        lines.append(f"Outgoing neighbors: {', '.join(sorted(set(outgoing))) or 'none'}")
+        lines.append(f"Related edges: {len(related_edges)}")
         if related_edges:
             lines.append("")
             lines.extend(related_edges[:20])

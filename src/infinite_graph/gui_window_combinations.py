@@ -13,31 +13,31 @@ from .analyzer import candidate_result_weight, normalize_pair
 class WindowCombinationsMixin:
     def _combination_known_status(self, pair: tuple[str, str]) -> str | None:
         if pair in self._current_result["known_pairs"]:
-            return "Statut combinaison : recette deja connue dans la save."
+            return "Combination status: recipe already known in the save."
         if pair in self._current_result["discarded_pairs"]:
-            return "Statut combinaison : combinaison discardee globalement."
+            return "Combination status: globally discarded combination."
         if pair in self._current_result["done_pairs"]:
-            return "Statut combinaison : combinaison marquee done pour cette session."
+            return "Combination status: marked done for this session."
         if pair in self._current_result["skipped_pairs"]:
-            return "Statut combinaison : combinaison repoussee plus tard dans la session."
+            return "Combination status: postponed for later in this session."
         return None
 
     def _combination_status_message(self, left: str, right: str) -> str:
         if not self._current_result:
-            return "Statut combinaison : charge une save pour analyser une paire."
+            return "Combination status: load a save to analyze a pair."
         if not left or not right:
-            return "Statut combinaison : saisis ou genere une combinaison."
+            return "Combination status: enter or generate a combination."
         if (
             left not in self._current_result["elements"]
             or right not in self._current_result["elements"]
         ):
-            return "Statut combinaison : au moins un element est introuvable dans la save."
+            return "Combination status: at least one element was not found in the save."
 
         pair = normalize_pair(left, right)
         known_status = self._combination_known_status(pair)
         if known_status is not None:
             return known_status
-        return "Statut combinaison : combinaison candidate encore proposable."
+        return "Combination status: candidate still available."
 
     def _refresh_candidate_status(self) -> None:
         left = self.element1_edit.text().strip()
@@ -49,32 +49,32 @@ class WindowCombinationsMixin:
 
     def _current_candidate_origin_label(self, left: str, right: str) -> str:
         if not left or not right:
-            return "aucune"
+            return "none"
         if self._last_suggested_pair is None or self._current_candidate_origin is None:
-            return "manuelle"
+            return "manual"
         current_pair = normalize_pair(left, right)
         if current_pair != self._last_suggested_pair:
-            return "manuelle"
+            return "manual"
         return self._current_candidate_origin
 
     def _current_candidate_details_text(self, left: str, right: str) -> str:
         if not left and not right:
-            return "Aucune combinaison courante."
+            return "No current combination."
 
-        lines = [f"Paire courante : {left or '?'} + {right or '?'}"]
-        lines.append(f"Origine : {self._current_candidate_origin_label(left, right)}")
+        lines = [f"Current pair: {left or '?'} + {right or '?'}"]
+        lines.append(f"Origin: {self._current_candidate_origin_label(left, right)}")
         lines.append(self._combination_status_message(left, right))
         if not self._current_result:
-            lines.append("Poids resultat estime : indisponible sans save chargee.")
+            lines.append("Estimated result weight: unavailable without a loaded save.")
             return "\n".join(lines)
         if not left or not right:
-            lines.append("Poids resultat estime : indisponible tant que la paire est incomplete.")
+            lines.append("Estimated result weight: unavailable while the pair is incomplete.")
             return "\n".join(lines)
         if (
             left not in self._current_result["elements"]
             or right not in self._current_result["elements"]
         ):
-            lines.append("Poids resultat estime : indisponible avec un element introuvable.")
+            lines.append("Estimated result weight: unavailable with an unknown element.")
             return "\n".join(lines)
 
         estimated_weight = candidate_result_weight(
@@ -82,13 +82,13 @@ class WindowCombinationsMixin:
             right,
             self._current_result["node_weights"],
         )
-        lines.append(f"Poids resultat estime : {estimated_weight}")
+        lines.append(f"Estimated result weight: {estimated_weight}")
         lines.append(
-            "Encore dans l'index candidats : "
+            "Still present in candidate index: "
             + (
-                "oui"
+                "yes"
                 if normalize_pair(left, right) in self._current_result.get("candidate_pairs", [])
-                else "non"
+                else "no"
             )
         )
         return "\n".join(lines)
@@ -184,11 +184,11 @@ class WindowCombinationsMixin:
         )
         if matched_name is None:
             field.setStyleSheet("border: 1px solid #dc2626;")
-            field.setToolTip("Element introuvable dans la save.")
+            field.setToolTip("Element not found in the save.")
             return False
 
         field.setStyleSheet("border: 1px solid #16a34a;")
-        field.setToolTip(f"Element valide : {matched_name}")
+        field.setToolTip(f"Valid element: {matched_name}")
         return True
 
     def _record_suggestion(self, pair: tuple[str, str], mode: str) -> None:
@@ -206,7 +206,7 @@ class WindowCombinationsMixin:
     def _restore_history_suggestion(self, item: QListWidgetItem) -> None:
         pair = item.data(Qt.UserRole)
         if pair:
-            self._set_current_pair((str(pair[0]), str(pair[1])), "historique")
+            self._set_current_pair((str(pair[0]), str(pair[1])), "history")
 
     def _pick_random_combination(self) -> None:
         gui_module = sys.modules[f"{__package__}.gui"]
@@ -233,9 +233,9 @@ class WindowCombinationsMixin:
                 done_pairs=self._current_result["done_pairs"],
             )
         if pair is None:
-            QMessageBox.information(self, "Information", "Aucune combinaison non faite disponible.")
+            QMessageBox.information(self, "Information", "No unfinished combination available.")
             return
-        self._set_current_pair(pair, "suggestion random", suggestion_mode="random")
+        self._set_current_pair(pair, "random suggestion", suggestion_mode="random")
         self._record_suggestion(pair, "random")
 
     def _pick_cheapest_combination(self) -> None:
@@ -265,16 +265,16 @@ class WindowCombinationsMixin:
                 done_pairs=self._current_result["done_pairs"],
             )
         if pair is None:
-            QMessageBox.information(self, "Information", "Aucune combinaison non faite disponible.")
+            QMessageBox.information(self, "Information", "No unfinished combination available.")
             return
-        self._set_current_pair(pair, "suggestion cheapest", suggestion_mode="cheapest")
+        self._set_current_pair(pair, "cheapest suggestion", suggestion_mode="cheapest")
         self._record_suggestion(pair, "cheapest")
 
     def _pick_next_combination(self) -> None:
         if not self._current_result:
             return
         if self._last_suggestion_mode is None:
-            QMessageBox.information(self, "Information", "Genere d'abord une suggestion.")
+            QMessageBox.information(self, "Information", "Generate a suggestion first.")
             return
         left = self.element1_edit.text().strip()
         right = self.element2_edit.text().strip()
@@ -301,27 +301,27 @@ class WindowCombinationsMixin:
         right = self.element2_edit.text().strip()
         if not left or not right:
             QMessageBox.information(
-                self, "Information", "Renseigne ou genere d'abord une combinaison."
+                self, "Information", "Enter or generate a combination first."
             )
             return
         if (
             left not in self._current_result["elements"]
             or right not in self._current_result["elements"]
         ):
-            QMessageBox.warning(self, "Erreur", "Les elements saisis n'existent pas dans la save.")
+            QMessageBox.warning(self, "Error", "The entered elements do not exist in the save.")
             return
         pair = normalize_pair(left, right)
         if pair in self._current_result["known_pairs"]:
             QMessageBox.information(
-                self, "Information", "Cette combinaison existe deja dans la save."
+                self, "Information", "This combination already exists in the save."
             )
             return
         if pair in self._current_result["discarded_pairs"]:
-            QMessageBox.information(self, "Information", "Cette combinaison est discardee.")
+            QMessageBox.information(self, "Information", "This combination is discarded.")
             return
         if pair in self._current_result["done_pairs"]:
             QMessageBox.information(
-                self, "Information", "Cette combinaison est deja marquee done pour cette session."
+                self, "Information", "This combination is already marked done for this session."
             )
             return
         self._current_result["skipped_pairs"].discard(pair)
@@ -341,19 +341,19 @@ class WindowCombinationsMixin:
         right = self.element2_edit.text().strip()
         if not left or not right:
             QMessageBox.information(
-                self, "Information", "Renseigne une combinaison marquee done a annuler."
+                self, "Information", "Enter a done combination to undo."
             )
             return
         if (
             left not in self._current_result["elements"]
             or right not in self._current_result["elements"]
         ):
-            QMessageBox.warning(self, "Erreur", "Les elements saisis n'existent pas dans la save.")
+            QMessageBox.warning(self, "Error", "The entered elements do not exist in the save.")
             return
         pair = normalize_pair(left, right)
         if pair not in self._current_result["done_pairs"]:
             QMessageBox.information(
-                self, "Information", "Cette combinaison n'est pas marquee done pour cette session."
+                self, "Information", "This combination is not marked done for this session."
             )
             return
         self._current_result["done_pairs"].remove(pair)
@@ -377,21 +377,21 @@ class WindowCombinationsMixin:
         right = self.element2_edit.text().strip()
         if not left or not right:
             QMessageBox.information(
-                self, "Information", "Renseigne ou genere d'abord une combinaison."
+                self, "Information", "Enter or generate a combination first."
             )
             return
         if (
             left not in self._current_result["elements"]
             or right not in self._current_result["elements"]
         ):
-            QMessageBox.warning(self, "Erreur", "Les elements saisis n'existent pas dans la save.")
+            QMessageBox.warning(self, "Error", "The entered elements do not exist in the save.")
             return
         pair = normalize_pair(left, right)
         if pair in self._current_result["known_pairs"]:
-            QMessageBox.warning(self, "Erreur", "Cette combinaison existe deja dans la save.")
+            QMessageBox.warning(self, "Error", "This combination already exists in the save.")
             return
         if pair in self._current_result["discarded_pairs"]:
-            QMessageBox.information(self, "Information", "Cette combinaison est deja discardee.")
+            QMessageBox.information(self, "Information", "This combination is already discarded.")
             return
         self._current_result["skipped_pairs"].discard(pair)
         gui_module.add_discarded_pair(self._current_save_path, pair)
@@ -405,7 +405,7 @@ class WindowCombinationsMixin:
         self.element1_edit.clear()
         self.element2_edit.clear()
         QMessageBox.information(
-            self, "Information", f"Combinaison discardee: {pair[0]} + {pair[1]}"
+            self, "Information", f"Discarded combination: {pair[0]} + {pair[1]}"
         )
 
     def _undo_current_combination_discard(self) -> None:
@@ -415,18 +415,18 @@ class WindowCombinationsMixin:
         right = self.element2_edit.text().strip()
         if not left or not right:
             QMessageBox.information(
-                self, "Information", "Renseigne une combinaison discardee a annuler."
+                self, "Information", "Enter a discarded combination to undo."
             )
             return
         if (
             left not in self._current_result["elements"]
             or right not in self._current_result["elements"]
         ):
-            QMessageBox.warning(self, "Erreur", "Les elements saisis n'existent pas dans la save.")
+            QMessageBox.warning(self, "Error", "The entered elements do not exist in the save.")
             return
         pair = normalize_pair(left, right)
         if pair not in self._current_result["discarded_pairs"]:
-            QMessageBox.information(self, "Information", "Cette combinaison n'est pas discardee.")
+            QMessageBox.information(self, "Information", "This combination is not discarded.")
             return
         self._restore_discarded_pair(pair)
         self.element1_edit.clear()
@@ -439,7 +439,7 @@ class WindowCombinationsMixin:
         selected_indexes = self.discarded_table.selectionModel().selectedRows()
         if not selected_indexes:
             QMessageBox.information(
-                self, "Information", "Selectionne d'abord une combinaison discardee."
+                self, "Information", "Select a discarded combination first."
             )
             return
 
@@ -448,7 +448,7 @@ class WindowCombinationsMixin:
         right = self.discarded_model.data(self.discarded_model.index(row, 1))
         pair = normalize_pair(str(left), str(right))
         if pair not in self._current_result["discarded_pairs"]:
-            QMessageBox.information(self, "Information", "Cette combinaison n'est pas discardee.")
+            QMessageBox.information(self, "Information", "This combination is not discarded.")
             return
 
         self._restore_discarded_pair(pair)
@@ -458,14 +458,14 @@ class WindowCombinationsMixin:
             return
         if not self._current_result["discarded_pairs"]:
             QMessageBox.information(
-                self, "Information", "Aucune combinaison discardee a reinitialiser."
+                self, "Information", "There is no discarded combination to reset."
             )
             return
 
         answer = QMessageBox.question(
             self,
             "Confirmation",
-            "Reinitialiser completement les combinaisons discardees ?",
+            "Reset all discarded combinations?",
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
@@ -493,7 +493,7 @@ class WindowCombinationsMixin:
         gui_module = sys.modules[f"{__package__}.gui"]
         path, _ = gui_module.QFileDialog.getSaveFileName(
             self,
-            "Exporter les combinaisons discardees",
+            "Export discarded combinations",
             str(Path("discarded_export.json")),
             "JSON (*.json);;Tous les fichiers (*)",
         )
@@ -501,7 +501,7 @@ class WindowCombinationsMixin:
             return
 
         gui_module.export_discarded_pairs(Path(path))
-        QMessageBox.information(self, "Information", "Export des discarded termine.")
+        QMessageBox.information(self, "Information", "Discarded export completed.")
 
     def _import_discarded_combinations(self) -> None:
         if not self._current_result or self._current_save_path is None:
@@ -510,7 +510,7 @@ class WindowCombinationsMixin:
         gui_module = sys.modules[f"{__package__}.gui"]
         path, _ = gui_module.QFileDialog.getOpenFileName(
             self,
-            "Importer des combinaisons discardees",
+            "Import discarded combinations",
             "",
             "JSON (*.json);;Tous les fichiers (*)",
         )
@@ -520,7 +520,7 @@ class WindowCombinationsMixin:
         try:
             imported_pairs = gui_module.import_discarded_pairs(Path(path))
         except (OSError, ValueError) as exc:
-            QMessageBox.warning(self, "Erreur", str(exc))
+            QMessageBox.warning(self, "Error", str(exc))
             return
 
         new_pairs = imported_pairs - self._current_result["discarded_pairs"]
@@ -532,5 +532,5 @@ class WindowCombinationsMixin:
         self._refresh_discarded_table()
         self._refresh_summary()
         QMessageBox.information(
-            self, "Information", f"{len(new_pairs)} combinaison(s) discardee(s) importee(s)."
+            self, "Information", f"{len(new_pairs)} discarded combination(s) imported."
         )

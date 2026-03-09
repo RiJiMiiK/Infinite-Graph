@@ -14,11 +14,11 @@ class WindowGenerationMixin:
     def _refresh_candidate_count(self) -> None:
         if not self._current_result:
             self.candidate_count_label.setText(
-                "Combinaisons candidates restantes : aucune save chargee"
+                "Remaining candidate combinations: no save loaded"
             )
             return
         self.candidate_count_label.setText(
-            "Combinaisons candidates restantes : "
+            "Remaining candidate combinations: "
             f"{len(self._current_result['missing'])}"
         )
 
@@ -26,7 +26,7 @@ class WindowGenerationMixin:
         gui_module = sys.modules[f"{__package__}.gui"]
         input_value = self.input_edit.text().strip()
         if not input_value:
-            QMessageBox.critical(self, "Erreur", "Choisis un fichier de sauvegarde.")
+            QMessageBox.critical(self, "Error", "Choose a save file.")
             return
 
         if self._worker_thread is not None:
@@ -36,9 +36,9 @@ class WindowGenerationMixin:
         self._set_candidate_buttons_enabled(False)
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
-        self.summary_label.setText("Generation en cours...")
+        self.summary_label.setText("Generation in progress...")
         self.summary_panel.setVisible(True)
-        self.summary_toggle_button.setText("Masquer details")
+        self.summary_toggle_button.setText("Hide details")
         self.stage_label.setText("Current step: Starting generation (0%)")
         try:
             layout_iterations, spring_scale = self._layout_settings()
@@ -92,8 +92,8 @@ class WindowGenerationMixin:
             "Updating graph view",
         )
         self.graph_view.update_graph(render_data)
-        self.selected_node_label.setText("Noeud selectionne : aucun")
-        self.selected_node_details.setPlainText("Aucun noeud selectionne.")
+        self.selected_node_label.setText("Selected node: none")
+        self.selected_node_details.setPlainText("No node selected.")
         self.subgraph_center_edit.clear()
         self.subgraph_depth_edit.setText("1")
 
@@ -145,7 +145,7 @@ class WindowGenerationMixin:
         self.missing_weight_list.clear()
         for weight, count in statistics["missing_counts_by_result_weight"]:
             self.missing_weight_list.addItem(
-                f"Poids {weight}: {count} recipes non faites possibles"
+                f"Weight {weight}: {count} possible missing recipes"
             )
 
         self._on_generation_progress(
@@ -156,7 +156,7 @@ class WindowGenerationMixin:
             build_summary_text(result, self._last_generation_elapsed_seconds)
         )
         self.summary_panel.setVisible(True)
-        self.summary_toggle_button.setText("Masquer details")
+        self.summary_toggle_button.setText("Hide details")
         self.progress_bar.setValue(100)
         if result["load_warnings"]:
             self.stage_label.setText(
@@ -171,9 +171,9 @@ class WindowGenerationMixin:
 
     def _on_generation_failed(self, message: str) -> None:
         self._current_result = None
-        self.summary_label.setText("La generation a echoue.")
+        self.summary_label.setText("Generation failed.")
         self.summary_panel.setVisible(True)
-        self.summary_toggle_button.setText("Masquer details")
+        self.summary_toggle_button.setText("Hide details")
         self.progress_bar.setValue(0)
         self.stage_label.setText("Current step: failed (0%)")
         self._update_element_completion([])
@@ -184,10 +184,10 @@ class WindowGenerationMixin:
         self._set_candidate_buttons_enabled(False)
         self.discarded_model.update_rows([])
         self.candidate_status_label.setText(
-            "Statut combinaison : charge une save pour analyser une paire."
+            "Combination status: load a save to analyze a pair."
         )
-        self.current_candidate_details.setPlainText("Aucune combinaison courante.")
-        QMessageBox.critical(self, "Erreur", message)
+        self.current_candidate_details.setPlainText("No current combination.")
+        QMessageBox.critical(self, "Error", message)
 
     def _cleanup_worker(self) -> None:
         self.generate_button.setEnabled(True)
@@ -214,7 +214,7 @@ class WindowGenerationMixin:
         self.missing_weight_list.clear()
         for weight, count in self._current_result["statistics"]["missing_counts_by_result_weight"]:
             self.missing_weight_list.addItem(
-                f"Poids {weight}: {count} recipes non faites possibles"
+                f"Weight {weight}: {count} possible missing recipes"
             )
 
     def _refresh_discarded_table(self) -> None:
@@ -245,17 +245,17 @@ class WindowGenerationMixin:
         iterations_text = self.layout_iterations_edit.text().strip() or "80"
         scale_text = self.layout_scale_edit.text().strip() or "1.2"
         if not iterations_text.isdigit():
-            raise ValueError("Les iterations du layout doivent etre un entier positif.")
+            raise ValueError("Layout iterations must be a positive integer.")
         try:
             spring_scale = float(scale_text)
         except ValueError as exc:
-            raise ValueError("Le spring scale du layout doit etre un nombre positif.") from exc
+            raise ValueError("Layout spring scale must be a positive number.") from exc
 
         layout_iterations = int(iterations_text)
         if layout_iterations <= 0:
-            raise ValueError("Les iterations du layout doivent etre un entier positif.")
+            raise ValueError("Layout iterations must be a positive integer.")
         if spring_scale <= 0:
-            raise ValueError("Le spring scale du layout doit etre un nombre positif.")
+            raise ValueError("Layout spring scale must be a positive number.")
         return layout_iterations, spring_scale
 
     def _rebuild_layout(self) -> None:
@@ -278,6 +278,6 @@ class WindowGenerationMixin:
         )
         self._full_render_data = render_data
         self.graph_view.update_graph(render_data)
-        self.selected_node_label.setText("Noeud selectionne : aucun")
-        self.selected_node_details.setPlainText("Aucun noeud selectionne.")
+        self.selected_node_label.setText("Selected node: none")
+        self.selected_node_details.setPlainText("No node selected.")
         self.stage_label.setText("Current step: done")

@@ -156,31 +156,9 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Ajouter un panneau `current candidate`
 - [x] Afficher un compteur de combinaisons candidates restantes
 
-## 12. Priorites recommandees
+## 12. Futures ameliorations UX
 
-### Priorite haute
-
-- [ ] Auto-completion pour `Element 1` et `Element 2`
-- [x] `Undo Done`
-- [x] `Undo Discard`
-- [ ] Selection d'un noeud dans le graphe avec details
-
-### Priorite moyenne
-
-- [ ] Cache du `spring layout`
-- [ ] Recherche d'un element
-- [ ] Centrage sur un element
-- [ ] Sous-graphe autour d'un element
-
-### Priorite basse
-
-- [ ] Tests GUI plus pousses
-- [ ] Outils de gestion du fichier `discarded.json`
-- [ ] Meilleure presentation du graphe pour les tres gros jeux de donnees
-
-## 13. Futures ameliorations UX
-
-- [ ] Uniformiser tout le wording de l'interface
+- [x] Uniformiser tout le wording de l'interface
 - [ ] Responsive layout desktop / petite fenetre
 - [ ] Preferences UI persistantes
 - [ ] Recherche / filtre dans les tables `Infos`

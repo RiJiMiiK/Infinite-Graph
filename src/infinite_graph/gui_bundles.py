@@ -26,7 +26,7 @@ def create_controls_bundle(parent) -> SimpleNamespace:
         element1_edit=CopyLineEdit(),
         element2_edit=CopyLineEdit(),
         element_completer_model=QStringListModel(),
-        generate_button=QPushButton("Generer"),
+        generate_button=QPushButton("Generate"),
         random_button=QPushButton("Random"),
         cheapest_button=QPushButton("Cheapest"),
         next_button=QPushButton("Next"),
@@ -35,15 +35,15 @@ def create_controls_bundle(parent) -> SimpleNamespace:
         discard_button=QPushButton("Discard"),
         undo_discard_button=QPushButton("Undo Discard"),
         progress_bar=QProgressBar(),
-        summary_label=QLabel("Charge une sauvegarde Infinite Craft pour construire le graphe."),
+        summary_label=QLabel("Load an Infinite Craft save to build the graph."),
         stage_label=QLabel("Idle"),
-        candidate_status_label=QLabel("Statut combinaison : aucune"),
-        candidate_count_label=QLabel("Combinaisons candidates restantes : aucune save chargee"),
-        current_candidate_toggle_button=QPushButton("Afficher details candidat"),
+        candidate_status_label=QLabel("Combination status: none"),
+        candidate_count_label=QLabel("Remaining candidate combinations: no save loaded"),
+        current_candidate_toggle_button=QPushButton("Show candidate details"),
         current_candidate_details=QTextEdit(),
-        history_toggle_button=QPushButton("Afficher historique"),
+        history_toggle_button=QPushButton("Show history"),
         history_panel=QFrame(),
-        summary_toggle_button=QPushButton("Afficher details"),
+        summary_toggle_button=QPushButton("Show details"),
         summary_panel=QFrame(),
         suggestion_history_list=QListWidget(),
     )
@@ -54,7 +54,7 @@ def create_controls_bundle(parent) -> SimpleNamespace:
     bundle.discard_button.setObjectName("dangerButton")
     bundle.current_candidate_details.setReadOnly(True)
     bundle.current_candidate_details.setMaximumHeight(90)
-    bundle.current_candidate_details.setPlainText("Aucune combinaison courante.")
+    bundle.current_candidate_details.setPlainText("No current combination.")
     bundle.summary_toggle_button.setMaximumWidth(220)
     bundle.history_panel.setFrameShape(QFrame.StyledPanel)
     bundle.history_panel.setVisible(False)
@@ -68,35 +68,35 @@ def create_controls_bundle(parent) -> SimpleNamespace:
 def create_graph_bundle() -> SimpleNamespace:
     return SimpleNamespace(
         graph_view=GraphViewWidget(),
-        selected_node_label=QLabel("Noeud selectionne : aucun"),
+        selected_node_label=QLabel("Selected node: none"),
         selected_node_details=QTextEdit(),
         graph_search_edit=QLineEdit(),
-        graph_search_button=QPushButton("Rechercher"),
+        graph_search_button=QPushButton("Search"),
         subgraph_center_edit=QLineEdit(),
         subgraph_depth_edit=QLineEdit("1"),
-        subgraph_button=QPushButton("Sous-graphe"),
-        subgraph_reset_button=QPushButton("Reinitialiser"),
+        subgraph_button=QPushButton("Apply subgraph"),
+        subgraph_reset_button=QPushButton("Reset"),
         min_weight_edit=QLineEdit(),
         max_weight_edit=QLineEdit(),
-        weight_filter_button=QPushButton("Filtrer poids"),
+        weight_filter_button=QPushButton("Filter weights"),
         layout_iterations_edit=QLineEdit("80"),
         layout_scale_edit=QLineEdit("1.2"),
-        layout_apply_button=QPushButton("Appliquer layout"),
+        layout_apply_button=QPushButton("Apply layout"),
     )
 
 
 def create_info_bundle() -> SimpleNamespace:
     bundle = SimpleNamespace(
-        node_model=ListTableModel(["Element", "Poids"]),
-        edge_model=ListTableModel(["Source", "Cible", "Poids", "Liste d'elements"]),
+        node_model=ListTableModel(["Element", "Weight"]),
+        edge_model=ListTableModel(["Source", "Target", "Weight", "Element list"]),
         discarded_model=ListTableModel(["Element 1", "Element 2"]),
         node_table=QTableView(),
         edge_table=QTableView(),
         discarded_table=QTableView(),
-        remove_discarded_button=QPushButton("Supprimer la selection"),
+        remove_discarded_button=QPushButton("Remove selection"),
         reset_discarded_button=QPushButton("Reset discarded"),
-        export_discarded_button=QPushButton("Exporter discarded"),
-        import_discarded_button=QPushButton("Importer discarded"),
+        export_discarded_button=QPushButton("Export discarded"),
+        import_discarded_button=QPushButton("Import discarded"),
     )
     bundle.reset_discarded_button.setObjectName("dangerButton")
     return bundle

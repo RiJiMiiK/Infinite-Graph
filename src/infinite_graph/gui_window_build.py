@@ -31,9 +31,9 @@ class WindowBuildMixin:
         self.summary_toggle_button.clicked.connect(self._toggle_summary_panel)
 
         tabs = QTabWidget()
-        tabs.addTab(self._build_graph_tab(), "Graphe")
-        tabs.addTab(self._build_info_tab(), "Infos")
-        tabs.addTab(self._build_stats_tab(), "Statistiques")
+        tabs.addTab(self._build_graph_tab(), "Graph")
+        tabs.addTab(self._build_info_tab(), "Info")
+        tabs.addTab(self._build_stats_tab(), "Statistics")
         layout.addWidget(tabs, 1)
 
         self.setCentralWidget(central)
@@ -67,27 +67,27 @@ class WindowBuildMixin:
         return controls
 
     def _build_load_group(self) -> QGroupBox:
-        group = QGroupBox("Chargement")
+        group = QGroupBox("Loading")
         group_layout = QFormLayout(group)
         self.stage_label.setWordWrap(True)
         summary_panel_layout = QVBoxLayout(self.summary_panel)
         summary_panel_layout.setContentsMargins(8, 8, 8, 8)
         summary_panel_layout.addWidget(self.summary_label)
-        group_layout.addRow("Sauvegarde", self._build_file_row())
+        group_layout.addRow("Save file", self._build_file_row())
         group_layout.addRow("", self._build_action_row())
-        group_layout.addRow("Etat", self.stage_label)
+        group_layout.addRow("Status", self.stage_label)
         group_layout.addRow("", self.summary_toggle_button)
         group_layout.addRow("", self.summary_panel)
         return group
 
     def _build_current_candidate_group(self) -> QGroupBox:
-        group = QGroupBox("Combinaison courante")
+        group = QGroupBox("Current combination")
         group_layout = QFormLayout(group)
         group_layout.addRow("Elements", self._build_candidate_row())
         group_layout.addRow("Suggestions", self._build_suggestion_buttons_row())
         group_layout.addRow("Actions", self._build_decision_buttons_row())
-        group_layout.addRow("Statut", self.candidate_status_label)
-        group_layout.addRow("Restant", self.candidate_count_label)
+        group_layout.addRow("Status", self.candidate_status_label)
+        group_layout.addRow("Remaining", self.candidate_count_label)
         details_panel = QWidget()
         details_layout = QVBoxLayout(details_panel)
         details_layout.setContentsMargins(0, 0, 0, 0)
@@ -99,7 +99,7 @@ class WindowBuildMixin:
         return group
 
     def _build_history_group(self) -> QGroupBox:
-        group = QGroupBox("Historique local")
+        group = QGroupBox("Local history")
         group_layout = QVBoxLayout(group)
         history_panel_layout = QVBoxLayout(self.history_panel)
         history_panel_layout.setContentsMargins(6, 6, 6, 6)
@@ -112,7 +112,7 @@ class WindowBuildMixin:
         file_row = QWidget()
         file_row_layout = QHBoxLayout(file_row)
         file_row_layout.setContentsMargins(0, 0, 0, 0)
-        browse_button = QPushButton("Parcourir")
+        browse_button = QPushButton("Browse")
         browse_button.clicked.connect(self._pick_input)
         file_row_layout.addWidget(self.input_edit)
         file_row_layout.addWidget(browse_button)
@@ -198,23 +198,23 @@ class WindowBuildMixin:
         is_hidden = self.summary_panel.isHidden()
         self.summary_panel.setVisible(is_hidden)
         self.summary_toggle_button.setText(
-            "Masquer details" if is_hidden else "Afficher details"
+            "Hide details" if is_hidden else "Show details"
         )
 
     def _toggle_candidate_details(self) -> None:
         is_hidden = self.current_candidate_details.isHidden()
         self.current_candidate_details.setVisible(is_hidden)
         self.current_candidate_toggle_button.setText(
-            "Masquer details candidat"
+            "Hide candidate details"
             if is_hidden
-            else "Afficher details candidat"
+            else "Show candidate details"
         )
 
     def _toggle_history_panel(self) -> None:
         is_hidden = self.history_panel.isHidden()
         self.history_panel.setVisible(is_hidden)
         self.history_toggle_button.setText(
-            "Masquer historique" if is_hidden else "Afficher historique"
+            "Hide history" if is_hidden else "Show history"
         )
 
     def _build_graph_tab(self) -> QWidget:
@@ -225,7 +225,7 @@ class WindowBuildMixin:
         search_row = QWidget()
         search_layout = QHBoxLayout(search_row)
         search_layout.setContentsMargins(0, 0, 0, 0)
-        self.graph_search_edit.setPlaceholderText("Rechercher un element dans le graphe")
+        self.graph_search_edit.setPlaceholderText("Search an element in the graph")
         self.graph_search_button.clicked.connect(self._search_graph_node)
         search_layout.addWidget(self.graph_search_edit)
         search_layout.addWidget(self.graph_search_button)
@@ -233,8 +233,8 @@ class WindowBuildMixin:
         subgraph_row = QWidget()
         subgraph_layout = QHBoxLayout(subgraph_row)
         subgraph_layout.setContentsMargins(0, 0, 0, 0)
-        self.subgraph_center_edit.setPlaceholderText("Centre du sous-graphe")
-        self.subgraph_depth_edit.setPlaceholderText("Profondeur")
+        self.subgraph_center_edit.setPlaceholderText("Subgraph center")
+        self.subgraph_depth_edit.setPlaceholderText("Depth")
         self.subgraph_depth_edit.setFixedWidth(90)
         self.subgraph_button.clicked.connect(self._apply_subgraph_filter)
         self.subgraph_reset_button.clicked.connect(self._reset_subgraph_filter)
@@ -246,8 +246,8 @@ class WindowBuildMixin:
         weight_row = QWidget()
         weight_layout = QHBoxLayout(weight_row)
         weight_layout.setContentsMargins(0, 0, 0, 0)
-        self.min_weight_edit.setPlaceholderText("Poids min")
-        self.max_weight_edit.setPlaceholderText("Poids max")
+        self.min_weight_edit.setPlaceholderText("Min weight")
+        self.max_weight_edit.setPlaceholderText("Max weight")
         self.min_weight_edit.setFixedWidth(120)
         self.max_weight_edit.setFixedWidth(120)
         self.weight_filter_button.clicked.connect(self._apply_weight_filter)
@@ -271,7 +271,7 @@ class WindowBuildMixin:
 
         self.selected_node_details.setReadOnly(True)
         self.selected_node_details.setMinimumWidth(280)
-        self.selected_node_details.setPlainText("Aucun noeud selectionne.")
+        self.selected_node_details.setPlainText("No node selected.")
 
         details_container = QWidget()
         details_layout = QVBoxLayout(details_container)
@@ -329,7 +329,7 @@ class WindowBuildMixin:
         self.reset_discarded_button.clicked.connect(self._reset_discarded_combinations)
         self.export_discarded_button.clicked.connect(self._export_discarded_combinations)
         self.import_discarded_button.clicked.connect(self._import_discarded_combinations)
-        discarded_layout.addWidget(QLabel("Combinaisons discardees"))
+        discarded_layout.addWidget(QLabel("Discarded combinations"))
         discarded_layout.addWidget(self.discarded_table)
         discarded_layout.addWidget(self.remove_discarded_button)
         discarded_layout.addWidget(self.reset_discarded_button)
@@ -355,9 +355,9 @@ class WindowBuildMixin:
         gui_module = sys.modules[f"{__package__}.gui"]
         path, _ = gui_module.QFileDialog.getOpenFileName(
             self,
-            "Choisir une sauvegarde Infinite Craft",
+            "Choose an Infinite Craft save",
             "",
-            "Tous les fichiers (*);;JSON (*.json)",
+            "All files (*);;JSON (*.json)",
         )
         if path:
             self.input_edit.setText(path)

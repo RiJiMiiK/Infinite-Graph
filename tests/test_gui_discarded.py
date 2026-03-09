@@ -49,13 +49,13 @@ def test_window_remove_selected_discarded_combination(monkeypatch, qapp, sample_
     window._refresh_discarded_table()
 
     window._remove_selected_discarded_combination()
-    assert "Selectionne d'abord" in infos[-1][-1]
+    assert "Select a discarded combination first" in infos[-1][-1]
 
     sample_result["discarded_pairs"].clear()
     window.discarded_model.update_rows([["Earth", "Wind"]])
     window.discarded_table.selectRow(0)
     window._remove_selected_discarded_combination()
-    assert "n'est pas discardee" in infos[-1][-1]
+    assert "is not discarded" in infos[-1][-1]
 
     sample_result["discarded_pairs"].add(("Earth", "Wind"))
     window._refresh_discarded_table()
@@ -102,7 +102,7 @@ def test_window_reset_discarded_combinations(monkeypatch, qapp, sample_result) -
     assert window.discarded_model.rowCount() == 0
 
     window._reset_discarded_combinations()
-    assert "Aucune combinaison discardee" in infos[-1][-1]
+    assert "There is no discarded combination" in infos[-1][-1]
     window.close()
 
 
@@ -138,7 +138,7 @@ def test_window_export_and_import_discarded_combinations(monkeypatch, qapp, samp
     ))
     window._export_discarded_combinations()
     assert export_path.exists()
-    assert "Export des discarded termine" in infos[-1][-1]
+    assert "Discarded export completed" in infos[-1][-1]
 
     import_path.write_text(
         json.dumps({"discarded": [["Earth", "Wind"], ["Earth", "Earth"]]}),
@@ -149,7 +149,7 @@ def test_window_export_and_import_discarded_combinations(monkeypatch, qapp, samp
     assert ("Earth", "Earth") in sample_result["discarded_pairs"]
     assert ("Earth", "Earth") not in sample_result["missing"]
     assert sample_result["statistics"]["missing_counts_by_result_weight"] == [(1, 1)]
-    assert "1 combinaison(s) discardee(s) importee(s)." in infos[-1][-1]
+    assert "1 discarded combination(s) imported." in infos[-1][-1]
 
     monkeypatch.setattr(
         gui.QFileDialog,

@@ -431,7 +431,7 @@ def test_window_generate_and_input_pick(monkeypatch, qapp, sample_result) -> Non
     window._worker_thread = None
     window.layout_iterations_edit.setText("bad")
     window._generate()
-    assert infos[-1][-1] == "Les iterations du layout doivent etre un entier positif."
+    assert infos[-1][-1] == "Layout iterations must be a positive integer."
 
     monkeypatch.setattr(gui.QFileDialog, "getOpenFileName", lambda *args, **kwargs: ("picked.json", ""))
     window._pick_input()
@@ -455,9 +455,9 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     )
     assert window._current_result is sample_result
     assert window.random_button.isEnabled()
-    assert "Combinaisons discardees" in window.summary_label.text()
-    assert "Temps total de generation : 12.34s" in window.summary_label.text()
-    assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
+    assert "Discarded combinations" in window.summary_label.text()
+    assert "Total generation time: 12.34s" in window.summary_label.text()
+    assert "No node selected" in window.selected_node_details.toPlainText()
     assert "Water" in window.element_completer_model.stringList()
     assert window.discarded_model.rowCount() == 1
     assert window.discarded_model.data(window.discarded_model.index(0, 0)) == "Earth"
@@ -482,7 +482,7 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     window._on_generation_failed("bad")
     assert errors
     assert window.element_completer_model.stringList() == []
-    assert window.current_candidate_details.toPlainText() == "Aucune combinaison courante."
+    assert window.current_candidate_details.toPlainText() == "No current combination."
 
     fake_thread = _FakeThread()
     window._worker_thread = fake_thread
@@ -532,7 +532,7 @@ def test_window_candidate_buttons_and_selection(monkeypatch, qapp, sample_result
     monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
     monkeypatch.setattr(gui, "find_random_combination", lambda *args, **kwargs: None)
     window._pick_next_combination()
-    assert "Genere d'abord" in infos[-1][-1]
+    assert "Generate a suggestion first" in infos[-1][-1]
     window._pick_random_combination()
     assert infos
     monkeypatch.setattr(gui, "find_random_combination", lambda *args, **kwargs: ("A", "B"))
@@ -596,15 +596,15 @@ def test_window_candidate_buttons_and_selection(monkeypatch, qapp, sample_result
     assert "Fire" in window.selected_node_label.text()
     assert window.node_table.selectionModel().hasSelection() is True
     details = window.selected_node_details.toPlainText()
-    assert "Nom : Fire" in details
-    assert "Poids : 0" in details
-    assert "Starter : oui" in details
+    assert "Name: Fire" in details
+    assert "Weight: 0" in details
+    assert "Starter: yes" in details
     window._on_graph_node_selected("Water")
     details = window.selected_node_details.toPlainText()
-    assert "Voisins sortants : Fire" in details
+    assert "Outgoing neighbors: Fire" in details
     window._on_graph_node_selected(None)
-    assert "aucun" in window.selected_node_label.text()
-    assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
+    assert "none" in window.selected_node_label.text()
+    assert "No node selected" in window.selected_node_details.toPlainText()
     window.close()
 
 
@@ -644,7 +644,7 @@ def test_window_search_graph_node(monkeypatch, qapp, sample_result) -> None:
     window._search_graph_node()
     window._current_result = sample_result
     window._search_graph_node()
-    assert infos[-1][-1] == "Saisis un element a rechercher."
+    assert infos[-1][-1] == "Enter an element to search."
 
     window.graph_search_edit.setText("fire")
     window._search_graph_node()
@@ -653,7 +653,7 @@ def test_window_search_graph_node(monkeypatch, qapp, sample_result) -> None:
 
     window.graph_search_edit.setText("unknown")
     window._search_graph_node()
-    assert "introuvable" in infos[-1][-1]
+    assert "not found" in infos[-1][-1]
     window.close()
 
 
@@ -680,7 +680,7 @@ def test_window_subgraph_filter(monkeypatch, qapp, sample_result) -> None:
     }
 
     window._apply_subgraph_filter()
-    assert "selectionne un noeud" in infos[-1][-1]
+    assert "select a node" in infos[-1][-1]
 
     window.graph_view._selected_node_id = "Fire"
     window._apply_subgraph_filter()
@@ -691,12 +691,12 @@ def test_window_subgraph_filter(monkeypatch, qapp, sample_result) -> None:
     window.subgraph_center_edit.setText("Water")
     window.subgraph_depth_edit.setText("bad")
     window._apply_subgraph_filter()
-    assert "entier positif" in infos[-1][-1]
+    assert "non-negative integer" in infos[-1][-1]
 
     window.subgraph_depth_edit.setText("1")
     window.subgraph_center_edit.setText("Ghost")
     window._apply_subgraph_filter()
-    assert "Impossible de construire" in infos[-1][-1]
+    assert "Unable to build" in infos[-1][-1]
 
     window._reset_subgraph_filter()
     assert updates[-1]["node_ids"] == ["Water", "Fire", "Steam"]
@@ -721,16 +721,16 @@ def test_window_weight_filter(monkeypatch, qapp) -> None:
     }
 
     window._apply_weight_filter()
-    assert "au moins un poids" in infos[-1][-1]
+    assert "at least a minimum or maximum weight" in infos[-1][-1]
 
     window.min_weight_edit.setText("bad")
     window._apply_weight_filter()
-    assert "entiers positifs" in infos[-1][-1]
+    assert "non-negative integers" in infos[-1][-1]
 
     window.min_weight_edit.setText("2")
     window.max_weight_edit.setText("1")
     window._apply_weight_filter()
-    assert "superieur" in infos[-1][-1]
+    assert "greater than maximum" in infos[-1][-1]
 
     window.min_weight_edit.setText("0")
     window.max_weight_edit.setText("0")
