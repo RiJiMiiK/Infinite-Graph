@@ -10,6 +10,15 @@ def build_summary_text(result: dict[str, object], elapsed_seconds: float | None 
         f"Entrees recette ignorees : {result['ignored_recipe_entries']}",
         f"Noeuds du graphe : {len(result['graph_nodes'])}",
         f"Edges du graphe : {len(result['graph_edges'])}",
+        (
+            "Noeuds affiches dans le graphe : "
+            f"{len(result.get('render_graph_nodes', result['graph_nodes']))}"
+        ),
+        (
+            "Edges affiches dans le graphe : "
+            f"{len(result.get('render_graph_edges', result['graph_edges']))}"
+        ),
+        f"Mode de rendu du graphe : {result.get('render_scope', 'complete_graph')}",
         f"Combinaisons manquantes calculees : {len(result['missing'])}",
         f"Combinaisons discardees : {len(result['discarded_pairs'])}",
         f"Combinaisons done session : {len(result['done_pairs'])}",

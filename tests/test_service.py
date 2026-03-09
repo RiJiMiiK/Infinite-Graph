@@ -32,3 +32,6 @@ def test_process_save_reports_progress_and_returns_expected_data(monkeypatch, tm
     assert result["ignored_recipe_entries"] == 3
     assert result["discarded_pairs"] == {("Earth", "Wind")}
     assert result["done_pairs"] == set()
+    assert result["render_scope"] == "complete_graph"
+    assert result["render_graph_nodes"] == result["graph_nodes"]
+    assert result["render_graph_edges"] == result["graph_edges"]

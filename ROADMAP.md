@@ -147,7 +147,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Optimiser le `spring layout`
 - [x] Mettre en cache les positions des noeuds
 - [x] Eviter un recalcul complet si seule l'interface change
-- [ ] Calculer des sous-graphes au lieu du graphe complet si necessaire
+- [x] Calculer des sous-graphes au lieu du graphe complet si necessaire
 - [ ] Indexer plus efficacement les combinaisons candidates
 
 ## 11. UX produit

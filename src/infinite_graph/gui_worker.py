@@ -42,8 +42,8 @@ class GenerateWorker(QObject):
                 progress_callback=emit_process_progress,
             )
             render_data = gui_module.build_graph_render_data(
-                result["graph_nodes"],
-                result["graph_edges"],
+                result.get("render_graph_nodes", result["graph_nodes"]),
+                result.get("render_graph_edges", result["graph_edges"]),
                 progress_callback=self.progress.emit,
                 layout_iterations=self.layout_iterations,
                 spring_scale=self.spring_scale,
