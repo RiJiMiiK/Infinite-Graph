@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QTextEdit,
 )
 
-from .gui_table import ListTableModel
+from .gui_table import ContainsFilterProxyModel, ListTableModel
 from .gui_widgets import CopyLineEdit, GraphViewWidget, StatsCanvas
 
 
@@ -90,15 +90,27 @@ def create_info_bundle() -> SimpleNamespace:
         node_model=ListTableModel(["Element", "Weight"]),
         edge_model=ListTableModel(["Source", "Target", "Weight", "Element list"]),
         discarded_model=ListTableModel(["Element 1", "Element 2"]),
+        node_proxy_model=ContainsFilterProxyModel(),
+        edge_proxy_model=ContainsFilterProxyModel(),
+        discarded_proxy_model=ContainsFilterProxyModel(),
         node_table=QTableView(),
         edge_table=QTableView(),
         discarded_table=QTableView(),
+        node_filter_edit=QLineEdit(),
+        edge_filter_edit=QLineEdit(),
+        discarded_filter_edit=QLineEdit(),
         remove_discarded_button=QPushButton("Remove selection"),
         reset_discarded_button=QPushButton("Reset discarded"),
         export_discarded_button=QPushButton("Export discarded"),
         import_discarded_button=QPushButton("Import discarded"),
     )
     bundle.reset_discarded_button.setObjectName("dangerButton")
+    bundle.node_filter_edit.setPlaceholderText("Filter nodes")
+    bundle.edge_filter_edit.setPlaceholderText("Filter edges")
+    bundle.discarded_filter_edit.setPlaceholderText("Filter discarded combinations")
+    bundle.node_filter_edit.setClearButtonEnabled(True)
+    bundle.edge_filter_edit.setClearButtonEnabled(True)
+    bundle.discarded_filter_edit.setClearButtonEnabled(True)
     return bundle
 
 

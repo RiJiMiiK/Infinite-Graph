@@ -443,7 +443,9 @@ class WindowCombinationsMixin:
             )
             return
 
-        row = selected_indexes[0].row()
+        proxy_index = selected_indexes[0]
+        source_index = self.discarded_proxy_model.mapToSource(proxy_index)
+        row = source_index.row()
         left = self.discarded_model.data(self.discarded_model.index(row, 0))
         right = self.discarded_model.data(self.discarded_model.index(row, 1))
         pair = normalize_pair(str(left), str(right))

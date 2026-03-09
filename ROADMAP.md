@@ -161,7 +161,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Uniformiser tout le wording de l'interface
 - [x] Responsive layout desktop / petite fenetre
 - [x] Preferences UI persistantes
-- [ ] Recherche / filtre dans les tables `Infos`
+- [x] Recherche / filtre dans les tables `Infos`
 - [ ] Actions contextuelles depuis le graphe
 - [ ] Export image du graphe
 - [ ] Vrai polish des statistiques

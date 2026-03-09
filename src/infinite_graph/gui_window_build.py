@@ -454,17 +454,37 @@ class WindowBuildMixin:
         top_splitter.splitterMoved.connect(
             lambda _pos, _index: self._save_ui_preferences_state()
         )
-        self.node_table.setModel(self.node_model)
-        self.edge_table.setModel(self.edge_model)
-        self.discarded_table.setModel(self.discarded_model)
+        self.node_proxy_model.setSourceModel(self.node_model)
+        self.edge_proxy_model.setSourceModel(self.edge_model)
+        self.discarded_proxy_model.setSourceModel(self.discarded_model)
+        self.node_filter_edit.textChanged.connect(self.node_proxy_model.set_filter_text)
+        self.edge_filter_edit.textChanged.connect(self.edge_proxy_model.set_filter_text)
+        self.discarded_filter_edit.textChanged.connect(
+            self.discarded_proxy_model.set_filter_text
+        )
+        self.node_table.setModel(self.node_proxy_model)
+        self.edge_table.setModel(self.edge_proxy_model)
+        self.discarded_table.setModel(self.discarded_proxy_model)
         self.node_table.setSortingEnabled(True)
         self.edge_table.setSortingEnabled(True)
         self.discarded_table.setSortingEnabled(True)
         self.node_table.horizontalHeader().setStretchLastSection(True)
         self.edge_table.horizontalHeader().setStretchLastSection(True)
         self.discarded_table.horizontalHeader().setStretchLastSection(True)
-        top_splitter.addWidget(self.node_table)
-        top_splitter.addWidget(self.edge_table)
+        top_splitter.addWidget(
+            self._build_info_table_container(
+                "Nodes",
+                self.node_filter_edit,
+                self.node_table,
+            )
+        )
+        top_splitter.addWidget(
+            self._build_info_table_container(
+                "Edges",
+                self.edge_filter_edit,
+                self.edge_table,
+            )
+        )
         top_splitter.setSizes([400, 900])
 
         discarded_container = QWidget()
@@ -477,6 +497,7 @@ class WindowBuildMixin:
         self.export_discarded_button.clicked.connect(self._export_discarded_combinations)
         self.import_discarded_button.clicked.connect(self._import_discarded_combinations)
         discarded_layout.addWidget(QLabel("Discarded combinations"))
+        discarded_layout.addWidget(self.discarded_filter_edit)
         discarded_layout.addWidget(self.discarded_table)
         discarded_layout.addWidget(self.remove_discarded_button)
         discarded_layout.addWidget(self.reset_discarded_button)
@@ -493,6 +514,20 @@ class WindowBuildMixin:
         splitter.setSizes([700, 220])
         layout.addWidget(splitter)
         return tab
+
+    @staticmethod
+    def _build_info_table_container(
+        title: str,
+        filter_edit,
+        table,
+    ) -> QWidget:
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.addWidget(QLabel(title))
+        container_layout.addWidget(filter_edit)
+        container_layout.addWidget(table)
+        return container
 
     def _build_stats_tab(self) -> QWidget:
         tab = QWidget()

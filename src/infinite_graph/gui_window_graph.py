@@ -18,8 +18,13 @@ class WindowGraphMixin:
         self.selected_node_details.setPlainText(self._build_selected_node_details(node_name))
         for row_index, row in enumerate(self.node_model.rows):
             if row[0] == node_name:
-                self.node_table.selectRow(row_index)
-                self.node_table.scrollTo(self.node_model.index(row_index, 0))
+                source_index = self.node_model.index(row_index, 0)
+                proxy_index = self.node_proxy_model.mapFromSource(source_index)
+                if proxy_index.isValid():
+                    self.node_table.selectRow(proxy_index.row())
+                    self.node_table.scrollTo(proxy_index)
+                else:
+                    self.node_table.clearSelection()
                 break
 
     def _search_graph_node(self) -> None:
