@@ -177,22 +177,32 @@ class WindowBuildMixin:
         self.selected_node_details.setMinimumWidth(280)
         self.selected_node_details.setPlainText("Aucun noeud selectionne.")
 
-        splitter = QSplitter(Qt.Horizontal)
-        splitter.addWidget(self.graph_view)
-
         details_container = QWidget()
         details_layout = QVBoxLayout(details_container)
         details_layout.setContentsMargins(0, 0, 0, 0)
         details_layout.addWidget(self.selected_node_label)
         details_layout.addWidget(self.selected_node_details, 1)
-        splitter.addWidget(details_container)
-        splitter.setSizes([1100, 320])
 
-        layout.addWidget(search_row)
-        layout.addWidget(subgraph_row)
-        layout.addWidget(weight_row)
-        layout.addWidget(layout_row)
-        layout.addWidget(splitter)
+        controls_container = QWidget()
+        controls_container_layout = QVBoxLayout(controls_container)
+        controls_container_layout.setContentsMargins(0, 0, 0, 0)
+        controls_container_layout.addWidget(search_row)
+        controls_container_layout.addWidget(subgraph_row)
+        controls_container_layout.addWidget(weight_row)
+        controls_container_layout.addWidget(layout_row)
+        controls_container_layout.addStretch(1)
+
+        bottom_splitter = QSplitter(Qt.Horizontal)
+        bottom_splitter.addWidget(details_container)
+        bottom_splitter.addWidget(controls_container)
+        bottom_splitter.setSizes([420, 680])
+
+        main_splitter = QSplitter(Qt.Vertical)
+        main_splitter.addWidget(self.graph_view)
+        main_splitter.addWidget(bottom_splitter)
+        main_splitter.setSizes([720, 360])
+
+        layout.addWidget(main_splitter)
         return tab
 
     def _build_info_tab(self) -> QWidget:
