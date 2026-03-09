@@ -38,6 +38,7 @@ def create_controls_bundle(parent) -> SimpleNamespace:
         summary_label=QLabel("Charge une sauvegarde Infinite Craft pour construire le graphe."),
         stage_label=QLabel("Idle"),
         candidate_status_label=QLabel("Statut combinaison : aucune"),
+        candidate_count_label=QLabel("Combinaisons candidates restantes : aucune save chargee"),
         current_candidate_details=QTextEdit(),
         summary_toggle_button=QPushButton("Afficher details"),
         summary_panel=QFrame(),
@@ -45,6 +46,7 @@ def create_controls_bundle(parent) -> SimpleNamespace:
     )
     bundle.summary_label.setWordWrap(True)
     bundle.candidate_status_label.setWordWrap(True)
+    bundle.candidate_count_label.setWordWrap(True)
     bundle.current_candidate_details.setReadOnly(True)
     bundle.current_candidate_details.setMaximumHeight(110)
     bundle.current_candidate_details.setPlainText("Aucune combinaison courante.")

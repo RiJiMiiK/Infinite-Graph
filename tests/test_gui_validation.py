@@ -35,6 +35,7 @@ def sample_result() -> dict[str, object]:
 
 def test_window_live_element_validation(qapp, sample_result) -> None:
     window = gui.InfiniteGraphWindow()
+    assert "aucune save chargee" in window.candidate_count_label.text()
 
     window.element1_edit.setText("water")
     window._validate_combination_inputs()
@@ -84,10 +85,12 @@ def test_window_summary_panel_toggle_and_generation_state(monkeypatch, qapp, sam
         {"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []},
         1.0,
     )
+    assert window.candidate_count_label.text().endswith("0")
     assert window.summary_panel.isHidden() is False
     assert window.summary_toggle_button.text() == "Masquer details"
 
     window._on_generation_failed("boom")
+    assert "aucune save chargee" in window.candidate_count_label.text()
     assert window.summary_panel.isHidden() is False
     assert window.summary_toggle_button.text() == "Masquer details"
     assert errors
@@ -176,6 +179,9 @@ def test_window_current_candidate_panel(qapp, sample_result) -> None:
     window.element1_edit.setText("Earth")
     window.element2_edit.setText("Fire")
     assert "Origine : manuelle" in window.current_candidate_details.toPlainText()
+    sample_result["missing"] = [("Water", "Wind"), ("Earth", "Earth")]
+    window._refresh_summary()
+    assert window.candidate_count_label.text().endswith("2")
     window.close()
 
 

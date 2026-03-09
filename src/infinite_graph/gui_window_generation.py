@@ -11,6 +11,17 @@ from .gui_state import build_summary_text, update_missing_statistics_for_pair
 
 
 class WindowGenerationMixin:
+    def _refresh_candidate_count(self) -> None:
+        if not self._current_result:
+            self.candidate_count_label.setText(
+                "Combinaisons candidates restantes : aucune save chargee"
+            )
+            return
+        self.candidate_count_label.setText(
+            "Combinaisons candidates restantes : "
+            f"{len(self._current_result['missing'])}"
+        )
+
     def _generate(self) -> None:
         gui_module = sys.modules[f"{__package__}.gui"]
         input_value = self.input_edit.text().strip()
@@ -74,6 +85,7 @@ class WindowGenerationMixin:
         self.suggestion_history_list.clear()
         self._update_element_completion([str(element) for element in result["elements"]])
         self._validate_combination_inputs()
+        self._refresh_candidate_count()
         self._set_candidate_buttons_enabled(True)
         self._on_generation_progress(
             INTERFACE_PROGRESS["Updating graph view"],
@@ -158,6 +170,7 @@ class WindowGenerationMixin:
             )
 
     def _on_generation_failed(self, message: str) -> None:
+        self._current_result = None
         self.summary_label.setText("La generation a echoue.")
         self.summary_panel.setVisible(True)
         self.summary_toggle_button.setText("Masquer details")
@@ -167,6 +180,7 @@ class WindowGenerationMixin:
         self._last_suggested_pair = None
         self._current_candidate_origin = None
         self._validate_combination_inputs()
+        self._refresh_candidate_count()
         self._set_candidate_buttons_enabled(False)
         self.discarded_model.update_rows([])
         self.candidate_status_label.setText(
@@ -215,6 +229,7 @@ class WindowGenerationMixin:
         if not self._current_result:
             return
         self.summary_label.setText(build_summary_text(self._current_result))
+        self._refresh_candidate_count()
 
     def _update_missing_statistics_for_pair(self, pair: tuple[str, str], delta: int) -> None:
         if not self._current_result:

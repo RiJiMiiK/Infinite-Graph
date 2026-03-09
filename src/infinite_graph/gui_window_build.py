@@ -51,6 +51,7 @@ class WindowBuildMixin:
         controls_layout.addRow("Element cible", self.focus_edit)
         controls_layout.addRow("Element 1 / Element 2", self._build_candidate_row())
         controls_layout.addRow("Statut", self.candidate_status_label)
+        controls_layout.addRow("Compteur", self.candidate_count_label)
         controls_layout.addRow("Current candidate", self.current_candidate_details)
         controls_layout.addRow("Historique", self._build_history_widget())
         controls_layout.addRow("", self._build_action_row())

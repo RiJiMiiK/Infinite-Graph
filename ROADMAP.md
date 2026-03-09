@@ -154,9 +154,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 
 - [x] Indiquer pourquoi une combinaison n'est plus proposee
 - [x] Ajouter un panneau `current candidate`
-- [ ] Proposer plusieurs `Cheapest` au lieu d'une seule
-- [ ] Proposer plusieurs `Random`
-- [ ] Afficher un compteur de combinaisons candidates restantes
+- [x] Afficher un compteur de combinaisons candidates restantes
 
 ## 12. Priorites recommandees
 
