@@ -59,3 +59,7 @@ def remove_discarded_pair(_save_path: Path | None, pair: tuple[str, str]) -> Non
     pairs = load_discarded_pairs()
     pairs.discard(tuple(sorted(pair)))
     _save_raw_store({"discarded": [list(values) for values in sorted(pairs)]})
+
+
+def clear_discarded_pairs(_save_path: Path | None = None) -> None:
+    _save_raw_store({"discarded": []})

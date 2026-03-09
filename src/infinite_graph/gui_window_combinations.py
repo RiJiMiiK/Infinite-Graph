@@ -313,3 +313,36 @@ class WindowCombinationsMixin:
             return
 
         self._restore_discarded_pair(pair)
+
+    def _reset_discarded_combinations(self) -> None:
+        if not self._current_result or self._current_save_path is None:
+            return
+        if not self._current_result["discarded_pairs"]:
+            QMessageBox.information(
+                self, "Information", "Aucune combinaison discardee a reinitialiser."
+            )
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Confirmation",
+            "Reinitialiser completement les combinaisons discardees ?",
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module.clear_discarded_pairs(self._current_save_path)
+        restored_pairs = sorted(self._current_result["discarded_pairs"])
+        self._current_result["discarded_pairs"].clear()
+        self._current_result["skipped_pairs"].difference_update(restored_pairs)
+        for pair in restored_pairs:
+            if (
+                pair not in self._current_result["known_pairs"]
+                and pair not in self._current_result["done_pairs"]
+                and pair not in self._current_result["missing"]
+            ):
+                self._current_result["missing"].append(pair)
+            self._update_missing_statistics_for_pair(pair, 1)
+        self._refresh_discarded_table()
+        self._refresh_summary()

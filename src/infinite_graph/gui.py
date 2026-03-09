@@ -19,6 +19,7 @@ from .analyzer import (
 )
 from .discard_store import (
     add_discarded_pair as _add_discarded_pair,
+    clear_discarded_pairs as _clear_discarded_pairs,
     remove_discarded_pair as _remove_discarded_pair,
 )
 
@@ -59,7 +60,7 @@ __all__ += ["build_subgraph_render_data", "build_weight_filtered_render_data", "
 __all__ += ["load_cached_layout", "main", "nx", "pg", "save_cached_layout"]
 __all__ += ["QFileDialog", "QListWidgetItem", "QMessageBox", "QThread", "Qt", "process_save"]
 __all__ += ["find_random_combination", "find_cheapest_combination"]
-__all__ += ["add_discarded_pair", "remove_discarded_pair"]
+__all__ += ["add_discarded_pair", "clear_discarded_pairs", "remove_discarded_pair"]
 
 PUBLIC_REEXPORTS = (LAYOUT_PROGRESS_END, _layout_cache_file, layout_cache_dir)
 PUBLIC_REEXPORTS += (load_cached_layout, nx, pg, save_cached_layout)
@@ -78,6 +79,7 @@ build_weight_filtered_render_data = _build_weight_filtered_render_data
 find_random_combination = _find_random_combination
 find_cheapest_combination = _find_cheapest_combination
 add_discarded_pair = _add_discarded_pair
+clear_discarded_pairs = _clear_discarded_pairs
 remove_discarded_pair = _remove_discarded_pair
 
 

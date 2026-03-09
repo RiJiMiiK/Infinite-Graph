@@ -65,3 +65,41 @@ def test_window_remove_selected_discarded_combination(monkeypatch, qapp, sample_
     assert ("Earth", "Wind") in sample_result["missing"]
     assert window.discarded_model.rowCount() == 0
     window.close()
+
+
+def test_window_reset_discarded_combinations(monkeypatch, qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    infos = []
+    cleared = []
+    monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "question",
+        lambda *args: gui.QMessageBox.StandardButton.No,
+    )
+    monkeypatch.setattr(gui, "clear_discarded_pairs", lambda path: cleared.append(path))
+
+    window._reset_discarded_combinations()
+    window._current_result = sample_result
+    window._current_save_path = Path("save.json")
+    window._refresh_discarded_table()
+    sample_result["statistics"]["missing_counts_by_result_weight"] = []
+
+    window._reset_discarded_combinations()
+    assert cleared == []
+    assert ("Earth", "Wind") in sample_result["discarded_pairs"]
+
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "question",
+        lambda *args: gui.QMessageBox.StandardButton.Yes,
+    )
+    window._reset_discarded_combinations()
+    assert cleared == [Path("save.json")]
+    assert sample_result["discarded_pairs"] == set()
+    assert ("Earth", "Wind") in sample_result["missing"]
+    assert window.discarded_model.rowCount() == 0
+
+    window._reset_discarded_combinations()
+    assert "Aucune combinaison discardee" in infos[-1][-1]
+    window.close()
