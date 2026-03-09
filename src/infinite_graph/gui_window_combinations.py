@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 
-from .analyzer import normalize_pair
+from .analyzer import candidate_result_weight, normalize_pair
 
 
 class WindowCombinationsMixin:
@@ -43,6 +43,67 @@ class WindowCombinationsMixin:
         left = self.element1_edit.text().strip()
         right = self.element2_edit.text().strip()
         self.candidate_status_label.setText(self._combination_status_message(left, right))
+        self.current_candidate_details.setPlainText(
+            self._current_candidate_details_text(left, right)
+        )
+
+    def _current_candidate_origin_label(self, left: str, right: str) -> str:
+        if not left or not right:
+            return "aucune"
+        if self._last_suggested_pair is None or self._current_candidate_origin is None:
+            return "manuelle"
+        current_pair = normalize_pair(left, right)
+        if current_pair != self._last_suggested_pair:
+            return "manuelle"
+        return self._current_candidate_origin
+
+    def _current_candidate_details_text(self, left: str, right: str) -> str:
+        if not left and not right:
+            return "Aucune combinaison courante."
+
+        lines = [f"Paire courante : {left or '?'} + {right or '?'}"]
+        lines.append(f"Origine : {self._current_candidate_origin_label(left, right)}")
+        lines.append(self._combination_status_message(left, right))
+        if not self._current_result:
+            lines.append("Poids resultat estime : indisponible sans save chargee.")
+            return "\n".join(lines)
+        if not left or not right:
+            lines.append("Poids resultat estime : indisponible tant que la paire est incomplete.")
+            return "\n".join(lines)
+        if (
+            left not in self._current_result["elements"]
+            or right not in self._current_result["elements"]
+        ):
+            lines.append("Poids resultat estime : indisponible avec un element introuvable.")
+            return "\n".join(lines)
+
+        estimated_weight = candidate_result_weight(
+            left,
+            right,
+            self._current_result["node_weights"],
+        )
+        lines.append(f"Poids resultat estime : {estimated_weight}")
+        lines.append(
+            "Encore dans l'index candidats : "
+            + (
+                "oui"
+                if normalize_pair(left, right) in self._current_result.get("candidate_pairs", [])
+                else "non"
+            )
+        )
+        return "\n".join(lines)
+
+    def _set_current_pair(
+        self,
+        pair: tuple[str, str],
+        origin: str,
+        suggestion_mode: str | None = None,
+    ) -> None:
+        self._last_suggested_pair = normalize_pair(pair[0], pair[1])
+        self._current_candidate_origin = origin
+        self.element1_edit.setText(pair[0])
+        self.element2_edit.setText(pair[1])
+        self._last_suggestion_mode = suggestion_mode
 
     def _indexed_candidate_allowed(self, pair: tuple[str, str], include_skipped: bool) -> bool:
         if not self._current_result:
@@ -145,8 +206,7 @@ class WindowCombinationsMixin:
     def _restore_history_suggestion(self, item: QListWidgetItem) -> None:
         pair = item.data(Qt.UserRole)
         if pair:
-            self.element1_edit.setText(str(pair[0]))
-            self.element2_edit.setText(str(pair[1]))
+            self._set_current_pair((str(pair[0]), str(pair[1])), "historique")
 
     def _pick_random_combination(self) -> None:
         gui_module = sys.modules[f"{__package__}.gui"]
@@ -175,9 +235,7 @@ class WindowCombinationsMixin:
         if pair is None:
             QMessageBox.information(self, "Information", "Aucune combinaison non faite disponible.")
             return
-        self.element1_edit.setText(pair[0])
-        self.element2_edit.setText(pair[1])
-        self._last_suggestion_mode = "random"
+        self._set_current_pair(pair, "suggestion random", suggestion_mode="random")
         self._record_suggestion(pair, "random")
 
     def _pick_cheapest_combination(self) -> None:
@@ -209,9 +267,7 @@ class WindowCombinationsMixin:
         if pair is None:
             QMessageBox.information(self, "Information", "Aucune combinaison non faite disponible.")
             return
-        self.element1_edit.setText(pair[0])
-        self.element2_edit.setText(pair[1])
-        self._last_suggestion_mode = "cheapest"
+        self._set_current_pair(pair, "suggestion cheapest", suggestion_mode="cheapest")
         self._record_suggestion(pair, "cheapest")
 
     def _pick_next_combination(self) -> None:

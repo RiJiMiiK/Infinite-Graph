@@ -41,6 +41,7 @@ def test_window_live_element_validation(qapp, sample_result) -> None:
     assert window.element1_edit.styleSheet() == ""
     assert window.element1_edit.toolTip() == ""
     assert "charge une save" in window.candidate_status_label.text()
+    assert "water + ?" in window.current_candidate_details.toPlainText()
 
     window._current_result = sample_result
     window.element1_edit.setText("water")
@@ -52,6 +53,7 @@ def test_window_live_element_validation(qapp, sample_result) -> None:
     assert "#dc2626" in window.element2_edit.styleSheet()
     assert "introuvable" in window.element2_edit.toolTip()
     assert "introuvable" in window.candidate_status_label.text()
+    assert "Origine : manuelle" in window.current_candidate_details.toPlainText()
 
     window.element1_edit.clear()
     window._validate_combination_inputs()
@@ -147,4 +149,37 @@ def test_window_combination_status_messages(qapp, sample_result) -> None:
     assert "marquee done" in window._combination_status_message("Earth", "Earth")
     assert "repoussee plus tard" in window._combination_status_message("Earth", "Water")
     assert "candidate encore proposable" in window._combination_status_message("Water", "Wind")
+    window.close()
+
+
+def test_window_current_candidate_panel(qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    assert "Aucune combinaison courante." in window.current_candidate_details.toPlainText()
+
+    window._current_result = sample_result
+    window._set_current_pair(("Water", "Wind"), "suggestion random", suggestion_mode="random")
+    panel_text = window.current_candidate_details.toPlainText()
+    assert "Paire courante : Water + Wind" in panel_text
+    assert "Origine : suggestion random" in panel_text
+    assert "Poids resultat estime : 1" in panel_text
+    assert "Encore dans l'index candidats : non" in panel_text
+
+    sample_result["candidate_pairs"] = [("Water", "Wind")]
+    window._validate_combination_inputs()
+    assert "Encore dans l'index candidats : oui" in window.current_candidate_details.toPlainText()
+
+    window._record_suggestion(("Earth", "Earth"), "cheapest")
+    history_item = window.suggestion_history_list.item(0)
+    window._restore_history_suggestion(history_item)
+    assert "Origine : historique" in window.current_candidate_details.toPlainText()
+
+    window.element1_edit.setText("Earth")
+    window.element2_edit.setText("Fire")
+    assert "Origine : manuelle" in window.current_candidate_details.toPlainText()
+    window.close()
+
+
+def test_window_build_selected_node_details_without_result(qapp) -> None:
+    window = gui.InfiniteGraphWindow()
+    assert window._build_selected_node_details("Ghost") == "Nom : Ghost"
     window.close()

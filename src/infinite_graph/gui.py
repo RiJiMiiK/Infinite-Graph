@@ -111,6 +111,8 @@ class InfiniteGraphWindow(
         self._full_render_data: dict[str, object] | None = None
         self._last_generation_elapsed_seconds = 0.0
         self._last_suggestion_mode: str | None = None
+        self._last_suggested_pair: tuple[str, str] | None = None
+        self._current_candidate_origin: str | None = None
 
         self._build_ui()
 

@@ -69,6 +69,8 @@ class WindowGenerationMixin:
         self._full_render_data = render_data
         self._last_generation_elapsed_seconds = max(0.0, float(elapsed_seconds))
         self._last_suggestion_mode = None
+        self._last_suggested_pair = None
+        self._current_candidate_origin = None
         self.suggestion_history_list.clear()
         self._update_element_completion([str(element) for element in result["elements"]])
         self._validate_combination_inputs()
@@ -162,12 +164,15 @@ class WindowGenerationMixin:
         self.progress_bar.setValue(0)
         self.stage_label.setText("Current step: failed (0%)")
         self._update_element_completion([])
+        self._last_suggested_pair = None
+        self._current_candidate_origin = None
         self._validate_combination_inputs()
         self._set_candidate_buttons_enabled(False)
         self.discarded_model.update_rows([])
         self.candidate_status_label.setText(
             "Statut combinaison : charge une save pour analyser une paire."
         )
+        self.current_candidate_details.setPlainText("Aucune combinaison courante.")
         QMessageBox.critical(self, "Erreur", message)
 
     def _cleanup_worker(self) -> None:

@@ -483,6 +483,7 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     window._on_generation_failed("bad")
     assert errors
     assert window.element_completer_model.stringList() == []
+    assert window.current_candidate_details.toPlainText() == "Aucune combinaison courante."
 
     fake_thread = _FakeThread()
     window._worker_thread = fake_thread
@@ -631,12 +632,6 @@ def test_window_suggestion_history(qapp, sample_result) -> None:
     for index in range(12):
         window._record_suggestion((f"Element {index}", "Earth"), "random")
     assert window.suggestion_history_list.count() == 10
-    window.close()
-
-
-def test_window_build_selected_node_details_without_result(qapp) -> None:
-    window = gui.InfiniteGraphWindow()
-    assert window._build_selected_node_details("Ghost") == "Nom : Ghost"
     window.close()
 
 
