@@ -75,8 +75,8 @@ def test_stats_canvas_updates_series(qapp) -> None:
 
 
 def test_build_graph_render_data_with_progress(monkeypatch) -> None:
-    def fake_spring_layout(graph, seed, k, iterations, pos=None):
-        del graph, seed, k, iterations, pos
+    def fake_spring_layout(graph, seed, k, iterations, pos=None, **kwargs):
+        del graph, seed, k, iterations, pos, kwargs
         return {"A": np.array([0.0, 0.0]), "B": np.array([1.0, 1.0])}
 
     monkeypatch.setattr(gui.nx, "spring_layout", fake_spring_layout)
@@ -120,8 +120,8 @@ def test_build_graph_render_data_uses_local_cache(monkeypatch, tmp_path: Path) -
     monkeypatch.setattr(gui, "layout_cache_dir", lambda: tmp_path / "layout-cache")
     spring_calls = []
 
-    def fake_spring_layout(graph, seed, k, iterations, pos=None):
-        del graph, seed, k, iterations, pos
+    def fake_spring_layout(graph, seed, k, iterations, pos=None, **kwargs):
+        del graph, seed, k, iterations, pos, kwargs
         spring_calls.append("called")
         return {"A": np.array([0.0, 0.0]), "B": np.array([1.0, 1.0])}
 

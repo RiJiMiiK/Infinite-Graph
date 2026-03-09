@@ -154,6 +154,7 @@ def _run_spring_layout(
     spring_scale: float,
     progress_callback: Callable[[int, str], None] | None,
 ) -> dict[str, np.ndarray]:
+    layout_graph, layout_kwargs = _spring_layout_strategy(graph, names, spring_scale)
     spring_positions = None
     started_at = time.perf_counter()
     if progress_callback is not None:
@@ -164,11 +165,10 @@ def _run_spring_layout(
     for current_iteration in range(0, total_iterations, batch_size):
         iterations = min(batch_size, total_iterations - current_iteration)
         spring_positions = nx.spring_layout(
-            graph,
-            seed=42,
-            k=None if len(names) < 2 else spring_scale / np.sqrt(len(names)),
+            layout_graph,
             iterations=iterations,
             pos=spring_positions,
+            **layout_kwargs,
         )
         if progress_callback is not None:
             completed = current_iteration + iterations
@@ -188,6 +188,23 @@ def _run_spring_layout(
             )
     assert spring_positions is not None
     return spring_positions
+
+
+def _spring_layout_strategy(
+    graph: nx.DiGraph,
+    names: list[str],
+    spring_scale: float,
+) -> tuple[nx.Graph, dict[str, object]]:
+    node_count = len(names)
+    layout_graph = graph.to_undirected(as_view=True)
+    layout_kwargs: dict[str, object] = {
+        "seed": 42,
+        "k": None if node_count < 2 else spring_scale / np.sqrt(node_count),
+    }
+    if node_count >= 300:
+        layout_kwargs["method"] = "energy"
+        layout_kwargs["threshold"] = 1e-3
+    return layout_graph, layout_kwargs
 
 
 def layout_cache_dir() -> Path:

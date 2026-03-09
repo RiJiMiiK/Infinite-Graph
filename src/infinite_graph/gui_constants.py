@@ -23,4 +23,4 @@ INTERFACE_PROGRESS = {
     "Updating statistics": 99,
     "Updating summary": 100,
 }
-LAYOUT_CACHE_VERSION = 1
+LAYOUT_CACHE_VERSION = 2
