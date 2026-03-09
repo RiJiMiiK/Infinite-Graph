@@ -40,6 +40,7 @@ def test_window_live_element_validation(qapp, sample_result) -> None:
     window._validate_combination_inputs()
     assert window.element1_edit.styleSheet() == ""
     assert window.element1_edit.toolTip() == ""
+    assert "charge une save" in window.candidate_status_label.text()
 
     window._current_result = sample_result
     window.element1_edit.setText("water")
@@ -50,11 +51,13 @@ def test_window_live_element_validation(qapp, sample_result) -> None:
     assert "Water" in window.element1_edit.toolTip()
     assert "#dc2626" in window.element2_edit.styleSheet()
     assert "introuvable" in window.element2_edit.toolTip()
+    assert "introuvable" in window.candidate_status_label.text()
 
     window.element1_edit.clear()
     window._validate_combination_inputs()
     assert window.element1_edit.styleSheet() == ""
     assert window.element1_edit.toolTip() == ""
+    assert "saisis ou genere" in window.candidate_status_label.text()
     window.close()
 
 
@@ -130,4 +133,18 @@ def test_window_indexed_candidate_helpers(qapp, sample_result, monkeypatch) -> N
     assert window._pick_random_indexed_candidate(include_skipped=True) == ("Earth", "Water")
     assert window._pick_cheapest_indexed_candidate(include_skipped=False) is None
     assert window._pick_cheapest_indexed_candidate(include_skipped=True) == ("Earth", "Water")
+    window.close()
+
+
+def test_window_combination_status_messages(qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    sample_result["done_pairs"] = {("Earth", "Earth")}
+    sample_result["skipped_pairs"] = {("Earth", "Water")}
+
+    assert "recette deja connue" in window._combination_status_message("Water", "Fire")
+    assert "discardee globalement" in window._combination_status_message("Earth", "Wind")
+    assert "marquee done" in window._combination_status_message("Earth", "Earth")
+    assert "repoussee plus tard" in window._combination_status_message("Earth", "Water")
+    assert "candidate encore proposable" in window._combination_status_message("Water", "Wind")
     window.close()

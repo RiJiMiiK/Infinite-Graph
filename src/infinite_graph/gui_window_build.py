@@ -23,10 +23,39 @@ class WindowBuildMixin:
         layout.setContentsMargins(14, 14, 14, 14)
         layout.setSpacing(10)
 
+        controls = self._build_controls_section()
+        layout.addWidget(controls)
+        layout.addWidget(self.stage_label)
+        self.summary_toggle_button.clicked.connect(self._toggle_summary_panel)
+        summary_panel_layout = QVBoxLayout(self.summary_panel)
+        summary_panel_layout.setContentsMargins(8, 8, 8, 8)
+        summary_panel_layout.addWidget(self.summary_label)
+        layout.addWidget(self.summary_toggle_button)
+        layout.addWidget(self.summary_panel)
+
+        tabs = QTabWidget()
+        tabs.addTab(self._build_graph_tab(), "Graphe")
+        tabs.addTab(self._build_info_tab(), "Infos")
+        tabs.addTab(self._build_stats_tab(), "Statistiques")
+        layout.addWidget(tabs, 1)
+
+        self.setCentralWidget(central)
+        self._set_candidate_buttons_enabled(False)
+        self._update_element_completion([])
+
+    def _build_controls_section(self) -> QWidget:
         controls = QWidget()
         controls_layout = QFormLayout(controls)
         controls_layout.setContentsMargins(0, 0, 0, 0)
+        controls_layout.addRow("Sauvegarde", self._build_file_row())
+        controls_layout.addRow("Element cible", self.focus_edit)
+        controls_layout.addRow("Element 1 / Element 2", self._build_candidate_row())
+        controls_layout.addRow("Statut", self.candidate_status_label)
+        controls_layout.addRow("Historique", self._build_history_widget())
+        controls_layout.addRow("", self._build_action_row())
+        return controls
 
+    def _build_file_row(self) -> QWidget:
         file_row = QWidget()
         file_row_layout = QHBoxLayout(file_row)
         file_row_layout.setContentsMargins(0, 0, 0, 0)
@@ -34,7 +63,9 @@ class WindowBuildMixin:
         browse_button.clicked.connect(self._pick_input)
         file_row_layout.addWidget(self.input_edit)
         file_row_layout.addWidget(browse_button)
+        return file_row
 
+    def _build_action_row(self) -> QWidget:
         action_row = QWidget()
         action_row_layout = QHBoxLayout(action_row)
         action_row_layout.setContentsMargins(0, 0, 0, 0)
@@ -53,7 +84,9 @@ class WindowBuildMixin:
         action_row_layout.addWidget(self.generate_button)
         action_row_layout.addWidget(self.progress_bar)
         action_row_layout.addStretch(1)
+        return action_row
 
+    def _build_candidate_row(self) -> QWidget:
         candidate_row = QWidget()
         candidate_row_layout = QHBoxLayout(candidate_row)
         candidate_row_layout.setContentsMargins(0, 0, 0, 0)
@@ -78,33 +111,12 @@ class WindowBuildMixin:
         candidate_row_layout.addWidget(self.undo_done_button)
         candidate_row_layout.addWidget(self.discard_button)
         candidate_row_layout.addWidget(self.undo_discard_button)
+        return candidate_row
+
+    def _build_history_widget(self) -> QWidget:
         self.suggestion_history_list.setMaximumHeight(120)
         self.suggestion_history_list.itemClicked.connect(self._restore_history_suggestion)
-
-        controls_layout.addRow("Sauvegarde", file_row)
-        controls_layout.addRow("Element cible", self.focus_edit)
-        controls_layout.addRow("Element 1 / Element 2", candidate_row)
-        controls_layout.addRow("Historique", self.suggestion_history_list)
-        controls_layout.addRow("", action_row)
-
-        layout.addWidget(controls)
-        layout.addWidget(self.stage_label)
-        self.summary_toggle_button.clicked.connect(self._toggle_summary_panel)
-        summary_panel_layout = QVBoxLayout(self.summary_panel)
-        summary_panel_layout.setContentsMargins(8, 8, 8, 8)
-        summary_panel_layout.addWidget(self.summary_label)
-        layout.addWidget(self.summary_toggle_button)
-        layout.addWidget(self.summary_panel)
-
-        tabs = QTabWidget()
-        tabs.addTab(self._build_graph_tab(), "Graphe")
-        tabs.addTab(self._build_info_tab(), "Infos")
-        tabs.addTab(self._build_stats_tab(), "Statistiques")
-        layout.addWidget(tabs, 1)
-
-        self.setCentralWidget(central)
-        self._set_candidate_buttons_enabled(False)
-        self._update_element_completion([])
+        return self.suggestion_history_list
 
     @staticmethod
     def _configure_element_completer(completer: QCompleter) -> None:

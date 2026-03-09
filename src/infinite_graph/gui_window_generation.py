@@ -165,6 +165,9 @@ class WindowGenerationMixin:
         self._validate_combination_inputs()
         self._set_candidate_buttons_enabled(False)
         self.discarded_model.update_rows([])
+        self.candidate_status_label.setText(
+            "Statut combinaison : charge une save pour analyser une paire."
+        )
         QMessageBox.critical(self, "Erreur", message)
 
     def _cleanup_worker(self) -> None:

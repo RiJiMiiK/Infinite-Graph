@@ -37,11 +37,13 @@ def create_controls_bundle(parent) -> SimpleNamespace:
         progress_bar=QProgressBar(),
         summary_label=QLabel("Charge une sauvegarde Infinite Craft pour construire le graphe."),
         stage_label=QLabel("Idle"),
+        candidate_status_label=QLabel("Statut combinaison : aucune"),
         summary_toggle_button=QPushButton("Afficher details"),
         summary_panel=QFrame(),
         suggestion_history_list=QListWidget(),
     )
     bundle.summary_label.setWordWrap(True)
+    bundle.candidate_status_label.setWordWrap(True)
     bundle.summary_panel.setFrameShape(QFrame.StyledPanel)
     bundle.summary_panel.setVisible(False)
     bundle.element1_completer = QCompleter(bundle.element_completer_model, parent)

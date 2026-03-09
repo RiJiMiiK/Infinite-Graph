@@ -11,6 +11,39 @@ from .analyzer import normalize_pair
 
 
 class WindowCombinationsMixin:
+    def _combination_known_status(self, pair: tuple[str, str]) -> str | None:
+        if pair in self._current_result["known_pairs"]:
+            return "Statut combinaison : recette deja connue dans la save."
+        if pair in self._current_result["discarded_pairs"]:
+            return "Statut combinaison : combinaison discardee globalement."
+        if pair in self._current_result["done_pairs"]:
+            return "Statut combinaison : combinaison marquee done pour cette session."
+        if pair in self._current_result["skipped_pairs"]:
+            return "Statut combinaison : combinaison repoussee plus tard dans la session."
+        return None
+
+    def _combination_status_message(self, left: str, right: str) -> str:
+        if not self._current_result:
+            return "Statut combinaison : charge une save pour analyser une paire."
+        if not left or not right:
+            return "Statut combinaison : saisis ou genere une combinaison."
+        if (
+            left not in self._current_result["elements"]
+            or right not in self._current_result["elements"]
+        ):
+            return "Statut combinaison : au moins un element est introuvable dans la save."
+
+        pair = normalize_pair(left, right)
+        known_status = self._combination_known_status(pair)
+        if known_status is not None:
+            return known_status
+        return "Statut combinaison : combinaison candidate encore proposable."
+
+    def _refresh_candidate_status(self) -> None:
+        left = self.element1_edit.text().strip()
+        right = self.element2_edit.text().strip()
+        self.candidate_status_label.setText(self._combination_status_message(left, right))
+
     def _indexed_candidate_allowed(self, pair: tuple[str, str], include_skipped: bool) -> bool:
         if not self._current_result:
             return False
@@ -65,6 +98,7 @@ class WindowCombinationsMixin:
     def _validate_combination_inputs(self, *_args) -> None:
         self._validate_element_input(self.element1_edit)
         self._validate_element_input(self.element2_edit)
+        self._refresh_candidate_status()
 
     def _validate_element_input(self, field) -> bool:
         if not self._current_result:
