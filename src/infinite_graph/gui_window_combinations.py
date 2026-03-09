@@ -9,6 +9,40 @@ from .analyzer import normalize_pair
 
 
 class WindowCombinationsMixin:
+    def _validate_combination_inputs(self, *_args) -> None:
+        self._validate_element_input(self.element1_edit)
+        self._validate_element_input(self.element2_edit)
+
+    def _validate_element_input(self, field) -> bool:
+        if not self._current_result:
+            field.setStyleSheet("")
+            field.setToolTip("")
+            return False
+
+        text = field.text().strip()
+        if not text:
+            field.setStyleSheet("")
+            field.setToolTip("")
+            return False
+
+        normalized = text.casefold()
+        matched_name = next(
+            (
+                element
+                for element in self._current_result["elements"]
+                if str(element).casefold() == normalized
+            ),
+            None,
+        )
+        if matched_name is None:
+            field.setStyleSheet("border: 1px solid #dc2626;")
+            field.setToolTip("Element introuvable dans la save.")
+            return False
+
+        field.setStyleSheet("border: 1px solid #16a34a;")
+        field.setToolTip(f"Element valide : {matched_name}")
+        return True
+
     def _record_suggestion(self, pair: tuple[str, str], mode: str) -> None:
         for index in range(self.suggestion_history_list.count()):
             item = self.suggestion_history_list.item(index)

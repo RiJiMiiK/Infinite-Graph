@@ -101,7 +101,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Bouton `Undo Discard`
 - [x] Bouton pour passer directement a la suggestion suivante
 - [x] Historique local des dernieres suggestions
-- [ ] Validation en direct des noms saisis
+- [x] Validation en direct des noms saisis
 
 ## 7. Persistance locale
 

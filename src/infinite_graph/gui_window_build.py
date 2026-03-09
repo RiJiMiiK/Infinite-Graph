@@ -62,6 +62,8 @@ class WindowBuildMixin:
         self.element2_edit.setReadOnly(False)
         self.element1_edit.setClearButtonEnabled(True)
         self.element2_edit.setClearButtonEnabled(True)
+        self.element1_edit.textChanged.connect(self._validate_combination_inputs)
+        self.element2_edit.textChanged.connect(self._validate_combination_inputs)
         self._configure_element_completer(self.element1_completer)
         self._configure_element_completer(self.element2_completer)
         self.element1_edit.setCompleter(self.element1_completer)
