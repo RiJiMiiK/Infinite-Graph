@@ -451,6 +451,7 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     window._on_generation_progress(42, "step")
     assert "step" in window.stage_label.text()
     assert window.progress_bar.value() == 42
+    window.suggestion_history_list.addItem("Random: Water + Earth")
     window._on_generation_finished(
         sample_result,
         {"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []},
@@ -463,6 +464,7 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
     assert "Water" in window.element_completer_model.stringList()
     assert window.progress_bar.value() == 100
+    assert window.suggestion_history_list.count() == 0
     assert "12.34s" in window.stage_label.text()
 
     warned_result = dict(sample_result)
@@ -501,6 +503,13 @@ def test_window_element_completion_setup_and_update(qapp) -> None:
     assert window.element1_completer.filterMode() == gui.Qt.MatchContains
     window._update_element_completion(["Steam", "water", "Fire"])
     assert window.element_completer_model.stringList() == ["Fire", "Steam", "water"]
+    window.close()
+
+
+def test_window_missing_attribute_raises(qapp) -> None:
+    window = gui.InfiniteGraphWindow()
+    with pytest.raises(AttributeError):
+        _ = window.missing_widget_name
     window.close()
 
 
@@ -596,6 +605,32 @@ def test_window_candidate_buttons_and_selection(monkeypatch, qapp, sample_result
     window._on_graph_node_selected(None)
     assert "aucun" in window.selected_node_label.text()
     assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
+    window.close()
+
+
+def test_window_suggestion_history(qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+
+    window._record_suggestion(("Water", "Earth"), "random")
+    window._record_suggestion(("Earth", "Earth"), "cheapest")
+    window._record_suggestion(("Water", "Earth"), "random")
+
+    assert window.suggestion_history_list.count() == 2
+    assert window.suggestion_history_list.item(0).text() == "Random: Water + Earth"
+    assert window.suggestion_history_list.item(1).text() == "Cheapest: Earth + Earth"
+
+    history_item = window.suggestion_history_list.item(1)
+    window._restore_history_suggestion(history_item)
+    assert window.element1_edit.text() == "Earth"
+    assert window.element2_edit.text() == "Earth"
+    window._restore_history_suggestion(gui.QListWidgetItem("Sans paire"))
+    assert window.element1_edit.text() == "Earth"
+    assert window.element2_edit.text() == "Earth"
+
+    for index in range(12):
+        window._record_suggestion((f"Element {index}", "Earth"), "random")
+    assert window.suggestion_history_list.count() == 10
     window.close()
 
 
