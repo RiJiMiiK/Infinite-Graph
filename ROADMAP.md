@@ -122,7 +122,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Suppression de l'export CSV
 - [x] Nettoyage de la documentation en consequence
 - [x] Nettoyer `.gitignore` si certains ignores ne servent plus
-- [ ] Verifier s'il reste des fichiers morts dans le repo
+- [x] Verifier s'il reste des fichiers morts dans le repo
 
 ## 9. Qualite logicielle
 
@@ -138,7 +138,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Tests GUI minimaux
 - [x] Ajout d'un formatter
 - [x] Ajout d'un linter
-- [ ] Ajout d'une CI GitHub Actions
+- [x] Ajout d'une CI GitHub Actions
 
 ## 10. Performance
 

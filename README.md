@@ -79,9 +79,13 @@ Politique de taille des modules :
 
 - alerte a partir de `800` lignes
 - echec a partir de `1000` lignes
-- exception documentee temporaire pour `src/infinite_graph/gui.py`
 
 Cette regle est une convention interne du projet inspiree par les objectifs de maintenabilite, modularite et analysabilite.
+
+CI actuelle :
+
+- GitHub Actions execute `pytest --cov --cov-report=term-missing`
+- GitHub Actions execute `pylint main.py src`
 
 ## Utilisation GUI
 
