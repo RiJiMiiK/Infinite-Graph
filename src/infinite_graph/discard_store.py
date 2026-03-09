@@ -35,8 +35,7 @@ def _normalize_pairs(raw_pairs: list[object]) -> set[tuple[str, str]]:
     return discarded
 
 
-def load_discarded_pairs(_save_path: Path | None = None) -> set[tuple[str, str]]:
-    raw = _load_raw_store()
+def _extract_pairs_from_raw_store(raw: dict[str, list[list[str]]]) -> set[tuple[str, str]]:
     # New format: {"discarded": [["A", "B"], ...]}
     if "discarded" in raw and isinstance(raw["discarded"], list):
         return _normalize_pairs(raw["discarded"])
@@ -47,6 +46,11 @@ def load_discarded_pairs(_save_path: Path | None = None) -> set[tuple[str, str]]
         if isinstance(value, list):
             merged.update(_normalize_pairs(value))
     return merged
+
+
+def load_discarded_pairs(_save_path: Path | None = None) -> set[tuple[str, str]]:
+    raw = _load_raw_store()
+    return _extract_pairs_from_raw_store(raw)
 
 
 def add_discarded_pair(_save_path: Path | None, pair: tuple[str, str]) -> None:
@@ -63,3 +67,24 @@ def remove_discarded_pair(_save_path: Path | None, pair: tuple[str, str]) -> Non
 
 def clear_discarded_pairs(_save_path: Path | None = None) -> None:
     _save_raw_store({"discarded": []})
+
+
+def export_discarded_pairs(destination_path: Path) -> None:
+    pairs = load_discarded_pairs()
+    payload = {
+        "discarded": [list(values) for values in sorted(pairs)],
+    }
+    destination_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def import_discarded_pairs(source_path: Path) -> set[tuple[str, str]]:
+    raw = json.loads(source_path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError("Le fichier importe doit contenir un objet JSON.")
+    imported_pairs = _extract_pairs_from_raw_store(raw)
+    merged_pairs = load_discarded_pairs() | imported_pairs
+    _save_raw_store({"discarded": [list(values) for values in sorted(merged_pairs)]})
+    return imported_pairs

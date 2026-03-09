@@ -232,10 +232,14 @@ class WindowBuildMixin:
             self._remove_selected_discarded_combination
         )
         self.reset_discarded_button.clicked.connect(self._reset_discarded_combinations)
+        self.export_discarded_button.clicked.connect(self._export_discarded_combinations)
+        self.import_discarded_button.clicked.connect(self._import_discarded_combinations)
         discarded_layout.addWidget(QLabel("Combinaisons discardees"))
         discarded_layout.addWidget(self.discarded_table)
         discarded_layout.addWidget(self.remove_discarded_button)
         discarded_layout.addWidget(self.reset_discarded_button)
+        discarded_layout.addWidget(self.export_discarded_button)
+        discarded_layout.addWidget(self.import_discarded_button)
 
         splitter = QSplitter(Qt.Vertical)
         splitter.addWidget(top_splitter)

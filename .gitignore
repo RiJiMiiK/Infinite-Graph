@@ -1,7 +1,7 @@
 __pycache__/
 .cache/
+.pytest_cache/
 *.pyc
 .venv/
-output/
 examples/
 .coverage

@@ -1,6 +1,7 @@
 """Combination suggestion helpers for the main window."""
 
 import sys
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
@@ -346,3 +347,52 @@ class WindowCombinationsMixin:
             self._update_missing_statistics_for_pair(pair, 1)
         self._refresh_discarded_table()
         self._refresh_summary()
+
+    def _export_discarded_combinations(self) -> None:
+        if not self._current_result or self._current_save_path is None:
+            return
+
+        gui_module = sys.modules[f"{__package__}.gui"]
+        path, _ = gui_module.QFileDialog.getSaveFileName(
+            self,
+            "Exporter les combinaisons discardees",
+            str(Path("discarded_export.json")),
+            "JSON (*.json);;Tous les fichiers (*)",
+        )
+        if not path:
+            return
+
+        gui_module.export_discarded_pairs(Path(path))
+        QMessageBox.information(self, "Information", "Export des discarded termine.")
+
+    def _import_discarded_combinations(self) -> None:
+        if not self._current_result or self._current_save_path is None:
+            return
+
+        gui_module = sys.modules[f"{__package__}.gui"]
+        path, _ = gui_module.QFileDialog.getOpenFileName(
+            self,
+            "Importer des combinaisons discardees",
+            "",
+            "JSON (*.json);;Tous les fichiers (*)",
+        )
+        if not path:
+            return
+
+        try:
+            imported_pairs = gui_module.import_discarded_pairs(Path(path))
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, "Erreur", str(exc))
+            return
+
+        new_pairs = imported_pairs - self._current_result["discarded_pairs"]
+        for pair in new_pairs:
+            self._current_result["discarded_pairs"].add(pair)
+            if pair in self._current_result["missing"]:
+                self._current_result["missing"].remove(pair)
+                self._update_missing_statistics_for_pair(pair, -1)
+        self._refresh_discarded_table()
+        self._refresh_summary()
+        QMessageBox.information(
+            self, "Information", f"{len(new_pairs)} combinaison(s) discardee(s) importee(s)."
+        )

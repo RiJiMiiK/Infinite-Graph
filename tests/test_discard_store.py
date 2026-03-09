@@ -57,3 +57,36 @@ def test_clear_discarded_pairs_rewrites_global_format(monkeypatch, tmp_path: Pat
     discard_store.add_discarded_pair(None, ("Water", "Earth"))
     discard_store.clear_discarded_pairs()
     assert json.loads(path.read_text(encoding="utf-8")) == {"discarded": []}
+
+
+def test_export_and_import_discarded_pairs(monkeypatch, tmp_path: Path) -> None:
+    store_path = tmp_path / "discarded.json"
+    export_path = tmp_path / "export.json"
+    import_path = tmp_path / "import.json"
+    monkeypatch.setattr(discard_store, "_discard_path", lambda: store_path)
+    discard_store.add_discarded_pair(None, ("Water", "Fire"))
+    discard_store.export_discarded_pairs(export_path)
+    assert json.loads(export_path.read_text(encoding="utf-8")) == {
+        "discarded": [["Fire", "Water"]]
+    }
+
+    import_path.write_text(
+        json.dumps({"discarded": [["Earth", "Wind"], ["Water", "Fire"]]}),
+        encoding="utf-8",
+    )
+    imported_pairs = discard_store.import_discarded_pairs(import_path)
+    assert imported_pairs == {("Earth", "Wind"), ("Fire", "Water")}
+    assert discard_store.load_discarded_pairs() == {("Earth", "Wind"), ("Fire", "Water")}
+
+
+def test_import_discarded_pairs_rejects_invalid_json_shape(monkeypatch, tmp_path: Path) -> None:
+    store_path = tmp_path / "discarded.json"
+    import_path = tmp_path / "import.json"
+    monkeypatch.setattr(discard_store, "_discard_path", lambda: store_path)
+    import_path.write_text("[]", encoding="utf-8")
+    try:
+        discard_store.import_discarded_pairs(import_path)
+    except ValueError as exc:
+        assert "objet JSON" in str(exc)
+    else:
+        raise AssertionError("ValueError expected for invalid imported JSON shape")

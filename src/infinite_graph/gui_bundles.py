@@ -79,6 +79,8 @@ def create_info_bundle() -> SimpleNamespace:
         discarded_table=QTableView(),
         remove_discarded_button=QPushButton("Supprimer la selection"),
         reset_discarded_button=QPushButton("Reset discarded"),
+        export_discarded_button=QPushButton("Exporter discarded"),
+        import_discarded_button=QPushButton("Importer discarded"),
     )
 
 

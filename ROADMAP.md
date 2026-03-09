@@ -112,7 +112,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Interface pour consulter les combinaisons discardees
 - [x] Suppression manuelle d'une combinaison discardee
 - [x] Reset complet du fichier `discarded.json`
-- [ ] Export / import manuel si besoin
+- [x] Export / import manuel si besoin
 
 ## 8. Nettoyage deja effectue
 
@@ -121,7 +121,7 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Suppression des assets web inutiles
 - [x] Suppression de l'export CSV
 - [x] Nettoyage de la documentation en consequence
-- [ ] Nettoyer `.gitignore` si certains ignores ne servent plus
+- [x] Nettoyer `.gitignore` si certains ignores ne servent plus
 - [ ] Verifier s'il reste des fichiers morts dans le repo
 
 ## 9. Qualite logicielle
