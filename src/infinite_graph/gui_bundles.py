@@ -77,6 +77,7 @@ def create_info_bundle() -> SimpleNamespace:
         node_table=QTableView(),
         edge_table=QTableView(),
         discarded_table=QTableView(),
+        remove_discarded_button=QPushButton("Supprimer la selection"),
     )
 
 

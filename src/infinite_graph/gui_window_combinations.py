@@ -9,6 +9,24 @@ from .analyzer import normalize_pair
 
 
 class WindowCombinationsMixin:
+    def _restore_discarded_pair(self, pair: tuple[str, str]) -> None:
+        if not self._current_result or self._current_save_path is None:
+            return
+
+        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module.remove_discarded_pair(self._current_save_path, pair)
+        self._current_result["discarded_pairs"].remove(pair)
+        self._current_result["skipped_pairs"].discard(pair)
+        if (
+            pair not in self._current_result["known_pairs"]
+            and pair not in self._current_result["done_pairs"]
+            and pair not in self._current_result["missing"]
+        ):
+            self._current_result["missing"].append(pair)
+        self._update_missing_statistics_for_pair(pair, 1)
+        self._refresh_discarded_table()
+        self._refresh_summary()
+
     def _validate_combination_inputs(self, *_args) -> None:
         self._validate_element_input(self.element1_edit)
         self._validate_element_input(self.element2_edit)
@@ -252,7 +270,6 @@ class WindowCombinationsMixin:
         )
 
     def _undo_current_combination_discard(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
         if not self._current_result or self._current_save_path is None:
             return
         left = self.element1_edit.text().strip()
@@ -272,17 +289,27 @@ class WindowCombinationsMixin:
         if pair not in self._current_result["discarded_pairs"]:
             QMessageBox.information(self, "Information", "Cette combinaison n'est pas discardee.")
             return
-        gui_module.remove_discarded_pair(self._current_save_path, pair)
-        self._current_result["discarded_pairs"].remove(pair)
-        self._current_result["skipped_pairs"].discard(pair)
-        if (
-            pair not in self._current_result["known_pairs"]
-            and pair not in self._current_result["done_pairs"]
-            and pair not in self._current_result["missing"]
-        ):
-            self._current_result["missing"].append(pair)
-        self._update_missing_statistics_for_pair(pair, 1)
-        self._refresh_discarded_table()
-        self._refresh_summary()
+        self._restore_discarded_pair(pair)
         self.element1_edit.clear()
         self.element2_edit.clear()
+
+    def _remove_selected_discarded_combination(self) -> None:
+        if not self._current_result or self._current_save_path is None:
+            return
+
+        selected_indexes = self.discarded_table.selectionModel().selectedRows()
+        if not selected_indexes:
+            QMessageBox.information(
+                self, "Information", "Selectionne d'abord une combinaison discardee."
+            )
+            return
+
+        row = selected_indexes[0].row()
+        left = self.discarded_model.data(self.discarded_model.index(row, 0))
+        right = self.discarded_model.data(self.discarded_model.index(row, 1))
+        pair = normalize_pair(str(left), str(right))
+        if pair not in self._current_result["discarded_pairs"]:
+            QMessageBox.information(self, "Information", "Cette combinaison n'est pas discardee.")
+            return
+
+        self._restore_discarded_pair(pair)

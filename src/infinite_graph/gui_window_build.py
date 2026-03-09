@@ -228,8 +228,12 @@ class WindowBuildMixin:
         discarded_container = QWidget()
         discarded_layout = QVBoxLayout(discarded_container)
         discarded_layout.setContentsMargins(0, 0, 0, 0)
+        self.remove_discarded_button.clicked.connect(
+            self._remove_selected_discarded_combination
+        )
         discarded_layout.addWidget(QLabel("Combinaisons discardees"))
         discarded_layout.addWidget(self.discarded_table)
+        discarded_layout.addWidget(self.remove_discarded_button)
 
         splitter = QSplitter(Qt.Vertical)
         splitter.addWidget(top_splitter)
