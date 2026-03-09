@@ -7,9 +7,7 @@ import pytest
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QMessageBox
-
 from src.infinite_graph import gui
-
 
 @pytest.fixture()
 def sample_result() -> dict[str, object]:
@@ -67,7 +65,6 @@ def test_copy_line_edit_copies_to_clipboard(qapp) -> None:
     )
     widget.mousePressEvent(event)
     assert qapp.clipboard().text() == "hello"
-
 
 def test_stats_canvas_updates_series(qapp) -> None:
     canvas = gui.StatsCanvas()
@@ -463,6 +460,9 @@ def test_window_generation_callbacks_and_cleanup(monkeypatch, qapp, sample_resul
     assert "Temps total de generation : 12.34s" in window.summary_label.text()
     assert "Aucun noeud selectionne" in window.selected_node_details.toPlainText()
     assert "Water" in window.element_completer_model.stringList()
+    assert window.discarded_model.rowCount() == 1
+    assert window.discarded_model.data(window.discarded_model.index(0, 0)) == "Earth"
+    assert window.discarded_model.data(window.discarded_model.index(0, 1)) == "Wind"
     assert window.progress_bar.value() == 100
     assert window.suggestion_history_list.count() == 0
     assert "12.34s" in window.stage_label.text()
@@ -918,6 +918,7 @@ def test_window_discard_branches(monkeypatch, qapp, sample_result) -> None:
     assert ("Earth", "Water") in sample_result["discarded_pairs"]
     assert sample_result["statistics"]["missing_counts_by_result_weight"] == [(1, 3)]
     assert window.missing_weight_list.count() == 1
+    assert window.discarded_model.rowCount() == 2
     assert window.element1_edit.text() == ""
     assert infos and warns
 
@@ -973,6 +974,9 @@ def test_window_undo_discard_branches(monkeypatch, qapp, sample_result) -> None:
     assert ("Earth", "Water") not in sample_result["discarded_pairs"]
     assert ("Earth", "Water") in sample_result["missing"]
     assert sample_result["statistics"]["missing_counts_by_result_weight"] == [(1, 2)]
+    assert window.discarded_model.rowCount() == 1
+    assert window.discarded_model.data(window.discarded_model.index(0, 0)) == "Earth"
+    assert window.discarded_model.data(window.discarded_model.index(0, 1)) == "Wind"
     assert window.element1_edit.text() == ""
     assert infos and warns
     window.close()

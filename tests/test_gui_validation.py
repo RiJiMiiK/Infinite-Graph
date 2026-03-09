@@ -86,3 +86,11 @@ def test_window_summary_panel_toggle_and_generation_state(monkeypatch, qapp, sam
     assert window.summary_toggle_button.text() == "Masquer details"
     assert errors
     window.close()
+
+
+def test_window_refresh_discarded_table_without_result(qapp) -> None:
+    window = gui.InfiniteGraphWindow()
+    window.discarded_model.update_rows([["Earth", "Wind"]])
+    window._refresh_discarded_table()
+    assert window.discarded_model.rowCount() == 0
+    window.close()

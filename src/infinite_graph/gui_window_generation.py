@@ -117,6 +117,7 @@ class WindowGenerationMixin:
                 ]
             )
         self.edge_model.update_rows(edge_rows)
+        self._refresh_discarded_table()
 
         statistics = result["statistics"]
         self._on_generation_progress(
@@ -163,6 +164,7 @@ class WindowGenerationMixin:
         self._update_element_completion([])
         self._validate_combination_inputs()
         self._set_candidate_buttons_enabled(False)
+        self.discarded_model.update_rows([])
         QMessageBox.critical(self, "Erreur", message)
 
     def _cleanup_worker(self) -> None:
@@ -192,6 +194,14 @@ class WindowGenerationMixin:
             self.missing_weight_list.addItem(
                 f"Poids {weight}: {count} recipes non faites possibles"
             )
+
+    def _refresh_discarded_table(self) -> None:
+        if not self._current_result:
+            self.discarded_model.update_rows([])
+            return
+
+        rows = [list(pair) for pair in sorted(self._current_result["discarded_pairs"])]
+        self.discarded_model.update_rows(rows)
 
     def _refresh_summary(self) -> None:
         if not self._current_result:

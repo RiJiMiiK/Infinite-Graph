@@ -73,8 +73,10 @@ def create_info_bundle() -> SimpleNamespace:
     return SimpleNamespace(
         node_model=ListTableModel(["Element", "Poids"]),
         edge_model=ListTableModel(["Source", "Cible", "Poids", "Liste d'elements"]),
+        discarded_model=ListTableModel(["Element 1", "Element 2"]),
         node_table=QTableView(),
         edge_table=QTableView(),
+        discarded_table=QTableView(),
     )
 
 

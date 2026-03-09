@@ -243,6 +243,7 @@ class WindowCombinationsMixin:
             item for item in self._current_result["missing"] if item != pair
         ]
         self._update_missing_statistics_for_pair(pair, -1)
+        self._refresh_discarded_table()
         self._refresh_summary()
         self.element1_edit.clear()
         self.element2_edit.clear()
@@ -281,6 +282,7 @@ class WindowCombinationsMixin:
         ):
             self._current_result["missing"].append(pair)
         self._update_missing_statistics_for_pair(pair, 1)
+        self._refresh_discarded_table()
         self._refresh_summary()
         self.element1_edit.clear()
         self.element2_edit.clear()

@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QCompleter,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
     QPushButton,
     QSplitter,
     QTabWidget,
@@ -210,16 +211,30 @@ class WindowBuildMixin:
         layout = QVBoxLayout(tab)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        splitter = QSplitter(Qt.Horizontal)
+        top_splitter = QSplitter(Qt.Horizontal)
         self.node_table.setModel(self.node_model)
         self.edge_table.setModel(self.edge_model)
+        self.discarded_table.setModel(self.discarded_model)
         self.node_table.setSortingEnabled(True)
         self.edge_table.setSortingEnabled(True)
+        self.discarded_table.setSortingEnabled(True)
         self.node_table.horizontalHeader().setStretchLastSection(True)
         self.edge_table.horizontalHeader().setStretchLastSection(True)
-        splitter.addWidget(self.node_table)
-        splitter.addWidget(self.edge_table)
-        splitter.setSizes([400, 900])
+        self.discarded_table.horizontalHeader().setStretchLastSection(True)
+        top_splitter.addWidget(self.node_table)
+        top_splitter.addWidget(self.edge_table)
+        top_splitter.setSizes([400, 900])
+
+        discarded_container = QWidget()
+        discarded_layout = QVBoxLayout(discarded_container)
+        discarded_layout.setContentsMargins(0, 0, 0, 0)
+        discarded_layout.addWidget(QLabel("Combinaisons discardees"))
+        discarded_layout.addWidget(self.discarded_table)
+
+        splitter = QSplitter(Qt.Vertical)
+        splitter.addWidget(top_splitter)
+        splitter.addWidget(discarded_container)
+        splitter.setSizes([700, 220])
         layout.addWidget(splitter)
         return tab
 
