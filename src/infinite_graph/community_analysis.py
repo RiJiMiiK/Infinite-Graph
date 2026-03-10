@@ -52,6 +52,18 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Async Fluid",
         "supports_directed": False,
         "supports_weighted": False,
+        "parameter_definitions": [
+            {
+                "name": "k",
+                "label": "K",
+                "type": "int",
+                "default": 2,
+                "minimum": 2,
+            },
+        ],
+        "default_parameters": {
+            "k": 2,
+        },
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",

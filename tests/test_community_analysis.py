@@ -135,6 +135,19 @@ def test_algorithm_visibility_rules_for_unix_platform(monkeypatch) -> None:
 
 
 def test_get_mono_community_algorithm_parameters() -> None:
+    async_fluid_parameters = community_analysis.get_mono_community_algorithm_parameters(
+        "async_fluid"
+    )
+    assert async_fluid_parameters == [
+        {
+            "name": "k",
+            "label": "K",
+            "type": "int",
+            "default": 2,
+            "minimum": 2,
+        }
+    ]
+
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
     assert agdl_parameters == [
         {
@@ -234,6 +247,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("agdl", graph, kwargs))
         return "agdl-result"
 
+    def fake_async_fluid(graph, **kwargs):
+        calls.append(("async_fluid", graph, kwargs))
+        return "async-fluid-result"
+
     def fake_leiden(graph, **kwargs):
         calls.append(("leiden", graph, kwargs))
         return "leiden-result"
@@ -246,6 +263,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     monkeypatch.setattr(community_analysis.algorithms, "rb_pots", fake_rb_pots)
     monkeypatch.setattr(community_analysis.algorithms, "threshold_clustering", fake_threshold)
     monkeypatch.setattr(community_analysis.algorithms, "agdl", fake_agdl)
+    monkeypatch.setattr(community_analysis.algorithms, "async_fluid", fake_async_fluid)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
         community_analysis.algorithms,
@@ -267,6 +285,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         == "threshold-result"
     )
     assert community_analysis.run_mono_community_algorithm(graph, "agdl") == "agdl-result"
+    assert (
+        community_analysis.run_mono_community_algorithm(graph, "async_fluid")
+        == "async-fluid-result"
+    )
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
     assert (
         community_analysis.run_mono_community_algorithm(
@@ -282,11 +304,14 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[1][2] == {"weights": "weight"}
     assert "threshold_function" in calls[2][2]
     assert calls[3][2] == {"number_communities": 3, "kc": 2}
+    assert calls[4][0] == "async_fluid"
     assert isinstance(calls[4][1], nx.Graph)
-    assert calls[4][2] == {"weights": "weight"}
-    assert calls[5][0] == "label_propagation"
+    assert calls[4][2] == {"k": 2}
     assert isinstance(calls[5][1], nx.Graph)
-    assert calls[5][2] == {}
+    assert calls[5][2] == {"weights": "weight"}
+    assert calls[6][0] == "label_propagation"
+    assert isinstance(calls[6][1], nx.Graph)
+    assert calls[6][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

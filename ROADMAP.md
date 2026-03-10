@@ -222,7 +222,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Expose `Spectral` in the algorithm selector
 - [x] Expose `Threshold Clustering` in the algorithm selector
 - [x] Integrate `AGDL` execution from the `Communities` tab
-- [ ] Integrate `Async Fluid` execution from the `Communities` tab
+- [x] Integrate `Async Fluid` execution from the `Communities` tab
 - [ ] Integrate `Bayan` execution from the `Communities` tab
 - [ ] Integrate `Belief` execution from the `Communities` tab
 - [ ] Integrate `CPM` execution from the `Communities` tab

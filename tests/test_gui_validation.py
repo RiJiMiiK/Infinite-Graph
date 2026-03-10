@@ -387,6 +387,12 @@ def test_window_community_parameters_visibility_updates_with_algorithm_selection
     window = gui.InfiniteGraphWindow()
 
     window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("async_fluid")
+    )
+    assert window.community_parameters_group.isHidden() is False
+    assert set(window._community_parameter_inputs) == {"k"}
+
+    window.community_algorithm_combo.setCurrentIndex(
         window.community_algorithm_combo.findData("agdl")
     )
     assert window.community_parameters_group.isHidden() is False
@@ -397,6 +403,55 @@ def test_window_community_parameters_visibility_updates_with_algorithm_selection
     )
     assert window.community_parameters_group.isHidden() is True
     assert window._community_parameter_inputs == {}
+    window.close()
+
+
+def test_window_compute_communities_supports_async_fluid_parameters(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("async_fluid")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="Fluid",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "Fluid",
+            "parameters": result.method_parameters,
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+
+    window._community_parameter_inputs["k"].setValue(3)
+    window._compute_communities()
+
+    assert calls == [(sample_result["community_graph"], "async_fluid", {"k": 3})]
+    assert "Algorithm: Async Fluid" in window.community_summary_label.text()
+    assert "Method name: Fluid" in window.community_summary_label.text()
+    assert "Parameters:" in window.community_summary_label.text()
+    assert "k=3" in window.community_summary_label.text()
     window.close()
 
 
