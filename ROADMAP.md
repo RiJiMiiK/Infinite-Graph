@@ -179,18 +179,49 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Add a `Communities` tab to the interface
 - [x] Add a mono-community algorithm selector
 - [x] Evaluate the relevant mono-community CDlib algorithms for the directed weighted graph
-- [x] Offer `Infomap`
-- [x] Offer `RB Pots`
-- [x] Offer `Threshold Clustering`
-- [x] Offer `AGDL`
-- [x] Evaluate `Leiden`
-- [x] Evaluate `Louvain`
-- [x] Evaluate `PyCombo`
-- [x] Evaluate `Walktrap`
-- [x] Evaluate `Greedy Modularity`
-- [x] Evaluate `Label Propagation Raghavan`
 - [x] Keep less compatible algorithms available with graph adaptation and user warnings
 - [x] Document compatibility notes for every mono-community algorithm
+- [ ] Build a complete compatibility matrix for all available CDlib crisp mono-community algorithms
+- [ ] Offer `AGDL`
+- [ ] Offer `Async Fluid`
+- [ ] Offer `Bayan`
+- [ ] Offer `Belief`
+- [ ] Offer `CPM`
+- [ ] Offer `DER`
+- [ ] Offer `Eigenvector`
+- [ ] Offer `EM`
+- [ ] Offer `GA`
+- [ ] Offer `GDMP2`
+- [ ] Offer `Girvan-Newman`
+- [ ] Offer `Greedy Modularity`
+- [ ] Offer `Head/Tail`
+- [ ] Offer `Infomap`
+- [ ] Offer `Kcut`
+- [ ] Offer `Label Propagation Raghavan`
+- [ ] Offer `Label Propagation Cordasco-Gargano`
+- [ ] Offer `Leiden`
+- [ ] Offer `Louvain`
+- [ ] Offer `LSWL`
+- [ ] Offer `LSWL Plus`
+- [ ] Offer `Markov Clustering`
+- [ ] Offer `MCODE`
+- [ ] Offer `Mod M`
+- [ ] Offer `Mod R`
+- [ ] Offer `Paris`
+- [ ] Offer `PyCombo`
+- [ ] Offer `RBER Pots`
+- [ ] Offer `RB Pots`
+- [ ] Offer `Ricci Community`
+- [ ] Offer `R Spectral Clustering`
+- [ ] Offer `SCAN`
+- [ ] Offer `Significance Communities`
+- [ ] Offer `Spinglass`
+- [ ] Offer `Surprise Communities`
+- [ ] Offer `Walktrap`
+- [ ] Offer `SBM DL`
+- [ ] Offer `SBM DL Nested`
+- [ ] Offer `Spectral`
+- [ ] Offer `Threshold Clustering`
 - [ ] Allow running community detection from the GUI
 - [ ] Show progress or at least a running state during computation
 - [ ] Add a `Communities` panel or full tab content area
