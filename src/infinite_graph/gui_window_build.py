@@ -35,9 +35,11 @@ class WindowBuildMixin:
         self.summary_toggle_button.clicked.connect(self._toggle_summary_panel)
 
         tabs = QTabWidget()
+        self._main_tabs = tabs
         tabs.addTab(self._build_graph_tab(), "Graph")
         tabs.addTab(self._build_info_tab(), "Info")
         tabs.addTab(self._build_stats_tab(), "Statistics")
+        tabs.addTab(self._build_communities_tab(), "Communities")
         layout.addWidget(tabs, 1)
 
         self.setCentralWidget(central)
@@ -559,6 +561,45 @@ class WindowBuildMixin:
         layout.addWidget(self.stats_overview_group)
         layout.addWidget(self.stats_canvas, 2)
         layout.addWidget(self.missing_weight_group, 1)
+        return tab
+
+    def _build_communities_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
+
+        community_mode_layout = QVBoxLayout(self.community_mode_group)
+        community_mode_layout.setContentsMargins(12, 12, 12, 12)
+        community_mode_layout.addWidget(self.mono_community_mode_label)
+        community_mode_layout.addWidget(self.community_algorithm_label)
+        community_mode_layout.addWidget(self.community_compute_button)
+        community_mode_layout.addStretch(1)
+
+        summary_layout = QVBoxLayout(self.community_summary_group)
+        summary_layout.setContentsMargins(12, 12, 12, 12)
+        summary_layout.addWidget(self.community_summary_label)
+
+        community_list_layout = QVBoxLayout(self.community_list_group)
+        community_list_layout.setContentsMargins(12, 12, 12, 12)
+        self.community_list.setAlternatingRowColors(True)
+        community_list_layout.addWidget(self.community_list)
+
+        community_details_layout = QVBoxLayout(self.community_details_group)
+        community_details_layout.setContentsMargins(12, 12, 12, 12)
+        community_details_layout.addWidget(self.community_details)
+
+        bottom_splitter = QSplitter(Qt.Horizontal)
+        bottom_splitter.addWidget(self.community_list_group)
+        bottom_splitter.addWidget(self.community_details_group)
+        bottom_splitter.setSizes([420, 760])
+
+        top_row = QHBoxLayout()
+        top_row.addWidget(self.community_mode_group, 1)
+        top_row.addWidget(self.community_summary_group, 2)
+
+        layout.addLayout(top_row)
+        layout.addWidget(bottom_splitter, 1)
         return tab
 
     @staticmethod

@@ -28,6 +28,7 @@ from .discard_store import (
 )
 
 from .gui_bundles import (
+    create_communities_bundle,
     create_controls_bundle,
     create_graph_bundle,
     create_info_bundle,
@@ -267,6 +268,7 @@ class InfiniteGraphWindow(
         self.graph_ui = create_graph_bundle()
         self.info_ui = create_info_bundle()
         self.stats_ui = create_stats_bundle()
+        self.communities_ui = create_communities_bundle()
         self._worker_thread: QThread | None = None
         self._worker: GenerateWorker | None = None
         self._current_result: dict[str, object] | None = None
@@ -283,7 +285,7 @@ class InfiniteGraphWindow(
         self._load_ui_preferences_state()
 
     def __getattr__(self, name: str) -> object:
-        for bundle_name in ("controls", "graph_ui", "info_ui", "stats_ui"):
+        for bundle_name in ("controls", "graph_ui", "info_ui", "stats_ui", "communities_ui"):
             bundle = self.__dict__.get(bundle_name)
             if bundle is not None and hasattr(bundle, name):
                 return getattr(bundle, name)

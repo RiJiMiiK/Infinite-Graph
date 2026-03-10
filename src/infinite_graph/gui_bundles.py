@@ -130,3 +130,23 @@ def create_stats_bundle() -> SimpleNamespace:
     bundle.node_weight_summary_label.setWordWrap(True)
     bundle.missing_recipe_summary_label.setWordWrap(True)
     return bundle
+
+
+def create_communities_bundle() -> SimpleNamespace:
+    bundle = SimpleNamespace(
+        community_mode_group=QGroupBox("Community analysis"),
+        mono_community_mode_label=QLabel("Mode: Mono-community"),
+        community_algorithm_label=QLabel("Algorithm: not selected"),
+        community_compute_button=QPushButton("Compute communities"),
+        community_summary_group=QGroupBox("Community summary"),
+        community_summary_label=QLabel("No community analysis has been run yet."),
+        community_list_group=QGroupBox("Detected communities"),
+        community_list=QListWidget(),
+        community_details_group=QGroupBox("Selected community"),
+        community_details=QTextEdit(),
+    )
+    bundle.community_summary_label.setWordWrap(True)
+    bundle.community_compute_button.setEnabled(False)
+    bundle.community_details.setReadOnly(True)
+    bundle.community_details.setPlainText("No community selected.")
+    return bundle

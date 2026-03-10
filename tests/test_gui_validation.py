@@ -284,3 +284,18 @@ def test_window_ui_preferences_roundtrip(qapp, monkeypatch) -> None:
     assert stored_preferences["layout_scale"] == "2.5"
     assert "graph_main_splitter_sizes" in stored_preferences
     window.close()
+
+
+def test_window_has_communities_tab(qapp) -> None:
+    window = gui.InfiniteGraphWindow()
+    tab_titles = [window._main_tabs.tabText(index) for index in range(window._main_tabs.count())]
+    assert tab_titles == ["Graph", "Info", "Statistics", "Communities"]
+    assert window.community_mode_group.title() == "Community analysis"
+    assert window.community_summary_group.title() == "Community summary"
+    assert window.community_list_group.title() == "Detected communities"
+    assert window.community_details_group.title() == "Selected community"
+    assert window.community_compute_button.text() == "Compute communities"
+    assert window.community_compute_button.isEnabled() is False
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
+    assert window.community_details.toPlainText() == "No community selected."
+    window.close()
