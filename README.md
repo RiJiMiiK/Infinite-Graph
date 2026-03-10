@@ -321,4 +321,4 @@ Planned direction:
 - graph coloring by community
 - hierarchical community-aware graph layout
 
-See [ROADMAP.md](/c:/Users/youen/OneDrive/Bureau/Infinite_Graph/ROADMAP.md) for the current plan.
+See [ROADMAP.md](ROADMAP.md) for the current plan.
