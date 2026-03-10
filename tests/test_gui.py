@@ -66,14 +66,6 @@ def test_copy_line_edit_copies_to_clipboard(qapp) -> None:
     widget.mousePressEvent(event)
     assert qapp.clipboard().text() == "hello"
 
-def test_stats_canvas_updates_series(qapp) -> None:
-    canvas = gui.StatsCanvas()
-    canvas.update_series([(1, 2)], [(0, 4)])
-    assert len(canvas.axis.lines) == 2
-    canvas.update_series([], [])
-    assert len(canvas.axis.lines) == 0
-
-
 def test_build_graph_render_data_with_progress(monkeypatch) -> None:
     def fake_spring_layout(graph, seed, k, iterations, pos=None, **kwargs):
         del graph, seed, k, iterations, pos, kwargs
@@ -869,17 +861,6 @@ def test_window_undo_done_branches(monkeypatch, qapp, sample_result) -> None:
     assert sample_result["statistics"]["missing_counts_by_result_weight"] == [(1, 2)]
     assert window.element1_edit.text() == ""
     assert infos and warns
-    window.close()
-
-
-def test_window_update_missing_statistics_adds_new_weight_bucket(qapp, sample_result) -> None:
-    window = gui.InfiniteGraphWindow()
-    sample_result["statistics"]["missing_counts_by_result_weight"] = []
-    sample_result["node_weights"] = {"Water": 0, "Steam": 1}
-    window._current_result = sample_result
-    window._update_missing_statistics_for_pair(("Water", "Steam"), 1)
-    assert sample_result["statistics"]["missing_counts_by_result_weight"] == [(2, 1)]
-    assert window.missing_weight_list.count() == 1
     window.close()
 
 

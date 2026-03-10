@@ -535,10 +535,39 @@ class WindowBuildMixin:
     def _build_stats_tab(self) -> QWidget:
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
+
+        overview_layout = QHBoxLayout(self.stats_overview_group)
+        overview_layout.setContentsMargins(12, 12, 12, 12)
+        overview_layout.setSpacing(12)
+        overview_layout.addWidget(
+            self._build_stats_card("Recipes", self.recipe_weight_summary_label)
+        )
+        overview_layout.addWidget(
+            self._build_stats_card("Elements", self.node_weight_summary_label)
+        )
+        overview_layout.addWidget(
+            self._build_stats_card("Missing", self.missing_recipe_summary_label)
+        )
+
+        missing_group_layout = QVBoxLayout(self.missing_weight_group)
+        missing_group_layout.setContentsMargins(12, 12, 12, 12)
+        missing_group_layout.addWidget(self.missing_weight_list)
+        self.missing_weight_list.setAlternatingRowColors(True)
+
+        layout.addWidget(self.stats_overview_group)
         layout.addWidget(self.stats_canvas, 2)
-        layout.addWidget(self.missing_weight_list, 1)
+        layout.addWidget(self.missing_weight_group, 1)
         return tab
+
+    @staticmethod
+    def _build_stats_card(title: str, value_label) -> QWidget:
+        card = QGroupBox(title)
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(12, 10, 12, 10)
+        card_layout.addWidget(value_label)
+        return card
 
     def _pick_input(self) -> None:
         gui_module = sys.modules[f"{__package__}.gui"]

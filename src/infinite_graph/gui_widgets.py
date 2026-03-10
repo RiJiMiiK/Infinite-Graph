@@ -20,6 +20,8 @@ class StatsCanvas(FigureCanvasQTAgg):
         self.figure = Figure(figsize=(8, 4), dpi=100)
         self.axis = self.figure.add_subplot(111)
         super().__init__(self.figure)
+        self.figure.patch.set_facecolor("#0f172a")
+        self.axis.set_facecolor("#09111f")
 
     def update_series(
         self,
@@ -27,25 +29,44 @@ class StatsCanvas(FigureCanvasQTAgg):
         node_series: list[tuple[int, int]],
     ) -> None:
         self.axis.clear()
+        self.figure.patch.set_facecolor("#0f172a")
+        self.axis.set_facecolor("#09111f")
         if recipe_series:
             self.axis.plot(
                 [weight for weight, _ in recipe_series],
                 [count for _, count in recipe_series],
-                label="Recipes faites par poids du resultat",
-                color="#dc2626",
+                label="Recipes by result weight",
+                color="#f97316",
+                linewidth=2.2,
+                marker="o",
+                markersize=4,
             )
         if node_series:
             self.axis.plot(
                 [weight for weight, _ in node_series],
                 [count for _, count in node_series],
-                label="Elements par poids",
-                color="#2563eb",
+                label="Elements by weight",
+                color="#38bdf8",
+                linewidth=2.2,
+                marker="o",
+                markersize=4,
             )
-        self.axis.set_xlabel("Poids")
-        self.axis.set_ylabel("Nombre")
-        self.axis.grid(True, alpha=0.2)
+        self.axis.set_title("Craft progression overview", color="#e2e8f0", pad=14)
+        self.axis.set_xlabel("Weight", color="#cbd5e1")
+        self.axis.set_ylabel("Count", color="#cbd5e1")
+        self.axis.grid(True, alpha=0.18, color="#475569", linestyle="--", linewidth=0.8)
+        self.axis.tick_params(axis="both", colors="#cbd5e1")
+        for spine in self.axis.spines.values():
+            spine.set_color("#334155")
         if recipe_series or node_series:
-            self.axis.legend()
+            legend = self.axis.legend(
+                loc="upper left",
+                frameon=True,
+                facecolor="#0f172a",
+                edgecolor="#334155",
+            )
+            for text in legend.get_texts():
+                text.set_color("#e2e8f0")
         self.figure.tight_layout()
         self.draw()
 

@@ -11,6 +11,34 @@ from .gui_state import build_summary_text, update_missing_statistics_for_pair
 
 
 class WindowGenerationMixin:
+    def _refresh_statistics_overview(self) -> None:
+        if not self._current_result:
+            self.recipe_weight_summary_label.setText("Recipe series: no data")
+            self.node_weight_summary_label.setText("Element series: no data")
+            self.missing_recipe_summary_label.setText("Missing recipes: no data")
+            return
+
+        statistics = self._current_result.get("statistics", {})
+        recipe_series = statistics.get("recipe_counts_by_result_weight", [])
+        node_series = statistics.get("node_counts_by_weight", [])
+        missing_series = statistics.get("missing_counts_by_result_weight", [])
+
+        self.recipe_weight_summary_label.setText(
+            "Recipe series: "
+            f"{len(recipe_series)} weight bucket(s), "
+            f"{sum(count for _, count in recipe_series)} total recipe(s)"
+        )
+        self.node_weight_summary_label.setText(
+            "Element series: "
+            f"{len(node_series)} weight bucket(s), "
+            f"{sum(count for _, count in node_series)} total element(s)"
+        )
+        self.missing_recipe_summary_label.setText(
+            "Missing recipes: "
+            f"{sum(count for _, count in missing_series)} candidate(s) across "
+            f"{len(missing_series)} weight bucket(s)"
+        )
+
     def _refresh_candidate_count(self) -> None:
         if not self._current_result:
             self.candidate_count_label.setText(
@@ -142,10 +170,11 @@ class WindowGenerationMixin:
             statistics["recipe_counts_by_result_weight"],
             statistics["node_counts_by_weight"],
         )
+        self._refresh_statistics_overview()
         self.missing_weight_list.clear()
         for weight, count in statistics["missing_counts_by_result_weight"]:
             self.missing_weight_list.addItem(
-                f"Weight {weight}: {count} possible missing recipes"
+                f"Result weight {weight}: {count} possible missing recipe(s)"
             )
 
         self._on_generation_progress(
@@ -187,6 +216,7 @@ class WindowGenerationMixin:
             "Combination status: load a save to analyze a pair."
         )
         self.current_candidate_details.setPlainText("No current combination.")
+        self._refresh_statistics_overview()
         QMessageBox.critical(self, "Error", message)
 
     def _cleanup_worker(self) -> None:
@@ -214,8 +244,9 @@ class WindowGenerationMixin:
         self.missing_weight_list.clear()
         for weight, count in self._current_result["statistics"]["missing_counts_by_result_weight"]:
             self.missing_weight_list.addItem(
-                f"Weight {weight}: {count} possible missing recipes"
+                f"Result weight {weight}: {count} possible missing recipe(s)"
             )
+        self._refresh_statistics_overview()
 
     def _refresh_discarded_table(self) -> None:
         if not self._current_result:

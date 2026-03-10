@@ -104,11 +104,19 @@ def test_window_summary_panel_toggle_and_generation_state(monkeypatch, qapp, sam
         1.0,
     )
     assert window.candidate_count_label.text().endswith("0")
+    assert "0 weight bucket(s)" in window.recipe_weight_summary_label.text()
+    assert "0 total element(s)" in window.node_weight_summary_label.text()
+    assert "0 candidate(s)" in window.missing_recipe_summary_label.text()
+    assert window.missing_weight_group.title() == "Missing recipes by result weight"
+    assert window.missing_weight_list.count() == 0
     assert window.summary_panel.isHidden() is False
     assert window.summary_toggle_button.text() == "Hide details"
 
     window._on_generation_failed("boom")
     assert "no save loaded" in window.candidate_count_label.text()
+    assert window.recipe_weight_summary_label.text() == "Recipe series: no data"
+    assert window.node_weight_summary_label.text() == "Element series: no data"
+    assert window.missing_recipe_summary_label.text() == "Missing recipes: no data"
     assert window.summary_panel.isHidden() is False
     assert window.summary_toggle_button.text() == "Hide details"
     assert errors

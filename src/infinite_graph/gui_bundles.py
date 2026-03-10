@@ -6,6 +6,7 @@ from PySide6.QtCore import QStringListModel
 from PySide6.QtWidgets import (
     QCompleter,
     QFrame,
+    QGroupBox,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -116,7 +117,16 @@ def create_info_bundle() -> SimpleNamespace:
 
 
 def create_stats_bundle() -> SimpleNamespace:
-    return SimpleNamespace(
+    bundle = SimpleNamespace(
         stats_canvas=StatsCanvas(),
         missing_weight_list=QListWidget(),
+        stats_overview_group=QGroupBox("Overview"),
+        recipe_weight_summary_label=QLabel("Recipe series: no data"),
+        node_weight_summary_label=QLabel("Element series: no data"),
+        missing_recipe_summary_label=QLabel("Missing recipes: no data"),
+        missing_weight_group=QGroupBox("Missing recipes by result weight"),
     )
+    bundle.recipe_weight_summary_label.setWordWrap(True)
+    bundle.node_weight_summary_label.setWordWrap(True)
+    bundle.missing_recipe_summary_label.setWordWrap(True)
+    return bundle
