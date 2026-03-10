@@ -26,6 +26,10 @@ from .discard_store import (
     import_discarded_pairs as _import_discarded_pairs,
     remove_discarded_pair as _remove_discarded_pair,
 )
+from .community_analysis import (
+    get_default_mono_community_algorithm as _get_default_mono_community_algorithm,
+    get_mono_community_algorithms as _get_mono_community_algorithms,
+)
 
 from .gui_bundles import (
     create_communities_bundle,
@@ -74,6 +78,7 @@ __all__ += ["find_random_combination", "find_cheapest_combination"]
 __all__ += ["add_discarded_pair", "clear_discarded_pairs", "export_discarded_pairs"]
 __all__ += ["import_discarded_pairs", "remove_discarded_pair"]
 __all__ += ["load_ui_preferences", "save_ui_preferences", "ui_preferences_path"]
+__all__ += ["get_mono_community_algorithms", "get_default_mono_community_algorithm"]
 
 PUBLIC_REEXPORTS = (LAYOUT_PROGRESS_END, _layout_cache_file, layout_cache_dir)
 PUBLIC_REEXPORTS += (load_cached_layout, nx, pg, save_cached_layout)
@@ -97,6 +102,8 @@ clear_discarded_pairs = _clear_discarded_pairs
 export_discarded_pairs = _export_discarded_pairs
 import_discarded_pairs = _import_discarded_pairs
 remove_discarded_pair = _remove_discarded_pair
+get_mono_community_algorithms = _get_mono_community_algorithms
+get_default_mono_community_algorithm = _get_default_mono_community_algorithm
 
 
 def ui_preferences_path():

@@ -294,8 +294,15 @@ def test_window_has_communities_tab(qapp) -> None:
     assert window.community_summary_group.title() == "Community summary"
     assert window.community_list_group.title() == "Detected communities"
     assert window.community_details_group.title() == "Selected community"
+    assert window.community_algorithm_combo.count() == 4
+    assert window.community_algorithm_combo.currentData() == "infomap"
+    assert [
+        window.community_algorithm_combo.itemText(index)
+        for index in range(window.community_algorithm_combo.count())
+    ] == ["Infomap", "RB Pots", "RBER Pots", "Threshold Clustering"]
     assert window.community_compute_button.text() == "Compute communities"
     assert window.community_compute_button.isEnabled() is False
+    assert window.community_algorithm_combo.isEnabled() is False
     assert window.community_summary_label.text() == "No community analysis has been run yet."
     assert window.community_details.toPlainText() == "No community selected."
     window.close()

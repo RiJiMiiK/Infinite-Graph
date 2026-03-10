@@ -564,15 +564,26 @@ class WindowBuildMixin:
         return tab
 
     def _build_communities_tab(self) -> QWidget:
+        gui_module = sys.modules[f"{__package__}.gui"]
         tab = QWidget()
         layout = QVBoxLayout(tab)
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(12)
 
+        self.community_algorithm_combo.clear()
+        algorithms = gui_module.get_mono_community_algorithms()
+        default_algorithm = gui_module.get_default_mono_community_algorithm()
+        for algorithm in algorithms:
+            self.community_algorithm_combo.addItem(str(algorithm["label"]), algorithm["key"])
+        default_index = self.community_algorithm_combo.findData(default_algorithm)
+        if default_index >= 0:
+            self.community_algorithm_combo.setCurrentIndex(default_index)
+
         community_mode_layout = QVBoxLayout(self.community_mode_group)
         community_mode_layout.setContentsMargins(12, 12, 12, 12)
         community_mode_layout.addWidget(self.mono_community_mode_label)
-        community_mode_layout.addWidget(self.community_algorithm_label)
+        community_mode_layout.addWidget(QLabel("Algorithm"))
+        community_mode_layout.addWidget(self.community_algorithm_combo)
         community_mode_layout.addWidget(self.community_compute_button)
         community_mode_layout.addStretch(1)
 

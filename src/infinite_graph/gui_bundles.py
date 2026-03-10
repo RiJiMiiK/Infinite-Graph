@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 from PySide6.QtCore import QStringListModel
 from PySide6.QtWidgets import (
+    QComboBox,
     QCompleter,
     QFrame,
     QGroupBox,
@@ -136,7 +137,7 @@ def create_communities_bundle() -> SimpleNamespace:
     bundle = SimpleNamespace(
         community_mode_group=QGroupBox("Community analysis"),
         mono_community_mode_label=QLabel("Mode: Mono-community"),
-        community_algorithm_label=QLabel("Algorithm: not selected"),
+        community_algorithm_combo=QComboBox(),
         community_compute_button=QPushButton("Compute communities"),
         community_summary_group=QGroupBox("Community summary"),
         community_summary_label=QLabel("No community analysis has been run yet."),
@@ -147,6 +148,7 @@ def create_communities_bundle() -> SimpleNamespace:
     )
     bundle.community_summary_label.setWordWrap(True)
     bundle.community_compute_button.setEnabled(False)
+    bundle.community_algorithm_combo.setEnabled(False)
     bundle.community_details.setReadOnly(True)
     bundle.community_details.setPlainText("No community selected.")
     return bundle
