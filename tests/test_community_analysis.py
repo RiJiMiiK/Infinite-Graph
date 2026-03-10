@@ -98,7 +98,11 @@ def test_algorithm_evaluation_lists_all_algorithms_with_compatibility_notes() ->
     )
 
     algorithms = community_analysis.get_mono_community_algorithms()
-    assert len(algorithms) == len(evaluation)
+    visible_keys = [item["key"] for item in algorithms]
+    assert "label_propagation_raghavan" not in visible_keys
+    assert "sbm_dl" not in visible_keys
+    assert "sbm_dl_nested" not in visible_keys
+    assert "ricci_community" not in visible_keys
     assert next(item for item in algorithms if item["key"] == "infomap")[
         "requires_graph_adaptation"
     ] is False
@@ -112,6 +116,22 @@ def test_algorithm_evaluation_lists_all_algorithms_with_compatibility_notes() ->
     assert community_analysis.uses_directed_community_graph() is True
     assert community_analysis.uses_edge_weights_only() is True
     assert community_analysis.ignores_node_weights() is True
+
+
+def test_algorithm_visibility_rules() -> None:
+    assert community_analysis._is_mono_community_algorithm_visible("label_propagation_raghavan") is False
+    assert community_analysis._is_mono_community_algorithm_visible("sbm_dl") is False
+    assert community_analysis._is_mono_community_algorithm_visible("sbm_dl_nested") is False
+    assert community_analysis._is_mono_community_algorithm_visible("ricci_community") is False
+    assert community_analysis._is_mono_community_algorithm_visible("infomap") is True
+
+
+def test_algorithm_visibility_rules_for_unix_platform(monkeypatch) -> None:
+    monkeypatch.setattr(community_analysis, "_is_unix_platform", lambda: True)
+
+    assert community_analysis._is_mono_community_algorithm_visible("sbm_dl") is True
+    assert community_analysis._is_mono_community_algorithm_visible("sbm_dl_nested") is True
+    assert community_analysis._is_mono_community_algorithm_visible("ricci_community") is True
 
 
 def test_get_mono_community_algorithm_warning() -> None:
@@ -178,11 +198,20 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("leiden", graph, kwargs))
         return "leiden-result"
 
+    def fake_label_propagation(graph, **kwargs):
+        calls.append(("label_propagation", graph, kwargs))
+        return "label-propagation-result"
+
     monkeypatch.setattr(community_analysis.algorithms, "infomap", fake_infomap)
     monkeypatch.setattr(community_analysis.algorithms, "rb_pots", fake_rb_pots)
     monkeypatch.setattr(community_analysis.algorithms, "threshold_clustering", fake_threshold)
     monkeypatch.setattr(community_analysis.algorithms, "agdl", fake_agdl)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
+    monkeypatch.setattr(
+        community_analysis.algorithms,
+        "label_propagation",
+        fake_label_propagation,
+    )
 
     graph = nx.DiGraph()
     graph.add_edge("Water", "Steam", weight=2.0, elements=["Fire"])
@@ -199,6 +228,13 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     )
     assert community_analysis.run_mono_community_algorithm(graph, "agdl") == "agdl-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
+    assert (
+        community_analysis.run_mono_community_algorithm(
+            graph,
+            "label_propagation_cordasco_gargano",
+        )
+        == "label-propagation-result"
+    )
 
     assert calls[0][0] == "infomap"
     assert isinstance(calls[0][1], nx.DiGraph)
@@ -208,6 +244,9 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[3][2] == {}
     assert isinstance(calls[4][1], nx.Graph)
     assert calls[4][2] == {"weights": "weight"}
+    assert calls[5][0] == "label_propagation"
+    assert isinstance(calls[5][1], nx.Graph)
+    assert calls[5][2] == {}
 
 
 def test_summarize_mono_community_result_and_parameter_normalization() -> None:

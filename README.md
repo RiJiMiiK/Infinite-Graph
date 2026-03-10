@@ -53,6 +53,11 @@ The application loads a save, computes a directed weighted graph, and gives you 
 - full Qt desktop interface
 - global dark mode
 - responsive layout for large and smaller windows
+- dedicated tabs for:
+  - `Graph`
+  - `Info`
+  - `Statistics`
+  - `Communities`
 - persistent UI preferences:
   - window size
   - panel visibility
@@ -122,6 +127,18 @@ The application also includes:
 - missing recipe counts by result weight
 - overview cards for the main statistics
 - dark-mode styling consistent with the rest of the app
+
+### Communities tab
+
+- mono-community analysis scaffold
+- algorithm selector backed by CDlib metadata
+- platform-aware algorithm visibility
+- community summary, list, and details panels ready for the next analysis steps
+
+Current visibility rules:
+
+- `label_propagation_raghavan` is hidden because it is not exposed by the installed `cdlib 0.4.0`
+- `ricci_community`, `sbm_dl`, and `sbm_dl_nested` are only shown on Unix-like systems
 
 ### Generation flow
 
@@ -211,6 +228,8 @@ python main.py
 - `main.py`: application entry point
 - `src/infinite_graph`: application code
 - `tests`: full automated test suite
+- `tools/test_crisp_algorithms.py`: manual crisp mono-community benchmark script
+- `docker/`: Linux benchmark containers for community algorithms
 - `ROADMAP.md`: project roadmap
 - `CHANGELOG.md`: release history
 - `discarded.json`: global discarded combination storage
@@ -260,9 +279,40 @@ To keep the application usable:
 
 The candidate list shown by the application is a usable working set of still-untested pairs, not a prediction engine for actual recipe results.
 
+## Community benchmarking
+
+Manual benchmark:
+
+```bash
+python tools/test_crisp_algorithms.py
+```
+
+Linux Docker benchmark:
+
+```bash
+docker build -f docker/community-linux.Dockerfile -t infinite-graph-community .
+docker run --rm infinite-graph-community python3 tools/test_crisp_algorithms.py
+```
+
+Linux Python 3.13 benchmark:
+
+```bash
+docker build -f docker/community-linux-py313.Dockerfile -t infinite-graph-community-py313 .
+docker run --rm infinite-graph-community-py313 python tools/test_crisp_algorithms.py
+```
+
+Validated benchmark summary:
+
+- Windows + Python 3.12: `36 OK`, `4 errors`
+- Windows + Python 3.13: `36 OK`, `4 errors`
+- Linux + Python 3.12: `39 OK`, `1 error`
+- Linux + Python 3.13: `37 OK`, `3 errors`
+
+The only algorithm currently failing everywhere is `label_propagation_raghavan`, because the installed `cdlib 0.4.0` package does not expose that callable.
+
 ## Roadmap direction
 
-The next major feature area is mono-community analysis on the directed weighted graph through CDlib.
+The next major feature area is completing mono-community analysis on the directed weighted graph through CDlib and wiring the computation flow into the existing `Communities` tab.
 
 Planned direction:
 

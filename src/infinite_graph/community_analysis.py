@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import os
 
 import networkx as nx
 from cdlib import algorithms
@@ -138,6 +139,7 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
     },
     "label_propagation_cordasco_gargano": {
         "label": "Label Propagation Cordasco-Gargano",
+        "callable_name": "label_propagation",
         "supports_directed": False,
         "supports_weighted": False,
         "weight_parameter": None,
@@ -163,18 +165,18 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
     "lswl": {
         "label": "LSWL",
         "supports_directed": False,
-        "supports_weighted": False,
+        "supports_weighted": True,
         "weight_parameter": None,
         "weight_value": None,
-        "compatibility_note": "Will run on an undirected unweighted view of the graph.",
+        "compatibility_note": "Will run on an undirected weighted view of the graph.",
     },
     "lswl_plus": {
         "label": "LSWL Plus",
         "supports_directed": False,
-        "supports_weighted": False,
+        "supports_weighted": True,
         "weight_parameter": None,
         "weight_value": None,
-        "compatibility_note": "Will run on an undirected unweighted view of the graph.",
+        "compatibility_note": "Will run on an undirected weighted view of the graph.",
     },
     "markov_clustering": {
         "label": "Markov Clustering",
@@ -275,10 +277,10 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
     "spinglass": {
         "label": "Spinglass",
         "supports_directed": False,
-        "supports_weighted": True,
-        "weight_parameter": "weights",
-        "weight_value": "weight",
-        "compatibility_note": "Will run on an undirected weighted view of the graph.",
+        "supports_weighted": False,
+        "weight_parameter": None,
+        "weight_value": None,
+        "compatibility_note": "Will run on an undirected unweighted view of the graph.",
     },
     "surprise_communities": {
         "label": "Surprise Communities",
@@ -323,10 +325,10 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
     "walktrap": {
         "label": "Walktrap",
         "supports_directed": False,
-        "supports_weighted": True,
-        "weight_parameter": "weights",
-        "weight_value": "weight",
-        "compatibility_note": "Will run on an undirected weighted view of the graph.",
+        "supports_weighted": False,
+        "weight_parameter": None,
+        "weight_value": None,
+        "compatibility_note": "Will run on an undirected unweighted view of the graph.",
     },
 }
 
@@ -386,6 +388,18 @@ def get_mono_community_algorithm_evaluation() -> list[dict[str, object]]:
     ]
 
 
+def _is_unix_platform() -> bool:
+    return os.name == "posix"
+
+
+def _is_mono_community_algorithm_visible(algorithm_name: str) -> bool:
+    if algorithm_name == "label_propagation_raghavan":
+        return False
+    if algorithm_name in {"ricci_community", "sbm_dl", "sbm_dl_nested"} and not _is_unix_platform():
+        return False
+    return True
+
+
 def get_mono_community_algorithms() -> list[dict[str, object]]:
     return [
         {
@@ -399,6 +413,7 @@ def get_mono_community_algorithms() -> list[dict[str, object]]:
             ),
         }
         for key, metadata in MONO_COMMUNITY_ALGORITHM_EVALUATION.items()
+        if _is_mono_community_algorithm_visible(key)
     ]
 
 
@@ -476,7 +491,10 @@ def run_mono_community_algorithm(
         algorithm_name,
         **kwargs,
     )
-    algorithm = getattr(algorithms, algorithm_name)
+    algorithm_callable_name = str(
+        MONO_COMMUNITY_ALGORITHM_EVALUATION[algorithm_name].get("callable_name", algorithm_name)
+    )
+    algorithm = getattr(algorithms, algorithm_callable_name)
     return algorithm(adapted_graph, **call_kwargs)
 
 
