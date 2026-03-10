@@ -39,6 +39,13 @@ def test_build_cdlib_graph_requires_directed_mode(monkeypatch) -> None:
         community_analysis.build_cdlib_graph([], [])
 
 
+def test_build_cdlib_graph_requires_ignoring_node_weights(monkeypatch) -> None:
+    monkeypatch.setattr(community_analysis, "ignores_node_weights", lambda: False)
+
+    with pytest.raises(ValueError, match="must ignore node weights"):
+        community_analysis.build_cdlib_graph([], [])
+
+
 def test_get_mono_community_algorithms_and_default() -> None:
     algorithms = community_analysis.get_mono_community_algorithms()
     assert [item["key"] for item in algorithms] == [
@@ -51,6 +58,7 @@ def test_get_mono_community_algorithms_and_default() -> None:
     assert community_analysis.get_default_mono_community_algorithm() == "infomap"
     assert community_analysis.uses_directed_community_graph() is True
     assert community_analysis.uses_edge_weights_only() is True
+    assert community_analysis.ignores_node_weights() is True
 
 
 def test_run_mono_community_algorithm_rejects_unknown_name() -> None:

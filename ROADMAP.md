@@ -175,7 +175,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Build a CDlib graph from the current graph data
 - [x] Keep the graph directed for community analysis
 - [x] Use edge weights only
-- [ ] Explicitly ignore node weights
+- [x] Explicitly ignore node weights
 - [ ] Add a `Communities` tab to the interface
 - [ ] Add a mono-community algorithm selector
 - [ ] Evaluate the relevant mono-community CDlib algorithms for the directed weighted graph

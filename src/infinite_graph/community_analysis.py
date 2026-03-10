@@ -43,12 +43,18 @@ def uses_edge_weights_only() -> bool:
     return True
 
 
+def ignores_node_weights() -> bool:
+    return True
+
+
 def build_cdlib_graph(
     graph_nodes: list[dict[str, object]],
     graph_edges: list[dict[str, object]],
 ) -> nx.DiGraph:
     if not uses_directed_community_graph():
         raise ValueError("Community analysis must keep the graph directed.")
+    if not ignores_node_weights():
+        raise ValueError("Community analysis must ignore node weights.")
     graph = nx.DiGraph()
     for node in graph_nodes:
         node_id = str(node["id"])
