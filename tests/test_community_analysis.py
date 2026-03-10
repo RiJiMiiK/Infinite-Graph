@@ -134,8 +134,48 @@ def test_algorithm_visibility_rules_for_unix_platform(monkeypatch) -> None:
     assert community_analysis._is_mono_community_algorithm_visible("ricci_community") is True
 
 
+def test_get_mono_community_algorithm_parameters() -> None:
+    agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
+    assert agdl_parameters == [
+        {
+            "name": "number_communities",
+            "label": "Number of communities",
+            "type": "int",
+            "default": 3,
+            "minimum": 1,
+        },
+        {
+            "name": "kc",
+            "label": "KC",
+            "type": "int",
+            "default": 2,
+            "minimum": 1,
+        },
+    ]
+    assert community_analysis.get_mono_community_algorithm_parameters("infomap") == []
+    assert community_analysis.get_mono_community_algorithm_parameters("unknown") == []
+
+
+def test_get_mono_community_algorithm_parameters_ignores_invalid_metadata(
+    monkeypatch,
+) -> None:
+    monkeypatch.setitem(
+        community_analysis.MONO_COMMUNITY_ALGORITHM_EVALUATION,
+        "agdl",
+        {
+            **community_analysis.MONO_COMMUNITY_ALGORITHM_EVALUATION["agdl"],
+            "parameter_definitions": object(),
+        },
+    )
+    assert community_analysis.get_mono_community_algorithm_parameters("agdl") == []
+
+
 def test_get_mono_community_algorithm_warning() -> None:
     assert community_analysis.get_mono_community_algorithm_warning("infomap") is None
+    agdl_warning = community_analysis.get_mono_community_algorithm_warning("agdl")
+    assert agdl_warning is not None
+    assert "experimental in this environment" in agdl_warning
+    assert "karate_club_graph()" in agdl_warning
     leiden_warning = community_analysis.get_mono_community_algorithm_warning("leiden")
     assert leiden_warning is not None
     assert "does not support directed graphs directly" in leiden_warning
@@ -241,12 +281,35 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[0][2] == {"flags": "--directed --silent -w"}
     assert calls[1][2] == {"weights": "weight"}
     assert "threshold_function" in calls[2][2]
-    assert calls[3][2] == {}
+    assert calls[3][2] == {"number_communities": 3, "kc": 2}
     assert isinstance(calls[4][1], nx.Graph)
     assert calls[4][2] == {"weights": "weight"}
     assert calls[5][0] == "label_propagation"
     assert isinstance(calls[5][1], nx.Graph)
     assert calls[5][2] == {}
+
+
+def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_agdl(graph, **kwargs):
+        calls.append(kwargs)
+        return "agdl-result"
+
+    monkeypatch.setattr(community_analysis.algorithms, "agdl", fake_agdl)
+
+    graph = nx.DiGraph()
+    graph.add_edge("Water", "Steam", weight=2.0, elements=["Fire"])
+
+    assert (
+        community_analysis.run_mono_community_algorithm(
+            graph,
+            "agdl",
+            number_communities=5,
+        )
+        == "agdl-result"
+    )
+    assert calls == [{"number_communities": 5, "kc": 2}]
 
 
 def test_summarize_mono_community_result_and_parameter_normalization() -> None:

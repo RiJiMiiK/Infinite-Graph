@@ -134,11 +134,19 @@ The application also includes:
 - algorithm selector backed by CDlib metadata
 - platform-aware algorithm visibility
 - community summary, list, and details panels ready for the next analysis steps
+- algorithm-specific parameter inputs for supported community methods such as `AGDL`
 
 Current visibility rules:
 
 - `label_propagation_raghavan` is hidden because it is not exposed by the installed `cdlib 0.4.0`
 - `ricci_community`, `sbm_dl`, and `sbm_dl_nested` are only shown on Unix-like systems
+
+Current stability note:
+
+- `AGDL` is available, but it is marked as experimental
+- benchmark runs reproduced upstream CDlib crashes on several graph families
+- the failure also reproduces on the documented `karate_club_graph()` example in this environment
+- treat `AGDL` as a best-effort option, not as a stable default
 
 ### Generation flow
 
@@ -309,6 +317,12 @@ Validated benchmark summary:
 - Linux + Python 3.13: `37 OK`, `3 errors`
 
 The only algorithm currently failing everywhere is `label_propagation_raghavan`, because the installed `cdlib 0.4.0` package does not expose that callable.
+
+Additional benchmark note:
+
+- `AGDL` is not hidden, but it is intentionally treated as unstable
+- repeated matrix tests across graph size, orientation, weighting, cyclicity, self-loops, and parameter ranges up to `100`
+  reproduced non-deterministic failure families in the upstream CDlib implementation
 
 ## Roadmap direction
 

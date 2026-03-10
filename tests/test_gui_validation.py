@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QResizeEvent
@@ -33,6 +35,7 @@ def sample_result() -> dict[str, object]:
         "missing": [],
         "missing_limit": 1000,
         "focus_element": None,
+        "community_graph": object(),
     }
 
 
@@ -304,6 +307,222 @@ def test_window_has_communities_tab(qapp) -> None:
     assert window.community_compute_button.text() == "Compute communities"
     assert window.community_compute_button.isEnabled() is False
     assert window.community_algorithm_combo.isEnabled() is False
+    assert window.community_parameters_group.isHidden() is True
     assert window.community_summary_label.text() == "No community analysis has been run yet."
+    assert window.community_details.toPlainText() == "No community selected."
+    window.close()
+
+
+def test_window_enables_communities_after_generation(qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    window.input_edit.setText("save.json")
+    window._on_generation_finished(
+        sample_result,
+        {"positions": [], "adj": [], "sizes": [], "brushes": [], "labels": []},
+        1.0,
+    )
+    assert window.community_compute_button.isEnabled() is True
+    assert window.community_algorithm_combo.isEnabled() is True
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
+    window.close()
+
+
+def test_window_compute_communities_updates_summary_list_and_details(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("agdl")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="AGDL",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "AGDL",
+            "parameters": {},
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+
+    window._community_parameter_inputs["number_communities"].setValue(5)
+    window._community_parameter_inputs["kc"].setValue(4)
+    window._compute_communities()
+
+    assert calls == [(sample_result["community_graph"], "agdl", {"number_communities": 5, "kc": 4})]
+    assert "Algorithm: AGDL" in window.community_summary_label.text()
+    assert "Detected communities: 2" in window.community_summary_label.text()
+    assert "Parameters:" in window.community_summary_label.text()
+    assert "number_communities=5" in window.community_summary_label.text()
+    assert "kc=4" in window.community_summary_label.text()
+    assert window.community_list.count() == 2
+    assert window.community_list.item(0).text() == "Community 1 (2 nodes)"
+    assert "Community: 1" in window.community_details.toPlainText()
+    assert "Fire" in window.community_details.toPlainText()
+    assert "Water" in window.community_details.toPlainText()
+    window.close()
+
+
+def test_window_community_parameters_visibility_updates_with_algorithm_selection(qapp) -> None:
+    window = gui.InfiniteGraphWindow()
+
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("agdl")
+    )
+    assert window.community_parameters_group.isHidden() is False
+    assert set(window._community_parameter_inputs) == {"number_communities", "kc"}
+
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("infomap")
+    )
+    assert window.community_parameters_group.isHidden() is True
+    assert window._community_parameter_inputs == {}
+    window.close()
+
+
+def test_window_community_parameters_ignore_unsupported_field_types(
+    qapp, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_parameters",
+        lambda algorithm_name: [
+            {
+                "name": "unsupported",
+                "label": "Unsupported",
+                "type": "text",
+                "default": "x",
+            }
+        ],
+    )
+
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("agdl")
+    )
+    window._refresh_community_parameter_inputs()
+
+    assert window.community_parameters_group.isHidden() is True
+    assert window._community_parameter_inputs == {}
+    window.close()
+
+
+def test_window_compute_communities_failure_shows_error(qapp, sample_result, monkeypatch) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    errors = []
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda graph, algorithm_name: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+    monkeypatch.setattr(gui.QMessageBox, "critical", lambda *args: errors.append(args))
+
+    window._compute_communities()
+
+    assert errors
+    assert "No community analysis has been run yet." == window.community_summary_label.text()
+    assert window.community_list.count() == 0
+    assert "No community selected." == window.community_details.toPlainText()
+    window.close()
+
+
+def test_window_compute_communities_no_result_or_algorithm(qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+
+    window._compute_communities()
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
+
+    window._current_result = sample_result
+    window.community_algorithm_combo.clear()
+    window._compute_communities()
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
+    window.close()
+
+
+def test_window_compute_communities_with_warning_and_empty_result(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("leiden")
+    )
+
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda graph, algorithm_name: SimpleNamespace(
+            communities=[],
+            method_name="Leiden",
+            method_parameters={},
+        ),
+    )
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [],
+            "community_count": 0,
+            "community_sizes": [],
+            "min_size": 0,
+            "max_size": 0,
+            "average_size": 0.0,
+            "node_to_community": {},
+            "method_name": "Leiden",
+            "parameters": {},
+        },
+    )
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_warning",
+        lambda name: "The graph was converted to an undirected view for this run.",
+    )
+
+    window._compute_communities()
+
+    assert "Adaptation warning:" in window.community_summary_label.text()
+    assert window.community_list.count() == 0
+    assert window.community_details.toPlainText() == "No community selected."
+    window.close()
+
+
+def test_window_show_selected_community_handles_invalid_items(qapp, sample_result) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._current_community_summary = {"communities": [["Fire", "Water"]]}
+
+    window._show_selected_community(None)
+    assert window.community_details.toPlainText() == "No community selected."
+
+    item = gui.QListWidgetItem("Invalid")
+    item.setData(gui.Qt.UserRole, "bad-index")
+    window._show_selected_community(item)
+    assert window.community_details.toPlainText() == "No community selected."
+
+    item.setData(gui.Qt.UserRole, 99)
+    window._show_selected_community(item)
     assert window.community_details.toPlainText() == "No community selected."
     window.close()

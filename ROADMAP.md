@@ -221,7 +221,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Expose `SBM DL Nested` in the algorithm selector on Unix-like systems only
 - [x] Expose `Spectral` in the algorithm selector
 - [x] Expose `Threshold Clustering` in the algorithm selector
-- [ ] Integrate `AGDL` execution from the `Communities` tab
+- [x] Integrate `AGDL` execution from the `Communities` tab
 - [ ] Integrate `Async Fluid` execution from the `Communities` tab
 - [ ] Integrate `Bayan` execution from the `Communities` tab
 - [ ] Integrate `Belief` execution from the `Communities` tab
@@ -277,6 +277,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [ ] Show the community identifier in the node table
 - [ ] Add a summary of the parameters used for the computation
 - [ ] Add the basic parameters of mono-community algorithms
+- [x] Add a strong documented warning for unstable `AGDL` execution
 - [ ] Expose at least the resolution parameter for `RB Pots`
 - [ ] Gracefully handle errors when an algorithm backend is missing
 - [ ] Add unit tests for building the CDlib graph

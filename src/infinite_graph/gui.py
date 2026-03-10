@@ -29,6 +29,10 @@ from .discard_store import (
 from .community_analysis import (
     get_default_mono_community_algorithm as _get_default_mono_community_algorithm,
     get_mono_community_algorithms as _get_mono_community_algorithms,
+    get_mono_community_algorithm_parameters as _get_mono_community_algorithm_parameters,
+    get_mono_community_algorithm_warning as _get_mono_community_algorithm_warning,
+    run_mono_community_algorithm as _run_mono_community_algorithm,
+    summarize_mono_community_result as _summarize_mono_community_result,
 )
 
 from .gui_bundles import (
@@ -62,6 +66,7 @@ from .gui_table import ListTableModel as _ListTableModel
 from .gui_widgets import CopyLineEdit, GraphViewWidget, StatsCanvas as _StatsCanvas, pg
 from .gui_window_build import WindowBuildMixin
 from .gui_window_combinations import WindowCombinationsMixin
+from .gui_window_communities import WindowCommunitiesMixin
 from .gui_window_generation import WindowGenerationMixin
 from .gui_window_graph import WindowGraphMixin
 from .gui_worker import GenerateWorker
@@ -79,6 +84,9 @@ __all__ += ["add_discarded_pair", "clear_discarded_pairs", "export_discarded_pai
 __all__ += ["import_discarded_pairs", "remove_discarded_pair"]
 __all__ += ["load_ui_preferences", "save_ui_preferences", "ui_preferences_path"]
 __all__ += ["get_mono_community_algorithms", "get_default_mono_community_algorithm"]
+__all__ += ["get_mono_community_algorithm_parameters"]
+__all__ += ["get_mono_community_algorithm_warning", "run_mono_community_algorithm"]
+__all__ += ["summarize_mono_community_result"]
 
 PUBLIC_REEXPORTS = (LAYOUT_PROGRESS_END, _layout_cache_file, layout_cache_dir)
 PUBLIC_REEXPORTS += (load_cached_layout, nx, pg, save_cached_layout)
@@ -104,6 +112,10 @@ import_discarded_pairs = _import_discarded_pairs
 remove_discarded_pair = _remove_discarded_pair
 get_mono_community_algorithms = _get_mono_community_algorithms
 get_default_mono_community_algorithm = _get_default_mono_community_algorithm
+get_mono_community_algorithm_parameters = _get_mono_community_algorithm_parameters
+get_mono_community_algorithm_warning = _get_mono_community_algorithm_warning
+run_mono_community_algorithm = _run_mono_community_algorithm
+summarize_mono_community_result = _summarize_mono_community_result
 
 
 def ui_preferences_path():
@@ -262,6 +274,7 @@ class InfiniteGraphWindow(
     WindowBuildMixin,
     WindowGenerationMixin,
     WindowGraphMixin,
+    WindowCommunitiesMixin,
     WindowCombinationsMixin,
     QMainWindow,
 ):
@@ -284,6 +297,8 @@ class InfiniteGraphWindow(
         self._last_suggestion_mode: str | None = None
         self._last_suggested_pair: tuple[str, str] | None = None
         self._current_candidate_origin: str | None = None
+        self._current_community_summary: dict[str, object] | None = None
+        self._community_parameter_inputs: dict[str, object] = {}
         self._ui_preferences: dict[str, object] = {}
 
         self.setStyleSheet(WINDOW_STYLE)

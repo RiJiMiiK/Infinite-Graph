@@ -584,8 +584,14 @@ class WindowBuildMixin:
         community_mode_layout.addWidget(self.mono_community_mode_label)
         community_mode_layout.addWidget(QLabel("Algorithm"))
         community_mode_layout.addWidget(self.community_algorithm_combo)
+        community_mode_layout.addWidget(self.community_parameters_group)
         community_mode_layout.addWidget(self.community_compute_button)
         community_mode_layout.addStretch(1)
+        self.community_compute_button.clicked.connect(self._compute_communities)
+        self.community_algorithm_combo.currentIndexChanged.connect(
+            self._refresh_community_parameter_inputs
+        )
+        self._refresh_community_parameter_inputs()
 
         summary_layout = QVBoxLayout(self.community_summary_group)
         summary_layout.setContentsMargins(12, 12, 12, 12)
@@ -594,6 +600,7 @@ class WindowBuildMixin:
         community_list_layout = QVBoxLayout(self.community_list_group)
         community_list_layout.setContentsMargins(12, 12, 12, 12)
         self.community_list.setAlternatingRowColors(True)
+        self.community_list.itemClicked.connect(self._show_selected_community)
         community_list_layout.addWidget(self.community_list)
 
         community_details_layout = QVBoxLayout(self.community_details_group)

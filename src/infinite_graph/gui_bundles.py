@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
     QFrame,
+    QFormLayout,
     QGroupBox,
     QLabel,
     QLineEdit,
@@ -15,6 +16,8 @@ from PySide6.QtWidgets import (
     QPushButton,
     QTableView,
     QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
 
 from .gui_table import ContainsFilterProxyModel, ListTableModel
@@ -138,6 +141,9 @@ def create_communities_bundle() -> SimpleNamespace:
         community_mode_group=QGroupBox("Community analysis"),
         mono_community_mode_label=QLabel("Mode: Mono-community"),
         community_algorithm_combo=QComboBox(),
+        community_parameters_group=QGroupBox("Algorithm parameters"),
+        community_parameters_widget=QWidget(),
+        community_parameters_layout=QFormLayout(),
         community_compute_button=QPushButton("Compute communities"),
         community_summary_group=QGroupBox("Community summary"),
         community_summary_label=QLabel("No community analysis has been run yet."),
@@ -149,6 +155,13 @@ def create_communities_bundle() -> SimpleNamespace:
     bundle.community_summary_label.setWordWrap(True)
     bundle.community_compute_button.setEnabled(False)
     bundle.community_algorithm_combo.setEnabled(False)
+    bundle.community_parameters_group.setVisible(False)
+    bundle.community_parameters_layout.setContentsMargins(0, 0, 0, 0)
+    bundle.community_parameters_layout.setSpacing(8)
+    bundle.community_parameters_widget.setLayout(bundle.community_parameters_layout)
+    group_layout = QVBoxLayout(bundle.community_parameters_group)
+    group_layout.setContentsMargins(12, 12, 12, 12)
+    group_layout.addWidget(bundle.community_parameters_widget)
     bundle.community_details.setReadOnly(True)
     bundle.community_details.setPlainText("No community selected.")
     return bundle

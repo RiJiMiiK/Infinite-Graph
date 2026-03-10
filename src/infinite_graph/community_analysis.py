@@ -13,6 +13,37 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "AGDL",
         "supports_directed": True,
         "supports_weighted": True,
+        "runtime_warning": (
+            "AGDL is experimental in this environment. "
+            "Cross-platform benchmarks showed repeatable crashes "
+            "on several graph families, "
+            "especially many weighted undirected graphs "
+            "and some cyclic directed weighted graphs. "
+            "The failure also reproduces on standard CDlib examples "
+            "such as karate_club_graph(), "
+            "so this is treated as an upstream CDlib stability issue "
+            "rather than an Infinite Graph bug."
+        ),
+        "parameter_definitions": [
+            {
+                "name": "number_communities",
+                "label": "Number of communities",
+                "type": "int",
+                "default": 3,
+                "minimum": 1,
+            },
+            {
+                "name": "kc",
+                "label": "KC",
+                "type": "int",
+                "default": 2,
+                "minimum": 1,
+            },
+        ],
+        "default_parameters": {
+            "number_communities": 3,
+            "kc": 2,
+        },
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Uses the directed weighted graph as-is.",
@@ -417,6 +448,22 @@ def get_mono_community_algorithms() -> list[dict[str, object]]:
     ]
 
 
+def get_mono_community_algorithm_parameters(
+    algorithm_name: str,
+) -> list[dict[str, object]]:
+    metadata = MONO_COMMUNITY_ALGORITHM_EVALUATION.get(algorithm_name)
+    if metadata is None:
+        return []
+    parameter_definitions = metadata.get("parameter_definitions", [])
+    if not isinstance(parameter_definitions, list):
+        return []
+    return [
+        {str(key): value for key, value in parameter.items()}
+        for parameter in parameter_definitions
+        if isinstance(parameter, Mapping)
+    ]
+
+
 def get_default_mono_community_algorithm() -> str:
     return "infomap"
 
@@ -427,6 +474,9 @@ def get_mono_community_algorithm_warning(algorithm_name: str) -> str | None:
         return None
 
     warnings: list[str] = []
+    runtime_warning = metadata.get("runtime_warning")
+    if isinstance(runtime_warning, str) and runtime_warning:
+        warnings.append(runtime_warning)
     if not metadata["supports_directed"]:
         warnings.append(
             "This algorithm does not support directed graphs directly. "
@@ -471,6 +521,10 @@ def prepare_mono_community_algorithm_input(
         )
 
     call_kwargs = dict(kwargs)
+    default_parameters = metadata.get("default_parameters", {})
+    if isinstance(default_parameters, Mapping):
+        for key, value in default_parameters.items():
+            call_kwargs.setdefault(str(key), value)
     weight_parameter = metadata["weight_parameter"]
     if (
         metadata["supports_weighted"]
