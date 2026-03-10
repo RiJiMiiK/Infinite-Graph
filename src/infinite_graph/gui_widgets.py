@@ -52,6 +52,7 @@ class StatsCanvas(FigureCanvasQTAgg):
 
 class GraphViewWidget(pg.PlotWidget):
     nodeSelected = Signal(object)
+    contextMenuRequested = Signal(object, object)
     BACKGROUND_COLOR = "#0b1220"
     GRID_ALPHA = 0.16
     LABEL_COLOR = "#dbe4ff"
@@ -107,6 +108,16 @@ class GraphViewWidget(pg.PlotWidget):
             scene_pos = self.mapToScene(ev.position().toPoint())
             view_pos = self.getViewBox().mapSceneToView(scene_pos)
             self.select_node_at((float(view_pos.x()), float(view_pos.y())))
+        elif ev.button() == Qt.RightButton and self._render_data.get("positions"):
+            scene_pos = self.mapToScene(ev.position().toPoint())
+            view_pos = self.getViewBox().mapSceneToView(scene_pos)
+            selected_id = self._node_id_at((float(view_pos.x()), float(view_pos.y())))
+            if selected_id is not None:
+                self.select_node_by_id(selected_id)
+            elif self._selected_node_id is not None:
+                selected_id = self._selected_node_id
+            if selected_id is not None:
+                self.contextMenuRequested.emit(selected_id, ev.globalPosition().toPoint())
         super().mousePressEvent(ev)
 
     def select_node_by_id(self, node_id: str | None) -> None:
@@ -122,10 +133,18 @@ class GraphViewWidget(pg.PlotWidget):
         position: tuple[float, float],
         max_distance: float = 80.0,
     ) -> str | None:
+        selected_id = self._node_id_at(position, max_distance=max_distance)
+        self.select_node_by_id(selected_id)
+        return selected_id
+
+    def _node_id_at(
+        self,
+        position: tuple[float, float],
+        max_distance: float = 80.0,
+    ) -> str | None:
         node_ids = self._render_data.get("node_ids", [])
         positions = self._render_data.get("positions", [])
         if not node_ids or not positions:
-            self.select_node_by_id(None)
             return None
 
         selected_id = None
@@ -138,7 +157,6 @@ class GraphViewWidget(pg.PlotWidget):
                 selected_id = str(node_id)
                 best_distance = distance
 
-        self.select_node_by_id(selected_id)
         return selected_id
 
     def _apply_graph_style(self) -> None:

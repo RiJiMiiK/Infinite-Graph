@@ -357,6 +357,7 @@ class WindowBuildMixin:
         layout = QVBoxLayout(tab)
         layout.setContentsMargins(0, 0, 0, 0)
         self.graph_view.nodeSelected.connect(self._on_graph_node_selected)
+        self.graph_view.contextMenuRequested.connect(self._show_graph_context_menu)
         search_row = QWidget()
         search_layout = QHBoxLayout(search_row)
         search_layout.setContentsMargins(0, 0, 0, 0)

@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QFileDialog as _QFileDialog,
     QListWidgetItem as _QListWidgetItem,
     QMainWindow,
+    QMenu as _QMenu,
     QMessageBox as _QMessageBox,
 )
 
@@ -67,6 +68,7 @@ __all__ += ["StatsCanvas", "_layout_cache_file", "build_graph_render_data"]
 __all__ += ["build_subgraph_render_data", "build_weight_filtered_render_data", "layout_cache_dir"]
 __all__ += ["load_cached_layout", "main", "nx", "pg", "save_cached_layout"]
 __all__ += ["QFileDialog", "QListWidgetItem", "QMessageBox", "QThread", "Qt", "process_save"]
+__all__ += ["QMenu"]
 __all__ += ["find_random_combination", "find_cheapest_combination"]
 __all__ += ["add_discarded_pair", "clear_discarded_pairs", "export_discarded_pairs"]
 __all__ += ["import_discarded_pairs", "remove_discarded_pair"]
@@ -79,6 +81,7 @@ QThread = _QThread
 QFileDialog = _QFileDialog
 QListWidgetItem = _QListWidgetItem
 QMessageBox = _QMessageBox
+QMenu = _QMenu
 INTERFACE_PROGRESS = _INTERFACE_PROGRESS
 ListTableModel = _ListTableModel
 StatsCanvas = _StatsCanvas

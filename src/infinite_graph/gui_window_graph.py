@@ -1,11 +1,38 @@
 """Graph interaction helpers for the main window."""
 
+import sys
+
 from PySide6.QtWidgets import QMessageBox
 
 from .gui_layout import build_subgraph_render_data, build_weight_filtered_render_data
 
 
 class WindowGraphMixin:
+    def _show_graph_context_menu(self, node_id: object, global_pos) -> None:
+        node_name = str(node_id) if node_id is not None else ""
+        if not node_name:
+            return
+
+        gui_module = sys.modules[f"{__package__}.gui"]
+        menu = gui_module.QMenu(self)
+        copy_action = menu.addAction("Copy element name")
+        element1_action = menu.addAction("Use as Element 1")
+        element2_action = menu.addAction("Use as Element 2")
+        search_action = menu.addAction("Search this element")
+        subgraph_action = menu.addAction("Set as subgraph center")
+        chosen_action = menu.exec(global_pos)
+
+        if chosen_action == copy_action:
+            self._copy_graph_node_name(node_name)
+        elif chosen_action == element1_action:
+            self._set_graph_node_in_element_field(node_name, self.element1_edit)
+        elif chosen_action == element2_action:
+            self._set_graph_node_in_element_field(node_name, self.element2_edit)
+        elif chosen_action == search_action:
+            self._reuse_graph_node_as_search(node_name)
+        elif chosen_action == subgraph_action:
+            self._set_graph_node_as_subgraph_center(node_name)
+
     def _on_graph_node_selected(self, node_id: object) -> None:
         node_name = str(node_id) if node_id is not None else ""
         if not node_name:
@@ -26,6 +53,24 @@ class WindowGraphMixin:
                 else:
                     self.node_table.clearSelection()
                 break
+
+    @staticmethod
+    def _copy_graph_node_name(node_name: str) -> None:
+        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module.QApplication.clipboard().setText(node_name)
+
+    @staticmethod
+    def _set_graph_node_in_element_field(node_name: str, field) -> None:
+        field.setText(node_name)
+
+    def _reuse_graph_node_as_search(self, node_name: str) -> None:
+        self.graph_search_edit.setText(node_name)
+        self.graph_view.select_node_by_id(node_name)
+
+    def _set_graph_node_as_subgraph_center(self, node_name: str) -> None:
+        self.subgraph_center_edit.setText(node_name)
+        if not self.subgraph_depth_edit.text().strip():
+            self.subgraph_depth_edit.setText("1")
 
     def _search_graph_node(self) -> None:
         if not self._current_result:
