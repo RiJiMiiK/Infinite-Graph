@@ -400,9 +400,11 @@ class WindowBuildMixin:
         self.layout_iterations_edit.setFixedWidth(120)
         self.layout_scale_edit.setFixedWidth(120)
         self.layout_apply_button.clicked.connect(self._rebuild_layout)
+        self.export_graph_button.clicked.connect(self._export_graph_image)
         layout_controls.addWidget(self.layout_iterations_edit)
         layout_controls.addWidget(self.layout_scale_edit)
         layout_controls.addWidget(self.layout_apply_button)
+        layout_controls.addWidget(self.export_graph_button)
         layout_controls.addStretch(1)
 
         self.selected_node_details.setReadOnly(True)

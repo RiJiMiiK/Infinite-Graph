@@ -1,6 +1,5 @@
-"""Graph interaction helpers for the main window."""
-
 import sys
+from pathlib import Path
 
 from PySide6.QtWidgets import QMessageBox
 
@@ -8,6 +7,53 @@ from .gui_layout import build_subgraph_render_data, build_weight_filtered_render
 
 
 class WindowGraphMixin:
+    def _export_graph_image(self) -> None:
+        current_render = self.graph_view.current_render_data
+        if not current_render or not current_render.get("positions"):
+            QMessageBox.information(
+                self,
+                "Information",
+                "Generate or display a graph before exporting an image.",
+            )
+            return
+
+        gui_module = sys.modules[f"{__package__}.gui"]
+        path, _ = gui_module.QFileDialog.getSaveFileName(
+            self,
+            "Export graph image",
+            str(Path("graph_export.png")),
+            "PNG (*.png);;All files (*)",
+        )
+        if not path:
+            return
+
+        target_path = Path(path)
+        if not target_path.suffix:
+            target_path = target_path.with_suffix(".png")
+
+        image = self.graph_view.grab().toImage()
+        if image.isNull():
+            QMessageBox.warning(
+                self,
+                "Error",
+                "Unable to capture the graph view for export.",
+            )
+            return
+
+        if image.save(str(target_path), "PNG"):
+            QMessageBox.information(
+                self,
+                "Information",
+                f"Graph image exported to: {target_path}",
+            )
+            return
+
+        QMessageBox.warning(
+            self,
+            "Error",
+            f"Unable to save the graph image to: {target_path}",
+        )
+
     def _show_graph_context_menu(self, node_id: object, global_pos) -> None:
         node_name = str(node_id) if node_id is not None else ""
         if not node_name:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
@@ -134,4 +136,76 @@ def test_window_graph_context_menu_actions(qapp, sample_result, monkeypatch) -> 
     window._show_graph_context_menu("Steam", None)
     assert window.subgraph_center_edit.text() == "Steam"
     assert window.subgraph_depth_edit.text() == "1"
+    window.close()
+
+
+def test_window_export_graph_image(monkeypatch, qapp, sample_result, tmp_path: Path) -> None:
+    window = gui.InfiniteGraphWindow()
+    infos = []
+    warns = []
+    export_path = tmp_path / "graph_export"
+    monkeypatch.setattr(gui.QMessageBox, "information", lambda *args: infos.append(args))
+    monkeypatch.setattr(gui.QMessageBox, "warning", lambda *args: warns.append(args))
+
+    window._export_graph_image()
+    assert "Generate or display a graph" in infos[-1][-1]
+
+    window._current_result = sample_result
+    window.graph_view._render_data = {
+        "positions": [(0.0, 0.0)],
+        "adj": [],
+        "sizes": [10],
+        "brushes": [gui.pg.mkBrush("#ffffff")],
+        "labels": [],
+        "node_ids": ["Water"],
+    }
+
+    monkeypatch.setattr(
+        gui.QFileDialog,
+        "getSaveFileName",
+        lambda *args, **kwargs: (str(export_path), "PNG (*.png)"),
+    )
+
+    class _FakeImage:
+        def __init__(self, save_result: bool, is_null: bool = False) -> None:
+            self.saved_paths = []
+            self.save_result = save_result
+            self.is_null = is_null
+
+        def isNull(self) -> bool:
+            return self.is_null
+
+        def save(self, path: str, file_format: str) -> bool:
+            self.saved_paths.append((path, file_format))
+            return self.save_result
+
+    class _FakePixmap:
+        def __init__(self, image: _FakeImage) -> None:
+            self._image = image
+
+        def toImage(self) -> _FakeImage:
+            return self._image
+
+    image = _FakeImage(save_result=True)
+    monkeypatch.setattr(window.graph_view, "grab", lambda: _FakePixmap(image))
+    window._export_graph_image()
+    assert image.saved_paths == [(str(export_path.with_suffix(".png")), "PNG")]
+    assert str(export_path.with_suffix(".png")) in infos[-1][-1]
+
+    null_image = _FakeImage(save_result=False, is_null=True)
+    monkeypatch.setattr(window.graph_view, "grab", lambda: _FakePixmap(null_image))
+    window._export_graph_image()
+    assert "Unable to capture" in warns[-1][-1]
+
+    failed_image = _FakeImage(save_result=False)
+    monkeypatch.setattr(window.graph_view, "grab", lambda: _FakePixmap(failed_image))
+    window._export_graph_image()
+    assert "Unable to save" in warns[-1][-1]
+
+    monkeypatch.setattr(
+        gui.QFileDialog,
+        "getSaveFileName",
+        lambda *args, **kwargs: ("", "PNG (*.png)"),
+    )
+    window._export_graph_image()
     window.close()

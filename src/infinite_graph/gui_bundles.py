@@ -82,6 +82,7 @@ def create_graph_bundle() -> SimpleNamespace:
         layout_iterations_edit=QLineEdit("80"),
         layout_scale_edit=QLineEdit("1.2"),
         layout_apply_button=QPushButton("Apply layout"),
+        export_graph_button=QPushButton("Export image"),
     )
 
 
