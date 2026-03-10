@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Callable
 
 from .analyzer import build_candidate_index, find_missing_combinations
+from .community_analysis import build_cdlib_graph
 from .discard_store import load_discarded_pairs
 from .graph_model import build_graph_data, build_weight_statistics
 from .save_loader import load_save
@@ -161,6 +162,10 @@ def process_save(
         graph_data["edges"],
         focus_element,
     )
+    community_graph = build_cdlib_graph(
+        graph_data["nodes"],
+        graph_data["edges"],
+    )
 
     return {
         "elements": save["elements"],
@@ -171,6 +176,7 @@ def process_save(
         "ignored_recipe_entries": save["ignored_recipe_entries"],
         "graph_nodes": graph_data["nodes"],
         "graph_edges": graph_data["edges"],
+        "community_graph": community_graph,
         "render_graph_nodes": render_graph_nodes,
         "render_graph_edges": render_graph_edges,
         "render_scope": render_scope,

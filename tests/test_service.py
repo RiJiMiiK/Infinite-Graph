@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import networkx as nx
+
 from src.infinite_graph import service
 
 
@@ -35,5 +37,8 @@ def test_process_save_reports_progress_and_returns_expected_data(monkeypatch, tm
     assert result["render_scope"] == "complete_graph"
     assert result["render_graph_nodes"] == result["graph_nodes"]
     assert result["render_graph_edges"] == result["graph_edges"]
+    assert isinstance(result["community_graph"], nx.DiGraph)
+    assert sorted(result["community_graph"].nodes) == ["Earth", "Fire", "Steam", "Water", "Wind"]
+    assert result["community_graph"]["Water"]["Steam"]["weight"] == 1.0
     assert ("Earth", "Earth") in result["candidate_pairs"]
     assert result["candidate_pairs_by_weight"][0] == ("Earth", "Earth")
