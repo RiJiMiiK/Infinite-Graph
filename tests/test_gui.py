@@ -423,7 +423,8 @@ def test_window_generate_and_input_pick(monkeypatch, qapp, sample_result) -> Non
     window._worker_thread = None
     window.layout_iterations_edit.setText("bad")
     window._generate()
-    assert infos[-1][-1] == "Layout iterations must be a positive integer."
+    assert "The layout settings are not valid." in infos[-1][-1]
+    assert "Layout iterations must be a positive integer." in infos[-1][-1]
 
     monkeypatch.setattr(gui.QFileDialog, "getOpenFileName", lambda *args, **kwargs: ("picked.json", ""))
     window._pick_input()
@@ -636,7 +637,7 @@ def test_window_search_graph_node(monkeypatch, qapp, sample_result) -> None:
     window._search_graph_node()
     window._current_result = sample_result
     window._search_graph_node()
-    assert infos[-1][-1] == "Enter an element to search."
+    assert "Enter an element to search." in infos[-1][-1]
 
     window.graph_search_edit.setText("fire")
     window._search_graph_node()

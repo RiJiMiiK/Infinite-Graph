@@ -12,8 +12,11 @@ class WindowGraphMixin:
         if not current_render or not current_render.get("positions"):
             QMessageBox.information(
                 self,
-                "Information",
-                "Generate or display a graph before exporting an image.",
+                "Graph required",
+                (
+                    "Generate or display a graph before exporting an image.\n\n"
+                    "Once the graph is visible, try Export image again."
+                ),
             )
             return
 
@@ -35,23 +38,29 @@ class WindowGraphMixin:
         if image.isNull():
             QMessageBox.warning(
                 self,
-                "Error",
-                "Unable to capture the graph view for export.",
+                "Export failed",
+                (
+                    "Unable to capture the graph view for export.\n\n"
+                    "Try refreshing the graph and exporting again."
+                ),
             )
             return
 
         if image.save(str(target_path), "PNG"):
             QMessageBox.information(
                 self,
-                "Information",
-                f"Graph image exported to: {target_path}",
+                "Export completed",
+                f"Graph image exported to:\n{target_path}",
             )
             return
 
         QMessageBox.warning(
             self,
-            "Error",
-            f"Unable to save the graph image to: {target_path}",
+            "Export failed",
+            (
+                f"Unable to save the graph image to:\n{target_path}\n\n"
+                "Check that the target folder is writable and try again."
+            ),
         )
 
     def _show_graph_context_menu(self, node_id: object, global_pos) -> None:
@@ -124,7 +133,11 @@ class WindowGraphMixin:
 
         query = self.graph_search_edit.text().strip()
         if not query:
-            QMessageBox.information(self, "Information", "Enter an element to search.")
+            QMessageBox.information(
+                self,
+                "Search needs a value",
+                "Enter an element to search.\n\nType an element name, then try again.",
+            )
             return
 
         normalized_query = query.casefold()
@@ -137,8 +150,11 @@ class WindowGraphMixin:
 
         QMessageBox.information(
             self,
-            "Information",
-            f"Element not found in the graph: {query}",
+            "Element not found",
+            (
+                f"Element not found in the graph: {query}\n\n"
+                "Check the spelling or try the auto-complete fields in the combination panel."
+            ),
         )
 
     def _apply_subgraph_filter(self) -> None:
@@ -153,8 +169,11 @@ class WindowGraphMixin:
         if not center_node:
             QMessageBox.information(
                 self,
-                "Information",
-                "Enter a subgraph center or select a node.",
+                "Subgraph center needed",
+                (
+                    "Enter a subgraph center or select a node.\n\n"
+                    "You can also use the graph context menu to set the center."
+                ),
             )
             return
 
@@ -162,8 +181,11 @@ class WindowGraphMixin:
         if not depth_text.isdigit():
             QMessageBox.information(
                 self,
-                "Information",
-                "Subgraph depth must be a non-negative integer.",
+                "Depth value is invalid",
+                (
+                    "Subgraph depth must be a non-negative integer.\n\n"
+                    "Use values like 0, 1, 2, or higher."
+                ),
             )
             return
 
@@ -175,8 +197,11 @@ class WindowGraphMixin:
         if filtered is None:
             QMessageBox.information(
                 self,
-                "Information",
-                f"Unable to build a subgraph for: {center_node}",
+                "Subgraph unavailable",
+                (
+                    f"Unable to build a subgraph for: {center_node}\n\n"
+                    "Check that the element exists in the current rendered graph."
+                ),
             )
             return
 
@@ -198,16 +223,22 @@ class WindowGraphMixin:
         if not min_text and not max_text:
             QMessageBox.information(
                 self,
-                "Information",
-                "Enter at least a minimum or maximum weight.",
+                "Weight filter needs a value",
+                (
+                    "Enter at least a minimum or maximum weight.\n\n"
+                    "You can fill only one field or both."
+                ),
             )
             return
 
         if (min_text and not min_text.isdigit()) or (max_text and not max_text.isdigit()):
             QMessageBox.information(
                 self,
-                "Information",
-                "Min and max weights must be non-negative integers.",
+                "Weight filter is invalid",
+                (
+                    "Min and max weights must be non-negative integers.\n\n"
+                    "Use whole numbers such as 0, 1, 2, and so on."
+                ),
             )
             return
 
@@ -216,8 +247,11 @@ class WindowGraphMixin:
         if min_weight is not None and max_weight is not None and min_weight > max_weight:
             QMessageBox.information(
                 self,
-                "Information",
-                "Minimum weight cannot be greater than maximum weight.",
+                "Weight range is invalid",
+                (
+                    "Minimum weight cannot be greater than maximum weight.\n\n"
+                    "Adjust the range and try again."
+                ),
             )
             return
 

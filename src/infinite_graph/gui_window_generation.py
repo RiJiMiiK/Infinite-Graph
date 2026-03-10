@@ -11,6 +11,18 @@ from .gui_state import build_summary_text, update_missing_statistics_for_pair
 
 
 class WindowGenerationMixin:
+    @staticmethod
+    def _critical_error_message(action: str, detail: str) -> str:
+        return (
+            f"Could not {action}.\n\n"
+            "Check your input and try again.\n\n"
+            f"Details: {detail}"
+        )
+
+    @staticmethod
+    def _info_message(action: str, guidance: str) -> str:
+        return f"{action}\n\n{guidance}"
+
     def _refresh_statistics_overview(self) -> None:
         if not self._current_result:
             self.recipe_weight_summary_label.setText("Recipe series: no data")
@@ -54,7 +66,14 @@ class WindowGenerationMixin:
         gui_module = sys.modules[f"{__package__}.gui"]
         input_value = self.input_edit.text().strip()
         if not input_value:
-            QMessageBox.critical(self, "Error", "Choose a save file.")
+            QMessageBox.critical(
+                self,
+                "Save file required",
+                self._info_message(
+                    "Choose a save file before generating the graph.",
+                    "Use Browse to select an Infinite Craft save, then try again.",
+                ),
+            )
             return
 
         if self._worker_thread is not None:
@@ -73,7 +92,14 @@ class WindowGenerationMixin:
         except ValueError as exc:
             self.generate_button.setEnabled(True)
             self.progress_bar.setVisible(False)
-            QMessageBox.information(self, "Information", str(exc))
+            QMessageBox.information(
+                self,
+                "Layout settings need attention",
+                self._info_message(
+                    "The layout settings are not valid.",
+                    f"Update the fields and try again.\n\nDetails: {exc}",
+                ),
+            )
             return
 
         self._worker_thread = gui_module.QThread(self)
@@ -217,7 +243,14 @@ class WindowGenerationMixin:
         )
         self.current_candidate_details.setPlainText("No current combination.")
         self._refresh_statistics_overview()
-        QMessageBox.critical(self, "Error", message)
+        QMessageBox.critical(
+            self,
+            "Generation failed",
+            self._critical_error_message(
+                "generate the graph",
+                message,
+            ),
+        )
 
     def _cleanup_worker(self) -> None:
         self.generate_button.setEnabled(True)
@@ -296,7 +329,14 @@ class WindowGenerationMixin:
         try:
             layout_iterations, spring_scale = self._layout_settings()
         except ValueError as exc:
-            QMessageBox.information(self, "Information", str(exc))
+            QMessageBox.information(
+                self,
+                "Layout settings need attention",
+                self._info_message(
+                    "The layout could not be recomputed with the current settings.",
+                    f"Update the fields and try again.\n\nDetails: {exc}",
+                ),
+            )
             return
 
         self.stage_label.setText("Current step: recomputing layout")

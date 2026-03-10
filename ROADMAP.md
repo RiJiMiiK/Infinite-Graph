@@ -166,4 +166,4 @@ Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete
 - [x] Export image du graphe
 - [x] Vrai polish des statistiques
 - [x] Nettoyage lexical complet de l'interface
-- [ ] Gestion d'erreurs plus orientee UX
+- [x] Gestion d'erreurs plus orientee UX
