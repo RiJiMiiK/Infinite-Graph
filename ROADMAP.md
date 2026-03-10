@@ -182,46 +182,84 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Keep less compatible algorithms available with graph adaptation and user warnings
 - [x] Document compatibility notes for every mono-community algorithm
 - [x] Evaluate all available CDlib crisp mono-community algorithms
-- [ ] Offer `AGDL`
-- [ ] Offer `Async Fluid`
-- [ ] Offer `Bayan`
-- [ ] Offer `Belief`
-- [ ] Offer `CPM`
-- [ ] Offer `DER`
-- [ ] Offer `Eigenvector`
-- [ ] Offer `EM`
-- [ ] Offer `GA`
-- [ ] Offer `GDMP2`
-- [ ] Offer `Girvan-Newman`
-- [ ] Offer `Greedy Modularity`
-- [ ] Offer `Head/Tail`
-- [ ] Offer `Infomap`
-- [ ] Offer `Kcut`
-- [ ] Offer `Label Propagation Raghavan`
-- [ ] Offer `Label Propagation Cordasco-Gargano`
-- [ ] Offer `Leiden`
-- [ ] Offer `Louvain`
-- [ ] Offer `LSWL`
-- [ ] Offer `LSWL Plus`
-- [ ] Offer `Markov Clustering`
-- [ ] Offer `MCODE`
-- [ ] Offer `Mod M`
-- [ ] Offer `Mod R`
-- [ ] Offer `Paris`
-- [ ] Offer `PyCombo`
-- [ ] Offer `RBER Pots`
-- [ ] Offer `RB Pots`
-- [ ] Offer `Ricci Community`
-- [ ] Offer `R Spectral Clustering`
-- [ ] Offer `SCAN`
-- [ ] Offer `Significance Communities`
-- [ ] Offer `Spinglass`
-- [ ] Offer `Surprise Communities`
-- [ ] Offer `Walktrap`
-- [ ] Offer `SBM DL`
-- [ ] Offer `SBM DL Nested`
-- [ ] Offer `Spectral`
-- [ ] Offer `Threshold Clustering`
+- [x] Expose `AGDL` in the algorithm selector
+- [x] Expose `Async Fluid` in the algorithm selector
+- [x] Expose `Bayan` in the algorithm selector
+- [x] Expose `Belief` in the algorithm selector
+- [x] Expose `CPM` in the algorithm selector
+- [x] Expose `DER` in the algorithm selector
+- [x] Expose `Eigenvector` in the algorithm selector
+- [x] Expose `EM` in the algorithm selector
+- [x] Expose `GA` in the algorithm selector
+- [x] Expose `GDMP2` in the algorithm selector
+- [x] Expose `Girvan-Newman` in the algorithm selector
+- [x] Expose `Greedy Modularity` in the algorithm selector
+- [x] Expose `Head/Tail` in the algorithm selector
+- [x] Expose `Infomap` in the algorithm selector
+- [x] Expose `Kcut` in the algorithm selector
+- [x] Expose `Label Propagation Cordasco-Gargano` in the algorithm selector
+- [x] Expose `Leiden` in the algorithm selector
+- [x] Expose `Louvain` in the algorithm selector
+- [x] Expose `LSWL` in the algorithm selector
+- [x] Expose `LSWL Plus` in the algorithm selector
+- [x] Expose `Markov Clustering` in the algorithm selector
+- [x] Expose `MCODE` in the algorithm selector
+- [x] Expose `Mod M` in the algorithm selector
+- [x] Expose `Mod R` in the algorithm selector
+- [x] Expose `Paris` in the algorithm selector
+- [x] Expose `PyCombo` in the algorithm selector
+- [x] Expose `RBER Pots` in the algorithm selector
+- [x] Expose `RB Pots` in the algorithm selector
+- [x] Expose `Ricci Community` in the algorithm selector on Unix-like systems only
+- [x] Expose `R Spectral Clustering` in the algorithm selector
+- [x] Expose `SCAN` in the algorithm selector
+- [x] Expose `Significance Communities` in the algorithm selector
+- [x] Expose `Spinglass` in the algorithm selector
+- [x] Expose `Surprise Communities` in the algorithm selector
+- [x] Expose `Walktrap` in the algorithm selector
+- [x] Expose `SBM DL` in the algorithm selector on Unix-like systems only
+- [x] Expose `SBM DL Nested` in the algorithm selector on Unix-like systems only
+- [x] Expose `Spectral` in the algorithm selector
+- [x] Expose `Threshold Clustering` in the algorithm selector
+- [ ] Integrate `AGDL` execution from the `Communities` tab
+- [ ] Integrate `Async Fluid` execution from the `Communities` tab
+- [ ] Integrate `Bayan` execution from the `Communities` tab
+- [ ] Integrate `Belief` execution from the `Communities` tab
+- [ ] Integrate `CPM` execution from the `Communities` tab
+- [ ] Integrate `DER` execution from the `Communities` tab
+- [ ] Integrate `Eigenvector` execution from the `Communities` tab
+- [ ] Integrate `EM` execution from the `Communities` tab
+- [ ] Integrate `GA` execution from the `Communities` tab
+- [ ] Integrate `GDMP2` execution from the `Communities` tab
+- [ ] Integrate `Girvan-Newman` execution from the `Communities` tab
+- [ ] Integrate `Greedy Modularity` execution from the `Communities` tab
+- [ ] Integrate `Head/Tail` execution from the `Communities` tab
+- [ ] Integrate `Infomap` execution from the `Communities` tab
+- [ ] Integrate `Kcut` execution from the `Communities` tab
+- [ ] Integrate `Label Propagation Cordasco-Gargano` execution from the `Communities` tab
+- [ ] Integrate `Leiden` execution from the `Communities` tab
+- [ ] Integrate `Louvain` execution from the `Communities` tab
+- [ ] Integrate `LSWL` execution from the `Communities` tab
+- [ ] Integrate `LSWL Plus` execution from the `Communities` tab
+- [ ] Integrate `Markov Clustering` execution from the `Communities` tab
+- [ ] Integrate `MCODE` execution from the `Communities` tab
+- [ ] Integrate `Mod M` execution from the `Communities` tab
+- [ ] Integrate `Mod R` execution from the `Communities` tab
+- [ ] Integrate `Paris` execution from the `Communities` tab
+- [ ] Integrate `PyCombo` execution from the `Communities` tab
+- [ ] Integrate `RBER Pots` execution from the `Communities` tab
+- [ ] Integrate `RB Pots` execution from the `Communities` tab
+- [ ] Integrate `Ricci Community` execution from the `Communities` tab
+- [ ] Integrate `R Spectral Clustering` execution from the `Communities` tab
+- [ ] Integrate `SCAN` execution from the `Communities` tab
+- [ ] Integrate `Significance Communities` execution from the `Communities` tab
+- [ ] Integrate `Spinglass` execution from the `Communities` tab
+- [ ] Integrate `Surprise Communities` execution from the `Communities` tab
+- [ ] Integrate `Walktrap` execution from the `Communities` tab
+- [ ] Integrate `SBM DL` execution from the `Communities` tab
+- [ ] Integrate `SBM DL Nested` execution from the `Communities` tab
+- [ ] Integrate `Spectral` execution from the `Communities` tab
+- [ ] Integrate `Threshold Clustering` execution from the `Communities` tab
 - [ ] Allow running community detection from the GUI
 - [ ] Show progress or at least a running state during computation
 - [ ] Add a `Communities` panel or full tab content area
