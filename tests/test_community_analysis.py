@@ -31,6 +31,13 @@ def test_build_cdlib_graph_preserves_direction_and_edge_weights() -> None:
     assert graph["Water"]["Steam"]["elements"] == ["Fire", "Heat"]
 
 
+def test_build_cdlib_graph_requires_directed_mode(monkeypatch) -> None:
+    monkeypatch.setattr(community_analysis, "uses_directed_community_graph", lambda: False)
+
+    with pytest.raises(ValueError, match="must keep the graph directed"):
+        community_analysis.build_cdlib_graph([], [])
+
+
 def test_get_mono_community_algorithms_and_default() -> None:
     algorithms = community_analysis.get_mono_community_algorithms()
     assert [item["key"] for item in algorithms] == [
@@ -41,6 +48,7 @@ def test_get_mono_community_algorithms_and_default() -> None:
     ]
     assert algorithms[0]["label"] == "Infomap"
     assert community_analysis.get_default_mono_community_algorithm() == "infomap"
+    assert community_analysis.uses_directed_community_graph() is True
 
 
 def test_run_mono_community_algorithm_rejects_unknown_name() -> None:

@@ -35,10 +35,16 @@ MONO_COMMUNITY_ALGORITHMS: dict[str, dict[str, object]] = {
 }
 
 
+def uses_directed_community_graph() -> bool:
+    return True
+
+
 def build_cdlib_graph(
     graph_nodes: list[dict[str, object]],
     graph_edges: list[dict[str, object]],
 ) -> nx.DiGraph:
+    if not uses_directed_community_graph():
+        raise ValueError("Community analysis must keep the graph directed.")
     graph = nx.DiGraph()
     for node in graph_nodes:
         node_id = str(node["id"])

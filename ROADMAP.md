@@ -173,7 +173,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Add `cdlib` to the project dependencies
 - [x] Add a `community_analysis.py` module
 - [x] Build a CDlib graph from the current graph data
-- [ ] Keep the graph directed for community analysis
+- [x] Keep the graph directed for community analysis
 - [ ] Use edge weights only
 - [ ] Explicitly ignore node weights
 - [ ] Add a `Communities` tab to the interface
