@@ -178,18 +178,19 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Explicitly ignore node weights
 - [x] Add a `Communities` tab to the interface
 - [x] Add a mono-community algorithm selector
-- [ ] Evaluate the relevant mono-community CDlib algorithms for the directed weighted graph
-- [ ] Offer `Infomap`
-- [ ] Offer `RB Pots`
-- [ ] Offer `RBER Pots`
-- [ ] Offer `Threshold Clustering`
-- [ ] Evaluate `Leiden`
-- [ ] Evaluate `Louvain`
-- [ ] Evaluate `PyCombo`
-- [ ] Evaluate `Walktrap`
-- [ ] Evaluate `Greedy Modularity`
-- [ ] Evaluate `Label Propagation Raghavan`
-- [ ] Document the algorithms that are kept and the ones that are excluded
+- [x] Evaluate the relevant mono-community CDlib algorithms for the directed weighted graph
+- [x] Offer `Infomap`
+- [x] Offer `RB Pots`
+- [x] Offer `Threshold Clustering`
+- [x] Offer `AGDL`
+- [x] Evaluate `Leiden`
+- [x] Evaluate `Louvain`
+- [x] Evaluate `PyCombo`
+- [x] Evaluate `Walktrap`
+- [x] Evaluate `Greedy Modularity`
+- [x] Evaluate `Label Propagation Raghavan`
+- [x] Keep less compatible algorithms available with graph adaptation and user warnings
+- [x] Document compatibility notes for every mono-community algorithm
 - [ ] Allow running community detection from the GUI
 - [ ] Show progress or at least a running state during computation
 - [ ] Add a `Communities` panel or full tab content area

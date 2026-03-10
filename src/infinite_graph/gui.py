@@ -138,7 +138,6 @@ QMainWindow {
 }
 QWidget {
     color: #e2e8f0;
-    font-size: 13px;
 }
 QGroupBox {
     background: #111c33;
