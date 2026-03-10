@@ -39,6 +39,10 @@ def uses_directed_community_graph() -> bool:
     return True
 
 
+def uses_edge_weights_only() -> bool:
+    return True
+
+
 def build_cdlib_graph(
     graph_nodes: list[dict[str, object]],
     graph_edges: list[dict[str, object]],

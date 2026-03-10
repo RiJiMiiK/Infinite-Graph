@@ -27,6 +27,7 @@ def test_build_cdlib_graph_preserves_direction_and_edge_weights() -> None:
     assert isinstance(graph, nx.DiGraph)
     assert sorted(graph.nodes) == ["Steam", "Water"]
     assert graph.nodes["Water"]["label"] == "Water"
+    assert "weight" not in graph.nodes["Water"]
     assert graph["Water"]["Steam"]["weight"] == 3.0
     assert graph["Water"]["Steam"]["elements"] == ["Fire", "Heat"]
 
@@ -49,6 +50,7 @@ def test_get_mono_community_algorithms_and_default() -> None:
     assert algorithms[0]["label"] == "Infomap"
     assert community_analysis.get_default_mono_community_algorithm() == "infomap"
     assert community_analysis.uses_directed_community_graph() is True
+    assert community_analysis.uses_edge_weights_only() is True
 
 
 def test_run_mono_community_algorithm_rejects_unknown_name() -> None:
