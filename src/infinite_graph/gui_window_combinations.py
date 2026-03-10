@@ -497,7 +497,7 @@ class WindowCombinationsMixin:
             self,
             "Export discarded combinations",
             str(Path("discarded_export.json")),
-            "JSON (*.json);;Tous les fichiers (*)",
+            "JSON (*.json);;All files (*)",
         )
         if not path:
             return
@@ -514,7 +514,7 @@ class WindowCombinationsMixin:
             self,
             "Import discarded combinations",
             "",
-            "JSON (*.json);;Tous les fichiers (*)",
+            "JSON (*.json);;All files (*)",
         )
         if not path:
             return

@@ -87,6 +87,6 @@ def test_import_discarded_pairs_rejects_invalid_json_shape(monkeypatch, tmp_path
     try:
         discard_store.import_discarded_pairs(import_path)
     except ValueError as exc:
-        assert "objet JSON" in str(exc)
+        assert "JSON object" in str(exc)
     else:
         raise AssertionError("ValueError expected for invalid imported JSON shape")

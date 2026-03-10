@@ -83,7 +83,7 @@ def export_discarded_pairs(destination_path: Path) -> None:
 def import_discarded_pairs(source_path: Path) -> set[tuple[str, str]]:
     raw = json.loads(source_path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
-        raise ValueError("Le fichier importe doit contenir un objet JSON.")
+        raise ValueError("Imported file must contain a JSON object.")
     imported_pairs = _extract_pairs_from_raw_store(raw)
     merged_pairs = load_discarded_pairs() | imported_pairs
     _save_raw_store({"discarded": [list(values) for values in sorted(merged_pairs)]})

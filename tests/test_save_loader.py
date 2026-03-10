@@ -74,5 +74,5 @@ def test_load_save_invalid_json_and_format(tmp_path: Path) -> None:
 
     unknown = tmp_path / "unknown.json"
     unknown.write_text(json.dumps(["bad"]), encoding="utf-8")
-    with pytest.raises(ValueError, match="Format de sauvegarde non reconnu"):
+    with pytest.raises(ValueError, match="Unrecognized save format"):
         save_loader.load_save(unknown)

@@ -158,4 +158,4 @@ def load_save(path: Path) -> dict[str, list]:
         return _load_infinite_craft_save(data)
     if isinstance(data, dict):
         return _load_simple_save(data)
-    raise ValueError("Format de sauvegarde non reconnu.")
+    raise ValueError("Unrecognized save format.")
