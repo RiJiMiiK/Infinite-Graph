@@ -181,7 +181,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Evaluate the relevant mono-community CDlib algorithms for the directed weighted graph
 - [x] Keep less compatible algorithms available with graph adaptation and user warnings
 - [x] Document compatibility notes for every mono-community algorithm
-- [ ] Build a complete compatibility matrix for all available CDlib crisp mono-community algorithms
+- [x] Evaluate all available CDlib crisp mono-community algorithms
 - [ ] Offer `AGDL`
 - [ ] Offer `Async Fluid`
 - [ ] Offer `Bayan`

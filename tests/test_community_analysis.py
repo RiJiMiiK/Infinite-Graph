@@ -49,37 +49,65 @@ def test_build_cdlib_graph_requires_ignoring_node_weights(monkeypatch) -> None:
 def test_algorithm_evaluation_lists_all_algorithms_with_compatibility_notes() -> None:
     evaluation = community_analysis.get_mono_community_algorithm_evaluation()
     assert [item["key"] for item in evaluation] == [
-        "infomap",
-        "rb_pots",
-        "threshold_clustering",
         "agdl",
-        "rber_pots",
+        "async_fluid",
+        "bayan",
+        "belief",
+        "cpm",
+        "der",
+        "eigenvector",
+        "em",
+        "ga",
+        "gdmp2",
+        "girvan_newman",
+        "greedy_modularity",
+        "head_tail",
+        "infomap",
+        "kcut",
+        "label_propagation_raghavan",
+        "label_propagation_cordasco_gargano",
         "leiden",
         "louvain",
+        "lswl",
+        "lswl_plus",
+        "markov_clustering",
+        "mcode",
+        "mod_m",
+        "mod_r",
+        "paris",
         "pycombo",
+        "rber_pots",
+        "rb_pots",
+        "ricci_community",
+        "r_spectral_clustering",
+        "scan",
+        "significance_communities",
+        "spinglass",
+        "surprise_communities",
+        "sbm_dl",
+        "sbm_dl_nested",
+        "spectral",
+        "threshold_clustering",
         "walktrap",
-        "greedy_modularity",
-        "label_propagation",
     ]
-    assert "directed weighted graph as-is" in evaluation[0]["compatibility_note"]
-    assert "undirected unweighted view" in evaluation[4]["compatibility_note"]
+    assert "directed weighted graph as-is" in next(
+        item["compatibility_note"] for item in evaluation if item["key"] == "infomap"
+    )
+    assert "undirected unweighted view" in next(
+        item["compatibility_note"] for item in evaluation if item["key"] == "rber_pots"
+    )
 
     algorithms = community_analysis.get_mono_community_algorithms()
-    assert [item["key"] for item in algorithms] == [
-        "infomap",
-        "rb_pots",
-        "threshold_clustering",
-        "agdl",
-        "rber_pots",
-        "leiden",
-        "louvain",
-        "pycombo",
-        "walktrap",
-        "greedy_modularity",
-        "label_propagation",
-    ]
-    assert algorithms[0]["requires_graph_adaptation"] is False
-    assert algorithms[4]["requires_graph_adaptation"] is True
+    assert len(algorithms) == len(evaluation)
+    assert next(item for item in algorithms if item["key"] == "infomap")[
+        "requires_graph_adaptation"
+    ] is False
+    assert next(item for item in algorithms if item["key"] == "leiden")[
+        "requires_graph_adaptation"
+    ] is True
+    assert next(item for item in algorithms if item["key"] == "rber_pots")[
+        "requires_graph_adaptation"
+    ] is True
     assert community_analysis.get_default_mono_community_algorithm() == "infomap"
     assert community_analysis.uses_directed_community_graph() is True
     assert community_analysis.uses_edge_weights_only() is True
