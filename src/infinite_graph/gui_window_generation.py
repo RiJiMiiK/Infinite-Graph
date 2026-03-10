@@ -81,6 +81,7 @@ class WindowGenerationMixin:
 
         self.generate_button.setEnabled(False)
         self._set_candidate_buttons_enabled(False)
+        self._set_community_controls_enabled(False)
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
         self.summary_label.setText("Generation in progress...")
@@ -141,6 +142,8 @@ class WindowGenerationMixin:
         self._validate_combination_inputs()
         self._refresh_candidate_count()
         self._set_candidate_buttons_enabled(True)
+        self._set_community_controls_enabled(True)
+        self._reset_community_view()
         self._on_generation_progress(
             INTERFACE_PROGRESS["Updating graph view"],
             "Updating graph view",
@@ -237,6 +240,8 @@ class WindowGenerationMixin:
         self._validate_combination_inputs()
         self._refresh_candidate_count()
         self._set_candidate_buttons_enabled(False)
+        self._set_community_controls_enabled(False)
+        self._reset_community_view()
         self.discarded_model.update_rows([])
         self.candidate_status_label.setText(
             "Combination status: load a save to analyze a pair."
