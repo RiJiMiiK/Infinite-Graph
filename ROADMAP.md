@@ -170,7 +170,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 
 ## 13. Mono-community analysis
 
-- [ ] Add `cdlib` to the project dependencies
+- [x] Add `cdlib` to the project dependencies
 - [ ] Add a `community_analysis.py` module
 - [ ] Build a CDlib graph from the current graph data
 - [ ] Keep the graph directed for community analysis
