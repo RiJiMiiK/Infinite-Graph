@@ -1,169 +1,215 @@
 # Roadmap
 
-Cette roadmap decrit l'etat actuel du projet `Infinite Graph`, ce qui a deja ete fait, et les prochaines etapes possibles.
+This roadmap describes the current state of the `Infinite Graph` project, what has already been completed, and the next possible steps.
 
-## 1. Fondations du projet
+## 1. Project foundations
 
-- [x] Depot Git initialise
-- [x] Projet pousse sur GitHub
-- [x] Structure Python propre avec point d'entree dans `main.py`
-- [x] Code separe dans `src/infinite_graph`
-- [x] Dependances centralisees dans `requirements.txt`
-- [x] Documentation de base dans `README.md`
-- [x] Ajouter une licence si necessaire
-- [x] Clarifier la vision produit dans le `README`
-- [x] Ajouter un changelog si le projet grossit
+- [x] Git repository initialized
+- [x] Project pushed to GitHub
+- [x] Clean Python project structure with `main.py` as the entry point
+- [x] Code split into `src/infinite_graph`
+- [x] Dependencies centralized in `requirements.txt`
+- [x] Base documentation in `README.md`
+- [x] Add a license if needed
+- [x] Clarify the product vision in the `README`
+- [x] Add a changelog as the project grows
 
-## 2. Chargement et validation des saves
+## 2. Save loading and validation
 
-- [x] Support du vrai format Infinite Craft avec `items`
-- [x] Support d'un format JSON simplifie de test
-- [x] Extraction normalisee des recettes sous forme `left`, `right`, `result`
-- [x] Validation des starters obligatoires `Water`, `Fire`, `Wind`, `Earth`
-- [x] Erreur explicite si un starter est manquant
-- [x] Mieux gerer les saves partiellement corrompues
-- [x] Signaler les recettes invalides ignorees
-- [x] Ajouter des tests unitaires de parsing
+- [x] Support the real Infinite Craft save format with `items`
+- [x] Support a simplified JSON test format
+- [x] Normalize recipes as `left`, `right`, `result`
+- [x] Validate required starter elements: `Water`, `Fire`, `Wind`, `Earth`
+- [x] Show an explicit error if a starter is missing
+- [x] Better handle partially corrupted saves
+- [x] Report ignored invalid recipes
+- [x] Add parsing unit tests
 
-## 3. Modele du graphe
+## 3. Graph model
 
-- [x] Chaque element est un noeud
-- [x] Chaque recette `A + B = C` cree jusqu'a deux edges : `A -> C` et `B -> C`
-- [x] Fusion des edges deja existantes
-- [x] Conservation de la liste des co-elements sur chaque edge
-- [x] Poids d'une edge = `len(liste_des_co-elements)`
-- [x] Calcul du poids minimal des noeuds
-- [x] Poids `0` pour les starters
-- [x] Poids d'un resultat = `poids(A) + poids(B) + 1`
-- [x] Conservation du poids minimal si plusieurs recettes produisent le meme resultat
-- [x] Propagation amelioree avec priorite aux plus petits poids
-- [x] Ajouter des tests unitaires sur le calcul des poids
-- [x] Ajouter des tests sur la fusion des edges
-- [x] Ajouter des tests de regression sur des mini-saves
+- [x] Each element is a node
+- [x] Each recipe `A + B = C` creates up to two edges: `A -> C` and `B -> C`
+- [x] Merge already existing edges
+- [x] Preserve the co-element list on each edge
+- [x] Edge weight = `len(co_element_list)`
+- [x] Compute minimal node weights
+- [x] Starter nodes have weight `0`
+- [x] Result weight = `weight(A) + weight(B) + 1`
+- [x] Keep the minimal weight when multiple recipes produce the same result
+- [x] Improve propagation with priority on lower weights
+- [x] Add unit tests for weight computation
+- [x] Add tests for edge merging
+- [x] Add regression tests on mini saves
 
-## 4. Interface graphique
+## 4. Graphical interface
 
-- [x] GUI desktop en Qt
-- [x] Onglet `Graphe`
-- [x] Onglet `Infos`
-- [x] Onglet `Statistiques`
-- [x] Rendu natif du graphe avec `pyqtgraph`
-- [x] Layout actuel base sur `spring layout`
-- [x] Zoom et deplacement dans la vue graphe
-- [x] Tableau des noeuds avec leur poids
-- [x] Tableau des edges avec leur poids et leurs co-elements
-- [x] Graphique du nombre de recettes faites par poids du resultat
-- [x] Graphique du nombre d'elements par poids
-- [x] Liste du nombre de recettes non faites possibles par poids
-- [x] Selection d'un noeud dans le graphe
-- [x] Mise en surbrillance de ses voisins
-- [x] Panneau d'informations pour le noeud selectionne
-- [x] Recherche d'un element dans la vue
-- [x] Centrage automatique sur un element
-- [x] Filtrage du graphe par sous-graphe
-- [x] Filtrage par poids minimal / maximal
-- [x] Reglages de layout via l'interface
+- [x] Desktop Qt GUI
+- [x] `Graph` tab
+- [x] `Info` tab
+- [x] `Statistics` tab
+- [x] Native graph rendering with `pyqtgraph`
+- [x] Current layout based on `spring layout`
+- [x] Zoom and pan in the graph view
+- [x] Node table with weights
+- [x] Edge table with weights and co-elements
+- [x] Chart for completed recipe count by result weight
+- [x] Chart for element count by weight
+- [x] List of possible missing recipe counts by weight
+- [x] Node selection in the graph
+- [x] Highlight neighboring nodes
+- [x] Selected-node details panel
+- [x] Search for an element in the graph view
+- [x] Auto-center on an element
+- [x] Subgraph filtering
+- [x] Min / max weight filtering
+- [x] Layout settings exposed in the interface
 
-## 5. Experience utilisateur pendant la generation
+## 5. Generation user experience
 
-- [x] Generation executee hors du thread principal
-- [x] Fenetre qui reste responsive pendant le traitement
-- [x] Barre de progression indeterminee
-- [x] Affichage de l'etape courante
-- [x] Progression detaillee pendant le `spring layout`
-- [x] ETA approximative pendant le calcul du layout
-- [x] Vraie barre de progression en pourcentage
-- [x] Etapes encore plus fines
-- [x] Temps total de generation affiche
-- [x] Cache local du layout pour eviter de tout recalculer
+- [x] Run generation outside the main thread
+- [x] Keep the window responsive during processing
+- [x] Indeterminate loading bar
+- [x] Show the current stage
+- [x] Detailed progress during `spring layout`
+- [x] Approximate ETA during layout computation
+- [x] Real percentage progress bar
+- [x] Finer progress stages
+- [x] Display total generation time
+- [x] Local layout cache to avoid recomputing everything
 
-## 6. Gestion des combinaisons candidates
+## 6. Candidate combination workflow
 
-- [x] Deux champs `Element 1` et `Element 2`
-- [x] Bouton `Random`
-- [x] Bouton `Cheapest`
-- [x] Bouton `Done`
-- [x] Bouton `Discard`
-- [x] `Random` propose une combinaison non faite aleatoire
-- [x] `Cheapest` propose une combinaison avec le poids de resultat minimal
-- [x] `Done` marque la combinaison comme faite pour la session courante uniquement
-- [x] `Discard` marque la combinaison comme impossible de facon persistante
-- [x] `Random` et `Cheapest` excluent les recettes connues
-- [x] `Random` et `Cheapest` excluent les combinaisons discardees
-- [x] `Random` et `Cheapest` excluent les combinaisons marquees `done` dans la session
-- [x] Les champs sont editables
-- [x] Un clic sur un champ copie son contenu dans le presse-papiers
-- [x] Les champs sont vides apres `Done`
-- [x] Les champs sont vides apres `Discard`
-- [x] Pas de pop-up pour `Done`
-- [x] Auto-completion des noms d'elements
-- [x] Bouton `Undo Done`
-- [x] Bouton `Undo Discard`
-- [x] Bouton pour passer directement a la suggestion suivante
-- [x] Historique local des dernieres suggestions
-- [x] Validation en direct des noms saisis
+- [x] Two fields: `Element 1` and `Element 2`
+- [x] `Random` button
+- [x] `Cheapest` button
+- [x] `Done` button
+- [x] `Discard` button
+- [x] `Random` suggests an unfinished random combination
+- [x] `Cheapest` suggests a combination with the lowest result weight
+- [x] `Done` marks a combination as completed for the current session only
+- [x] `Discard` marks a combination as impossible persistently
+- [x] `Random` and `Cheapest` exclude known recipes
+- [x] `Random` and `Cheapest` exclude discarded combinations
+- [x] `Random` and `Cheapest` exclude session-done combinations
+- [x] Fields are editable
+- [x] Clicking a field copies its content to the clipboard
+- [x] Fields are cleared after `Done`
+- [x] Fields are cleared after `Discard`
+- [x] No popup for `Done`
+- [x] Element name auto-completion
+- [x] `Undo Done` button
+- [x] `Undo Discard` button
+- [x] Button to jump directly to the next suggestion
+- [x] Local history of the latest suggestions
+- [x] Live validation of typed element names
 
-## 7. Persistance locale
+## 7. Local persistence
 
-- [x] Fichier global `discarded.json`
-- [x] Combinaisons discardees globales, independantes de la save
-- [x] Compatibilite avec l'ancien format de `discarded.json`
-- [x] Reecriture au nouveau format global
-- [x] Interface pour consulter les combinaisons discardees
-- [x] Suppression manuelle d'une combinaison discardee
-- [x] Reset complet du fichier `discarded.json`
-- [x] Export / import manuel si besoin
+- [x] Global `discarded.json` file
+- [x] Discarded combinations are global and independent of the loaded save
+- [x] Backward compatibility with the old `discarded.json` format
+- [x] Rewrite to the new global format
+- [x] Interface to browse discarded combinations
+- [x] Manual removal of a discarded combination
+- [x] Full reset of `discarded.json`
+- [x] Manual import / export when needed
 
-## 8. Nettoyage deja effectue
+## 8. Cleanup already completed
 
-- [x] Suppression du CLI
-- [x] Suppression du rendu HTML
-- [x] Suppression des assets web inutiles
-- [x] Suppression de l'export CSV
-- [x] Nettoyage de la documentation en consequence
-- [x] Nettoyer `.gitignore` si certains ignores ne servent plus
-- [x] Verifier s'il reste des fichiers morts dans le repo
+- [x] CLI removed
+- [x] HTML rendering removed
+- [x] Unused web assets removed
+- [x] CSV export removed
+- [x] Documentation cleaned accordingly
+- [x] Clean `.gitignore` if some ignored paths are no longer used
+- [x] Check whether dead files remain in the repository
 
-## 9. Qualite logicielle
+## 9. Software quality
 
-- [x] Tests unitaires sur le chargement des saves
-- [x] Tests unitaires sur la validation des starters
-- [x] Tests unitaires sur le calcul des poids
-- [x] Tests unitaires sur la fusion des edges
-- [x] Tests unitaires sur `Random`
-- [x] Tests unitaires sur `Cheapest`
-- [x] Tests unitaires sur `Done`
-- [x] Tests unitaires sur `Discard`
-- [x] Tests de persistance sur `discarded.json`
-- [x] Tests GUI minimaux
-- [x] Ajout d'un formatter
-- [x] Ajout d'un linter
-- [x] Ajout d'une CI GitHub Actions
+- [x] Unit tests for save loading
+- [x] Unit tests for starter validation
+- [x] Unit tests for weight computation
+- [x] Unit tests for edge merging
+- [x] Unit tests for `Random`
+- [x] Unit tests for `Cheapest`
+- [x] Unit tests for `Done`
+- [x] Unit tests for `Discard`
+- [x] Persistence tests for `discarded.json`
+- [x] Minimal GUI tests
+- [x] Formatter added
+- [x] Linter added
+- [x] GitHub Actions CI added
 
 ## 10. Performance
 
-- [x] Traitement lourd sorti du thread principal
-- [x] Etat courant du traitement visible par l'utilisateur
-- [x] Optimiser le `spring layout`
-- [x] Mettre en cache les positions des noeuds
-- [x] Eviter un recalcul complet si seule l'interface change
-- [x] Calculer des sous-graphes au lieu du graphe complet si necessaire
-- [x] Indexer plus efficacement les combinaisons candidates
+- [x] Heavy processing moved out of the main thread
+- [x] Current processing state visible to the user
+- [x] Optimize the `spring layout`
+- [x] Cache node positions
+- [x] Avoid full recomputation when only the interface changes
+- [x] Compute reduced subgraphs instead of the full graph when needed
+- [x] Index candidate combinations more efficiently
 
-## 11. UX produit
+## 11. Product UX
 
-- [x] Indiquer pourquoi une combinaison n'est plus proposee
-- [x] Ajouter un panneau `current candidate`
-- [x] Afficher un compteur de combinaisons candidates restantes
+- [x] Explain why a combination is no longer suggested
+- [x] Add a `current candidate` panel
+- [x] Show the remaining candidate combination count
 
-## 12. Futures ameliorations UX
+## 12. Future UX improvements
 
-- [x] Uniformiser tout le wording de l'interface
-- [x] Responsive layout desktop / petite fenetre
-- [x] Preferences UI persistantes
-- [x] Recherche / filtre dans les tables `Infos`
-- [x] Actions contextuelles depuis le graphe
-- [x] Export image du graphe
-- [x] Vrai polish des statistiques
-- [x] Nettoyage lexical complet de l'interface
-- [x] Gestion d'erreurs plus orientee UX
+- [x] Unify all interface wording
+- [x] Responsive layout for desktop / smaller windows
+- [x] Persistent UI preferences
+- [x] Search / filtering in `Info` tables
+- [x] Context actions from the graph
+- [x] Export the graph as an image
+- [x] Real statistics view polish
+- [x] Complete lexical cleanup of the interface
+- [x] More UX-oriented error handling
+
+## 13. Mono-community analysis
+
+- [ ] Add `cdlib` to the project dependencies
+- [ ] Add a `community_analysis.py` module
+- [ ] Build a CDlib graph from the current graph data
+- [ ] Keep the graph directed for community analysis
+- [ ] Use edge weights only
+- [ ] Explicitly ignore node weights
+- [ ] Add a `Communities` tab to the interface
+- [ ] Add a mono-community algorithm selector
+- [ ] Evaluate the relevant mono-community CDlib algorithms for the directed weighted graph
+- [ ] Offer `Infomap`
+- [ ] Offer `RB Pots`
+- [ ] Offer `RBER Pots`
+- [ ] Offer `Threshold Clustering`
+- [ ] Evaluate `Leiden`
+- [ ] Evaluate `Louvain`
+- [ ] Evaluate `PyCombo`
+- [ ] Evaluate `Walktrap`
+- [ ] Evaluate `Greedy Modularity`
+- [ ] Evaluate `Label Propagation Raghavan`
+- [ ] Document the algorithms that are kept and the ones that are excluded
+- [ ] Allow running community detection from the GUI
+- [ ] Show progress or at least a running state during computation
+- [ ] Add a `Communities` panel or full tab content area
+- [ ] Show the total number of detected communities
+- [ ] Show min / max / average community size
+- [ ] List detected communities
+- [ ] Allow selecting a community
+- [ ] Show the node list of the selected community
+- [ ] Color the graph by community
+- [ ] Add an option to disable community coloring
+- [ ] Add a hierarchical layout by communities
+- [ ] Compute a global `spring layout` between communities
+- [ ] Compute a local `spring layout` inside each community
+- [ ] Combine both layouts to display node clusters by community
+- [ ] Show the community identifier in the node table
+- [ ] Add a summary of the parameters used for the computation
+- [ ] Add the basic parameters of mono-community algorithms
+- [ ] Expose at least the resolution parameter for `RB Pots`
+- [ ] Gracefully handle errors when an algorithm backend is missing
+- [ ] Add unit tests for building the CDlib graph
+- [ ] Add unit tests for mono-community outputs
+- [ ] Add minimal GUI tests for the community computation flow
+- [ ] Visually compare the retained mono-community algorithms on a mini test save

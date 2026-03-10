@@ -1,44 +1,161 @@
 # Infinite Graph
 
-Outil desktop Python pour analyser une sauvegarde d'Infinite Craft, visualiser son graphe, et piloter les combinaisons encore candidates.
+Infinite Graph is a Python desktop application for exploring an Infinite Craft save file as a graph, inspecting its structure, and managing still-untested candidate combinations.
 
-## Vision
+It is built as an interactive analysis tool, not as a static export utility.
 
-Infinite Graph a pour but de servir d'outil d'exploration pour une sauvegarde Infinite Craft.
+## What the project does
 
-L'idee n'est pas seulement d'afficher un graphe, mais de :
+Infinite Graph focuses on three things:
 
-- comprendre la structure des elements deja decouverts
-- estimer leur profondeur via un poids minimal
-- identifier rapidement des combinaisons encore non tentees
-- suivre localement les combinaisons deja essayees ou jugees inutiles
+- graph exploration of discovered Infinite Craft elements
+- candidate combination management for still-untested pairs
+- structural analysis through node weights, edge aggregation, and statistics
 
-Le projet est pense comme un outil desktop interactif, centre sur l'analyse et la prise de decision, plutot qu'un simple export statique.
+The application loads a save, computes a directed weighted graph, and gives you tools to:
 
-## Fonctionnalites
+- inspect nodes and edges
+- understand element depth through minimal node weights
+- browse remaining candidate combinations
+- mark combinations as done or discarded
+- keep local working state while exploring a save
 
-- lecture d'une sauvegarde Infinite Craft reelle ou d'un format JSON simplifie
-- interface graphique Qt complete
-- graphe natif avec `pyqtgraph`, zoom, deplacement, selection de noeud et mise en surbrillance des voisins
-- theme global sombre, avec vue graphe egalement en dark mode
-- calcul du poids minimal des noeuds et fusion des edges
-- suggestions de combinaisons avec `Random`, `Cheapest`, `Next`, `Done`, `Discard`, `Undo Done`, `Undo Discard`
-- historique local des dernieres suggestions
-- panneau `current candidate` avec statut, origine, poids estime et compteur restant
-- gestion globale des combinaisons ignorees via `discarded.json`
-- import, export, reset et consultation des `discarded`
-- statistiques sur les poids des recettes, noeuds et combinaisons candidates
-- generation asynchrone avec progression detaillee, temps total et cache local du layout
-- sous-graphe, filtre par poids et reglages de layout dans l'onglet graphe
+## Current feature set
 
-## Formats supportes
+### Save support
 
-Le projet supporte maintenant :
+- real Infinite Craft save format based on `items`
+- simplified JSON test format for fixtures and regression coverage
+- graceful handling of partially corrupted saves
+- warnings for ignored invalid entries or recipes
+- validation of required starter elements:
+  - `Water`
+  - `Fire`
+  - `Wind`
+  - `Earth`
 
-- une vraie sauvegarde Infinite Craft avec une cle `items`
-- un format JSON simplifie de test
+### Graph model
 
-Exemple du format simplifie :
+- each element is a node
+- each recipe `A + B = C` creates up to two directed edges:
+  - `A -> C`
+  - `B -> C`
+- edges are merged instead of duplicated
+- each edge stores the list of co-elements seen on that relation
+- edge weight equals the number of stored co-elements
+- starter elements have node weight `0`
+- all other node weights are computed as:
+  - `weight(A) + weight(B) + 1`
+- when multiple recipes produce the same element, the minimal weight is kept
+
+### GUI
+
+- full Qt desktop interface
+- global dark mode
+- responsive layout for large and smaller windows
+- persistent UI preferences:
+  - window size
+  - panel visibility
+  - splitter sizes
+  - layout settings
+
+### Graph tab
+
+- native graph rendering with `pyqtgraph`
+- zoom and pan
+- spring layout with local cache
+- search for an element
+- automatic centering on selected elements
+- node selection
+- neighbor highlighting
+- selected-node details panel
+- subgraph filtering
+- weight filtering
+- graph image export
+- graph context menu actions:
+  - copy element name
+  - use as `Element 1`
+  - use as `Element 2`
+  - search this element
+  - set as subgraph center
+
+### Candidate workflow
+
+- `Random`
+- `Cheapest`
+- `Next`
+- `Done`
+- `Undo Done`
+- `Discard`
+- `Undo Discard`
+
+The application also includes:
+
+- editable element fields
+- auto-completion for element names
+- live validation of typed names
+- `current candidate` panel
+- local suggestion history
+- remaining candidate count
+- explanation of why a pair is no longer suggestible
+
+### Discarded combination management
+
+- global `discarded.json`
+- independent from the loaded save
+- browse discarded pairs in the `Info` tab
+- manually remove a discarded pair
+- reset the whole discarded list
+- import and export discarded combinations
+
+### Info tab
+
+- node table
+- edge table
+- discarded combinations table
+- search / filtering for the tables
+
+### Statistics tab
+
+- chart of completed recipe counts by result weight
+- chart of element counts by weight
+- missing recipe counts by result weight
+- overview cards for the main statistics
+- dark-mode styling consistent with the rest of the app
+
+### Generation flow
+
+- runs outside the main UI thread
+- window remains responsive
+- visible progress bar
+- detailed stage messages
+- percentage progress
+- spring layout progress details
+- total generation time shown
+
+## Supported save formats
+
+### Real Infinite Craft save
+
+The main supported format is the real Infinite Craft save based on an `items` list.
+
+Each item is interpreted as an element, and its `recipes` field is interpreted as the list of recipes that produce that element.
+
+Example:
+
+```json
+{
+  "id": 4,
+  "text": "Steam",
+  "recipes": [[0, 1]]
+}
+```
+
+This is interpreted as:
+
+- `Water + Fire -> Steam`
+
+### Simplified test format
 
 ```json
 {
@@ -49,13 +166,18 @@ Exemple du format simplifie :
 }
 ```
 
-Il accepte aussi des variantes de cles :
+Accepted recipe key variants:
 
 - `left` / `right` / `result`
 - `first` / `second` / `result`
 - `a` / `b` / `result`
 
-Pour les elements, chaque entree peut etre une chaine ou un objet avec `name`, `text` ou `result`.
+Accepted element entry variants:
+
+- plain string
+- object with `name`
+- object with `text`
+- object with `result`
 
 ## Installation
 
@@ -65,79 +187,88 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Conventions de code
-
-Le projet suit explicitement :
-
-- `PEP 8` pour le style Python general
-- `PEP 257` pour les conventions de docstrings
-- `PEP 20` pour les principes de lisibilite et de conception
-
-Outils actuellement utilises dans le repo :
-
-- `black` pour le formatage
-- `isort` pour les imports
-- `pylint` pour les checks statiques
-
-Politique de taille des modules :
-
-- alerte a partir de `800` lignes
-- echec a partir de `1000` lignes
-
-Cette regle est une convention interne du projet inspiree par les objectifs de maintenabilite, modularite et analysabilite.
-
-CI actuelle :
-
-- GitHub Actions execute `pytest --cov --cov-report=term-missing`
-- GitHub Actions execute `pylint main.py src`
-
-## Utilisation GUI
+## Running the application
 
 ```bash
 python main.py
 ```
 
-## Fichiers du projet
+## Typical workflow
 
-- `ROADMAP.md` : roadmap detaillee
-- `CHANGELOG.md` : historique des evolutions
-- `discarded.json` : combinaisons globalement ignorees
-- `LICENSE` : licence du projet
+1. Load an Infinite Craft save.
+2. Click `Generate`.
+3. Explore the graph, node table, edge table, and statistics.
+4. Use `Random` or `Cheapest` to get a candidate combination.
+5. Mark the pair as:
+   - `Done` if you tested it in your current session
+   - `Discard` if you want to permanently ignore it
+6. Use `Undo Done` or `Undo Discard` when needed.
+7. Use `Next` to defer a suggestion and move on.
+8. Use history to revisit an earlier suggestion.
 
-Dans l'interface :
+## Project structure
 
-- choisis le fichier de sauvegarde
-- clique sur `Generer`
-- utilise `Random`, `Cheapest` et `Next` pour faire tourner les suggestions
-- utilise `Done`, `Undo Done`, `Discard` et `Undo Discard` pour gerer les combinaisons candidates
-- consulte le panneau `current candidate` pour voir l'etat de la paire courante
-- ouvre l'historique si tu veux recharger une suggestion precedente
-- consulte les trois onglets : graphe, infos, statistiques
-- dans l'onglet graphe, utilise la souris pour zoomer et deplacer la vue
+- `main.py`: application entry point
+- `src/infinite_graph`: application code
+- `tests`: full automated test suite
+- `ROADMAP.md`: project roadmap
+- `CHANGELOG.md`: release history
+- `discarded.json`: global discarded combination storage
+- `LICENSE`: project license
 
-## Onglets
+## Code quality
 
-- `Graphe` : rendu natif, recherche, recentrage, sous-graphe, filtre par poids, details du noeud selectionne
-- `Infos` : tables des noeuds, edges et combinaisons `discarded`
-- `Statistiques` : courbes par poids et liste des recettes candidates restantes par poids
+The project explicitly follows:
 
-## Limite actuelle
+- `PEP 8`
+- `PEP 257`
+- `PEP 20`
 
-Sur une vraie sauvegarde Infinite Craft, il peut y avoir des dizaines de millions de paires possibles. L'application travaille donc sur une selection exploitable de combinaisons candidates pour l'interface. Cela reste une liste de paires non testees, pas une prediction des resultats.
+Tools currently used:
 
-Pour les tres gros graphes :
+- `black`
+- `isort`
+- `pylint`
+- `pytest`
+- `pytest-cov`
 
-- les donnees completes restent chargees pour les tables et statistiques
-- le rendu visuel peut etre reduit a un sous-graphe plus exploitable
-- les positions de layout sont mises en cache localement
+Current quality targets already reached:
 
-## Modele du graphe
+- `100.00%` test coverage
+- `pylint` score of `10.00/10`
 
-- chaque element est un noeud
-- les starters `Water`, `Fire`, `Wind`, `Earth` ont un poids de `0`
-- tout autre noeud a pour poids minimal `poids(element_1) + poids(element_2) + 1`
-- si plusieurs recettes produisent un meme element, le poids minimal est conserve
-- une recette `A + B = C` cree jusqu'a deux edges : `A -> C` et `B -> C`
-- si une edge existe deja, elle n'est pas recreee
-- chaque edge stocke la liste des co-elements rencontres sur cette relation
-- le poids d'une edge est `len(liste_des_co_elements)`
+Current CI:
+
+- GitHub Actions runs `python -m pytest --cov --cov-report=term-missing`
+- GitHub Actions runs `python -m pylint main.py src`
+
+Internal module-size policy:
+
+- warning from `800` lines
+- failure from `1000` lines
+
+## Performance notes
+
+Large Infinite Craft saves can contain a huge number of possible pairs.
+
+To keep the application usable:
+
+- full data remains available for tables and statistics
+- graph rendering may use a reduced subgraph when the graph is too large to display comfortably
+- graph layout positions are cached locally
+- candidate combinations are indexed for faster suggestion lookup
+
+The candidate list shown by the application is a usable working set of still-untested pairs, not a prediction engine for actual recipe results.
+
+## Roadmap direction
+
+The next major feature area is mono-community analysis on the directed weighted graph through CDlib.
+
+Planned direction:
+
+- dedicated `Communities` tab
+- support for multiple mono-community algorithms
+- graph coloring by community
+- hierarchical community-aware graph layout
+
+See [ROADMAP.md](/c:/Users/youen/OneDrive/Bureau/Infinite_Graph/ROADMAP.md) for the current plan.
