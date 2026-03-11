@@ -27,9 +27,11 @@ from .discard_store import (
     remove_discarded_pair as _remove_discarded_pair,
 )
 from .community_analysis import (
+    get_bayan_gurobi_status as _get_bayan_gurobi_status,
     get_default_mono_community_algorithm as _get_default_mono_community_algorithm,
     get_mono_community_algorithms as _get_mono_community_algorithms,
     get_mono_community_algorithm_parameters as _get_mono_community_algorithm_parameters,
+    get_mono_community_algorithm_pre_run_warning as _get_mono_community_algorithm_pre_run_warning,
     get_mono_community_algorithm_warning as _get_mono_community_algorithm_warning,
     run_mono_community_algorithm as _run_mono_community_algorithm,
     summarize_mono_community_result as _summarize_mono_community_result,
@@ -85,6 +87,7 @@ __all__ += ["import_discarded_pairs", "remove_discarded_pair"]
 __all__ += ["load_ui_preferences", "save_ui_preferences", "ui_preferences_path"]
 __all__ += ["get_mono_community_algorithms", "get_default_mono_community_algorithm"]
 __all__ += ["get_mono_community_algorithm_parameters"]
+__all__ += ["get_bayan_gurobi_status", "get_mono_community_algorithm_pre_run_warning"]
 __all__ += ["get_mono_community_algorithm_warning", "run_mono_community_algorithm"]
 __all__ += ["summarize_mono_community_result"]
 
@@ -112,7 +115,9 @@ import_discarded_pairs = _import_discarded_pairs
 remove_discarded_pair = _remove_discarded_pair
 get_mono_community_algorithms = _get_mono_community_algorithms
 get_default_mono_community_algorithm = _get_default_mono_community_algorithm
+get_bayan_gurobi_status = _get_bayan_gurobi_status
 get_mono_community_algorithm_parameters = _get_mono_community_algorithm_parameters
+get_mono_community_algorithm_pre_run_warning = _get_mono_community_algorithm_pre_run_warning
 get_mono_community_algorithm_warning = _get_mono_community_algorithm_warning
 run_mono_community_algorithm = _run_mono_community_algorithm
 summarize_mono_community_result = _summarize_mono_community_result

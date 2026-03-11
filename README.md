@@ -135,6 +135,7 @@ The application also includes:
 - platform-aware algorithm visibility
 - community summary, list, and details panels ready for the next analysis steps
 - algorithm-specific parameter inputs for supported community methods such as `AGDL`
+- pre-run warnings for high-risk algorithms before launching a community computation
 
 Current visibility rules:
 
@@ -147,6 +148,18 @@ Current stability note:
 - benchmark runs reproduced upstream CDlib crashes on several graph families
 - the failure also reproduces on the documented `karate_club_graph()` example in this environment
 - treat `AGDL` as a best-effort option, not as a stable default
+
+Current solver warning:
+
+- `Bayan` is available, but it depends on Gurobi
+- when a restricted Gurobi license is detected, the application shows a pre-run warning
+- the main risk in this project comes from running it without a suitable full Gurobi license
+- with only a restricted license, Bayan can hit the Gurobi size limit on relatively small graphs
+- that failure may happen only after the solver has already spent an unknown amount of time running
+- a real Infinite Graph save reproduced this with a run started around `01:00` that was still blocked when checked again around `07:00`
+- that observation was made with a restricted Gurobi license only
+- no equivalent runtime validation was completed with a full Gurobi license
+- with a proper full license, this specific risk is expected to be much lower
 
 ### Generation flow
 
@@ -323,6 +336,7 @@ Additional benchmark note:
 - `AGDL` is not hidden, but it is intentionally treated as unstable
 - repeated matrix tests across graph size, orientation, weighting, cyclicity, self-loops, and parameter ranges up to `100`
   reproduced non-deterministic failure families in the upstream CDlib implementation
+- `Bayan` is additionally constrained by the local Gurobi license, so runtime behavior can be dominated by the solver rather than by the graph algorithm itself
 
 ## Roadmap direction
 

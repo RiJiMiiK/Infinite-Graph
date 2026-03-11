@@ -198,6 +198,128 @@ def test_get_mono_community_algorithm_warning() -> None:
     assert community_analysis.get_mono_community_algorithm_warning("unknown") is None
 
 
+def test_get_mono_community_algorithm_pre_run_warning_for_bayan(monkeypatch) -> None:
+    monkeypatch.setattr(
+        community_analysis,
+        "get_bayan_gurobi_status",
+        lambda: {
+            "available": True,
+            "restricted": True,
+            "license_expiration": 20271129,
+            "message": "Restricted license - for non-production use only - expires 2027-11-29",
+        },
+    )
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning("bayan")
+
+    assert warning is not None
+    assert "runtime can effectively feel indefinite" in warning
+    assert "restricted Gurobi license" in warning
+    assert "20271129" in warning
+    assert "checked again around 07:00" in warning
+    assert "no equivalent test was run with a full license" in warning
+    assert "far less problematic" in warning
+
+
+def test_get_bayan_gurobi_status_when_gurobi_is_missing(monkeypatch) -> None:
+    community_analysis.get_bayan_gurobi_status.cache_clear()
+
+    def fake_import_module(name: str):
+        raise ImportError("missing gurobi")
+
+    monkeypatch.setattr(community_analysis.importlib, "import_module", fake_import_module)
+
+    status = community_analysis.get_bayan_gurobi_status()
+
+    assert status == {
+        "available": False,
+        "restricted": False,
+        "license_expiration": None,
+        "message": "gurobipy is not installed.",
+    }
+    community_analysis.get_bayan_gurobi_status.cache_clear()
+
+
+def test_get_bayan_gurobi_status_with_restricted_license(monkeypatch) -> None:
+    community_analysis.get_bayan_gurobi_status.cache_clear()
+
+    class FakeModel:
+        def __init__(self) -> None:
+            print("Restricted license - for non-production use only - expires 2027-11-29")
+
+        def getAttr(self, name: str) -> int:
+            assert name == "LicenseExpiration"
+            return 20271129
+
+        def dispose(self) -> None:
+            return None
+
+    fake_gp = SimpleNamespace(Model=FakeModel)
+    monkeypatch.setattr(
+        community_analysis.importlib,
+        "import_module",
+        lambda name: fake_gp,
+    )
+
+    status = community_analysis.get_bayan_gurobi_status()
+
+    assert status == {
+        "available": True,
+        "restricted": True,
+        "license_expiration": 20271129,
+        "message": "Restricted license - for non-production use only - expires 2027-11-29",
+    }
+    community_analysis.get_bayan_gurobi_status.cache_clear()
+
+
+def test_get_bayan_gurobi_status_when_model_creation_fails(monkeypatch) -> None:
+    community_analysis.get_bayan_gurobi_status.cache_clear()
+
+    class FakeModel:
+        def __init__(self) -> None:
+            raise RuntimeError("license failure")
+
+    fake_gp = SimpleNamespace(Model=FakeModel)
+    monkeypatch.setattr(
+        community_analysis.importlib,
+        "import_module",
+        lambda name: fake_gp,
+    )
+
+    status = community_analysis.get_bayan_gurobi_status()
+
+    assert status == {
+        "available": False,
+        "restricted": False,
+        "license_expiration": None,
+        "message": "Gurobi could not start: license failure",
+    }
+    community_analysis.get_bayan_gurobi_status.cache_clear()
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_missing_bayan_runtime(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        community_analysis,
+        "get_bayan_gurobi_status",
+        lambda: {
+            "available": False,
+            "restricted": False,
+            "license_expiration": None,
+            "message": "gurobipy is not installed.",
+        },
+    )
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning("bayan")
+
+    assert warning is not None
+    assert "Gurobi is not available" in warning
+    assert "gurobipy is not installed" in warning
+    assert community_analysis.get_mono_community_algorithm_pre_run_warning("infomap") is None
+    assert community_analysis.get_mono_community_algorithm_pre_run_warning("unknown") is None
+
+
 def test_prepare_mono_community_algorithm_input_adapts_graph_and_warnings() -> None:
     graph = nx.DiGraph()
     graph.add_edge("Water", "Steam", weight=2.0, elements=["Fire"])
@@ -251,6 +373,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("async_fluid", graph, kwargs))
         return "async-fluid-result"
 
+    def fake_bayan(graph, **kwargs):
+        calls.append(("bayan", graph, kwargs))
+        return "bayan-result"
+
     def fake_leiden(graph, **kwargs):
         calls.append(("leiden", graph, kwargs))
         return "leiden-result"
@@ -264,6 +390,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     monkeypatch.setattr(community_analysis.algorithms, "threshold_clustering", fake_threshold)
     monkeypatch.setattr(community_analysis.algorithms, "agdl", fake_agdl)
     monkeypatch.setattr(community_analysis.algorithms, "async_fluid", fake_async_fluid)
+    monkeypatch.setattr(community_analysis.algorithms, "bayan", fake_bayan)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
         community_analysis.algorithms,
@@ -289,6 +416,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         community_analysis.run_mono_community_algorithm(graph, "async_fluid")
         == "async-fluid-result"
     )
+    assert community_analysis.run_mono_community_algorithm(graph, "bayan") == "bayan-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
     assert (
         community_analysis.run_mono_community_algorithm(
@@ -307,11 +435,14 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[4][0] == "async_fluid"
     assert isinstance(calls[4][1], nx.Graph)
     assert calls[4][2] == {"k": 2}
+    assert calls[5][0] == "bayan"
     assert isinstance(calls[5][1], nx.Graph)
-    assert calls[5][2] == {"weights": "weight"}
-    assert calls[6][0] == "label_propagation"
+    assert calls[5][2] == {}
     assert isinstance(calls[6][1], nx.Graph)
-    assert calls[6][2] == {}
+    assert calls[6][2] == {"weights": "weight"}
+    assert calls[7][0] == "label_propagation"
+    assert isinstance(calls[7][1], nx.Graph)
+    assert calls[7][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

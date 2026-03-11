@@ -78,6 +78,19 @@ class WindowCommunitiesMixin:
         gui_module = sys.modules[f"{__package__}.gui"]
         graph = self._current_result["community_graph"]
         algorithm_parameters = self._read_community_parameter_values()
+        pre_run_warning = gui_module.get_mono_community_algorithm_pre_run_warning(
+            str(algorithm_name)
+        )
+        if pre_run_warning:
+            response = QMessageBox.warning(
+                self,
+                "Community computation warning",
+                f"{pre_run_warning}\n\nContinue anyway?",
+                QMessageBox.Ok | QMessageBox.Cancel,
+                QMessageBox.Cancel,
+            )
+            if response != QMessageBox.Ok:
+                return
 
         try:
             result = gui_module.run_mono_community_algorithm(

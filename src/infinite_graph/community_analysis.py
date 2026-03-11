@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+from contextlib import redirect_stderr, redirect_stdout
 from collections.abc import Mapping
+from functools import lru_cache
+import importlib
+import io
 import os
 
 import networkx as nx
@@ -72,6 +76,16 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Bayan",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": (
+            "Bayan depends on Gurobi. The main risk in this project comes from running it "
+            "without a suitable full license. With only a restricted license, relatively small "
+            "graphs can trigger extremely long runs before a size-limit failure, and the runtime "
+            "can effectively feel indefinite. On a real Infinite Graph save, a Bayan run was "
+            "started around 01:00 and was still running when checked again around 07:00. "
+            "This observation was made with a restricted Gurobi license only; no equivalent test "
+            "was run with a full license. With a proper license, Bayan is expected to be far less "
+            "problematic."
+        ),
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",
@@ -478,6 +492,91 @@ def get_mono_community_algorithm_parameters(
 
 def get_default_mono_community_algorithm() -> str:
     return "infomap"
+
+
+@lru_cache(maxsize=1)
+def get_bayan_gurobi_status() -> dict[str, object]:
+    """Return a best-effort snapshot of the local Gurobi runtime status."""
+    try:
+        gp = importlib.import_module("gurobipy")
+    except ImportError:
+        return {
+            "available": False,
+            "restricted": False,
+            "license_expiration": None,
+            "message": "gurobipy is not installed.",
+        }
+
+    output = io.StringIO()
+    try:
+        with redirect_stdout(output), redirect_stderr(output):
+            model = gp.Model()
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "available": False,
+            "restricted": False,
+            "license_expiration": None,
+            "message": f"Gurobi could not start: {exc}",
+        }
+
+    banner = output.getvalue().strip()
+    restricted = "restricted license" in banner.lower()
+    expiration = None
+    try:
+        expiration = model.getAttr("LicenseExpiration")
+    except Exception:  # pragma: no cover - defensive only
+        expiration = None
+    dispose = getattr(model, "dispose", None)
+    if callable(dispose):
+        dispose()
+
+    return {
+        "available": True,
+        "restricted": restricted,
+        "license_expiration": expiration,
+        "message": banner or "Gurobi runtime detected.",
+    }
+
+
+def get_mono_community_algorithm_pre_run_warning(algorithm_name: str) -> str | None:
+    """Return a warning that should be shown before starting an algorithm run."""
+    metadata = MONO_COMMUNITY_ALGORITHM_EVALUATION.get(algorithm_name)
+    if metadata is None:
+        return None
+
+    warnings: list[str] = []
+    runtime_warning = metadata.get("runtime_warning")
+    if isinstance(runtime_warning, str) and runtime_warning:
+        warnings.append(runtime_warning)
+
+    if algorithm_name == "bayan":
+        gurobi_status = get_bayan_gurobi_status()
+        if not bool(gurobi_status["available"]):
+            warnings.append(
+                "Gurobi is not available in this environment, so Bayan is expected to fail.\n"
+                f"Details: {gurobi_status['message']}"
+            )
+        elif bool(gurobi_status["restricted"]):
+            warning_lines = [
+                "A restricted Gurobi license was detected for Bayan.",
+                "This setup can fail on relatively small graphs with a size-limit error "
+                "after spending an unknown amount of time inside the solver.",
+                "A real Infinite Graph save already reproduced this behavior with an overnight "
+                "run that started around 01:00 and was still blocked when checked again "
+                "around 07:00.",
+                "This observation only comes from a restricted-license setup; no equivalent "
+                "runtime test was completed with a full Gurobi license.",
+                "With a proper full license, this specific risk is expected to be much lower.",
+            ]
+            license_expiration = gurobi_status.get("license_expiration")
+            if license_expiration:
+                warning_lines.append(f"License expiration: {license_expiration}")
+            message = str(gurobi_status.get("message", "")).strip()
+            if message:
+                warning_lines.append(f"Gurobi banner: {message}")
+            warnings.append("\n".join(warning_lines))
+
+    return "\n\n".join(warnings) if warnings else None
 
 
 def get_mono_community_algorithm_warning(algorithm_name: str) -> str | None:

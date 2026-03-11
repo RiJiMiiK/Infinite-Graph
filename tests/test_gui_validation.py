@@ -364,6 +364,11 @@ def test_window_compute_communities_updates_summary_list_and_details(
         },
     )
     monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda name: None,
+    )
 
     window._community_parameter_inputs["number_communities"].setValue(5)
     window._community_parameter_inputs["kc"].setValue(4)
@@ -443,6 +448,11 @@ def test_window_compute_communities_supports_async_fluid_parameters(
         },
     )
     monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda name: None,
+    )
 
     window._community_parameter_inputs["k"].setValue(3)
     window._compute_communities()
@@ -452,6 +462,149 @@ def test_window_compute_communities_supports_async_fluid_parameters(
     assert "Method name: Fluid" in window.community_summary_label.text()
     assert "Parameters:" in window.community_summary_label.text()
     assert "k=3" in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_supports_bayan(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("bayan")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="Bayan",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "Bayan",
+            "parameters": result.method_parameters,
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda name: None,
+    )
+
+    window._compute_communities()
+
+    assert calls == [(sample_result["community_graph"], "bayan", {})]
+    assert "Algorithm: Bayan" in window.community_summary_label.text()
+    assert "Method name: Bayan" in window.community_summary_label.text()
+    assert "Detected communities: 2" in window.community_summary_label.text()
+    assert "Parameters:" not in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_bayan_warning_can_cancel(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("bayan")
+    )
+
+    calls = []
+
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda name: "Restricted Gurobi license detected.",
+    )
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "warning",
+        lambda *args: gui.QMessageBox.Cancel,
+    )
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    window._compute_communities()
+
+    assert calls == []
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
+    window.close()
+
+
+def test_window_compute_communities_bayan_warning_can_continue(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("bayan")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="Bayan",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda name: "Restricted Gurobi license detected.",
+    )
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "warning",
+        lambda *args: gui.QMessageBox.Ok,
+    )
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "Bayan",
+            "parameters": result.method_parameters,
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+
+    window._compute_communities()
+
+    assert calls == [(sample_result["community_graph"], "bayan", {})]
+    assert "Algorithm: Bayan" in window.community_summary_label.text()
     window.close()
 
 
@@ -491,6 +644,11 @@ def test_window_compute_communities_failure_shows_error(qapp, sample_result, mon
         gui,
         "run_mono_community_algorithm",
         lambda graph, algorithm_name: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda name: None,
     )
     monkeypatch.setattr(gui.QMessageBox, "critical", lambda *args: errors.append(args))
 
@@ -554,6 +712,11 @@ def test_window_compute_communities_with_warning_and_empty_result(
         gui,
         "get_mono_community_algorithm_warning",
         lambda name: "The graph was converted to an undirected view for this run.",
+    )
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda name: None,
     )
 
     window._compute_communities()
