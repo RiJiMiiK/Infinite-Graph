@@ -12,7 +12,9 @@ from functools import lru_cache
 import networkx as nx
 from cdlib import algorithms
 
+from .community_async_fluid import estimate_async_fluid_runtime_and_communities
 from .community_belief import estimate_belief_runtime_and_communities, format_duration
+from .community_cpm import estimate_cpm_runtime_and_communities
 
 MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
     "agdl": {
@@ -58,6 +60,10 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Async Fluid",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": (
+            "Async Fluid is usually fast in this project. The main practical control is k, "
+            "which directly sets the expected number of communities."
+        ),
         "parameter_definitions": [
             {
                 "name": "k",
@@ -160,6 +166,26 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "CPM",
         "supports_directed": False,
         "supports_weighted": True,
+        "runtime_warning": (
+            "CPM is usually fast in this project, but the resolution parameter strongly affects "
+            "how fragmented the result becomes. Use the pre-run estimate to preview both runtime "
+            "and the approximate number of communities before launching it on a large save."
+        ),
+        "parameter_definitions": [
+            {
+                "name": "resolution_parameter",
+                "label": "Resolution parameter",
+                "type": "float",
+                "default": 1.0,
+                "minimum": 0.0,
+                "maximum": 1000.0,
+                "decimals": 3,
+                "step": 0.1,
+            },
+        ],
+        "default_parameters": {
+            "resolution_parameter": 1.0,
+        },
         "weight_parameter": "weights",
         "weight_value": "weight",
         "compatibility_note": "Will run on an undirected weighted view of the graph.",
@@ -641,6 +667,53 @@ def get_mono_community_algorithm_pre_run_warning(
             "\n".join(
                 [
                     "Belief benchmark-based estimate for the current graph and parameters:",
+                    (
+                        "- Estimated runtime: "
+                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                    ),
+                    f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                    f"- Confidence: {estimate['confidence']}",
+                    (
+                        "This estimate is heuristic and derived from project benchmark data, "
+                        "not a guarantee."
+                    ),
+                ]
+            )
+        )
+
+    if algorithm_name == "async_fluid" and graph is not None:
+        estimate = estimate_async_fluid_runtime_and_communities(
+            graph,
+            **dict(parameters or {}),
+        )
+        warnings.append(
+            "\n".join(
+                [
+                    "Async Fluid benchmark-based estimate for the current graph and parameters:",
+                    (
+                        "- Estimated runtime: "
+                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                    ),
+                    (
+                        "- Estimated communities: "
+                        f"{int(estimate['estimated_community_count'])} "
+                        "(this follows k by design)"
+                    ),
+                    f"- Confidence: {estimate['confidence']}",
+                    (
+                        "This estimate is heuristic and derived from project benchmark data, "
+                        "not a guarantee."
+                    ),
+                ]
+            )
+        )
+
+    if algorithm_name == "cpm" and graph is not None:
+        estimate = estimate_cpm_runtime_and_communities(graph, **dict(parameters or {}))
+        warnings.append(
+            "\n".join(
+                [
+                    "CPM benchmark-based estimate for the current graph and parameters:",
                     (
                         "- Estimated runtime: "
                         f"{format_duration(float(estimate['estimated_runtime_seconds']))}"

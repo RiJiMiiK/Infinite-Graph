@@ -5,7 +5,12 @@ from types import SimpleNamespace
 import networkx as nx
 import pytest
 
-from src.infinite_graph import community_analysis, community_belief
+from src.infinite_graph import (
+    community_analysis,
+    community_async_fluid,
+    community_belief,
+    community_cpm,
+)
 
 
 def test_build_cdlib_graph_preserves_direction_and_edge_weights() -> None:
@@ -154,6 +159,20 @@ def test_get_mono_community_algorithm_parameters() -> None:
         }
     ]
 
+    cpm_parameters = community_analysis.get_mono_community_algorithm_parameters("cpm")
+    assert cpm_parameters == [
+        {
+            "name": "resolution_parameter",
+            "label": "Resolution parameter",
+            "type": "float",
+            "default": 1.0,
+            "minimum": 0.0,
+            "maximum": 1000.0,
+            "decimals": 3,
+            "step": 0.1,
+        },
+    ]
+
     belief_parameters = community_analysis.get_mono_community_algorithm_parameters("belief")
     assert belief_parameters == [
         {
@@ -295,6 +314,41 @@ def test_estimate_belief_runtime_and_communities() -> None:
     assert estimate["confidence"] in {"high", "medium", "low"}
 
 
+def test_estimate_async_fluid_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_async_fluid.estimate_async_fluid_runtime_and_communities(
+        graph,
+        k=3,
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) == 3
+    assert estimate["confidence"] in {"high", "medium", "low"}
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_async_fluid() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "async_fluid",
+        graph,
+        {"k": 4},
+    )
+
+    assert warning is not None
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "follows k by design" in warning
+    assert "Confidence:" in warning
+
+
 def test_get_mono_community_algorithm_pre_run_warning_for_belief() -> None:
     graph = nx.DiGraph()
     graph.add_edge("A", "B", weight=1.0)
@@ -311,6 +365,40 @@ def test_get_mono_community_algorithm_pre_run_warning_for_belief() -> None:
             "threshold": 0.005,
             "q_max": 7,
         },
+    )
+
+    assert warning is not None
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
+
+
+def test_estimate_cpm_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_cpm.estimate_cpm_runtime_and_communities(
+        graph,
+        resolution_parameter=0.1,
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) >= 1
+    assert estimate["confidence"] in {"high", "medium", "low"}
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_cpm() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "cpm",
+        graph,
+        {"resolution_parameter": 0.5},
     )
 
     assert warning is not None
@@ -489,6 +577,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("belief", graph, kwargs))
         return "belief-result"
 
+    def fake_cpm(graph, **kwargs):
+        calls.append(("cpm", graph, kwargs))
+        return "cpm-result"
+
     def fake_leiden(graph, **kwargs):
         calls.append(("leiden", graph, kwargs))
         return "leiden-result"
@@ -504,6 +596,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     monkeypatch.setattr(community_analysis.algorithms, "async_fluid", fake_async_fluid)
     monkeypatch.setattr(community_analysis.algorithms, "bayan", fake_bayan)
     monkeypatch.setattr(community_analysis.algorithms, "belief", fake_belief)
+    monkeypatch.setattr(community_analysis.algorithms, "cpm", fake_cpm)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
         community_analysis.algorithms,
@@ -531,6 +624,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     )
     assert community_analysis.run_mono_community_algorithm(graph, "bayan") == "bayan-result"
     assert community_analysis.run_mono_community_algorithm(graph, "belief") == "belief-result"
+    assert community_analysis.run_mono_community_algorithm(graph, "cpm") == "cpm-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
     assert (
         community_analysis.run_mono_community_algorithm(
@@ -561,11 +655,17 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         "threshold": 0.005,
         "q_max": 7,
     }
+    assert calls[7][0] == "cpm"
     assert isinstance(calls[7][1], nx.Graph)
-    assert calls[7][2] == {"weights": "weight"}
-    assert calls[8][0] == "label_propagation"
+    assert calls[7][2] == {
+        "resolution_parameter": 1.0,
+        "weights": "weight",
+    }
     assert isinstance(calls[8][1], nx.Graph)
-    assert calls[8][2] == {}
+    assert calls[8][2] == {"weights": "weight"}
+    assert calls[9][0] == "label_propagation"
+    assert isinstance(calls[9][1], nx.Graph)
+    assert calls[9][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

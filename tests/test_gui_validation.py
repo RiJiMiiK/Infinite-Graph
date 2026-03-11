@@ -419,6 +419,15 @@ def test_window_community_parameters_visibility_updates_with_algorithm_selection
     assert isinstance(window._community_parameter_inputs["threshold"], QDoubleSpinBox)
 
     window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("cpm")
+    )
+    assert window.community_parameters_group.isHidden() is False
+    assert set(window._community_parameter_inputs) == {"resolution_parameter"}
+    assert isinstance(
+        window._community_parameter_inputs["resolution_parameter"], QDoubleSpinBox
+    )
+
+    window.community_algorithm_combo.setCurrentIndex(
         window.community_algorithm_combo.findData("infomap")
     )
     assert window.community_parameters_group.isHidden() is True
@@ -477,6 +486,41 @@ def test_window_compute_communities_supports_async_fluid_parameters(
     assert "Method name: Fluid" in window.community_summary_label.text()
     assert "Parameters:" in window.community_summary_label.text()
     assert "k=3" in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_async_fluid_warning_can_cancel(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("async_fluid")
+    )
+
+    calls = []
+
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: "Async Fluid estimate warning.",
+    )
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "warning",
+        lambda *args: gui.QMessageBox.Cancel,
+    )
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    window._compute_communities()
+
+    assert calls == []
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
     window.close()
 
 
@@ -599,6 +643,100 @@ def test_window_compute_communities_supports_belief_parameters(
     assert "Parameters:" in window.community_summary_label.text()
     assert "eps=0.0012" in window.community_summary_label.text()
     assert "q_max=9" in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_supports_cpm_parameters(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("cpm")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="CPM",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "CPM",
+            "parameters": result.method_parameters,
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: None,
+    )
+
+    window._community_parameter_inputs["resolution_parameter"].setValue(2.5)
+    window._compute_communities()
+
+    assert calls == [
+        (
+            sample_result["community_graph"],
+            "cpm",
+            {"resolution_parameter": 2.5},
+        )
+    ]
+    assert "Algorithm: CPM" in window.community_summary_label.text()
+    assert "Method name: CPM" in window.community_summary_label.text()
+    assert "resolution_parameter=2.5" in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_cpm_warning_can_cancel(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("cpm")
+    )
+
+    calls = []
+
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: "CPM estimate warning.",
+    )
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "warning",
+        lambda *args: gui.QMessageBox.Cancel,
+    )
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    window._compute_communities()
+
+    assert calls == []
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
     window.close()
 
 

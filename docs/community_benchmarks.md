@@ -113,3 +113,74 @@ Project consequence:
 
 - the GUI shows a strong pre-run warning before launching `Bayan`
 - the warning is especially explicit when a restricted Gurobi license is detected
+
+## CPM
+
+`CPM` is fast enough for interactive use in this project, but it is highly sensitive to `resolution_parameter`.
+
+### Real-graph benchmark basis
+
+The project benchmark was rerun on:
+
+- BFS subgraphs extracted from a real Infinite Graph save
+- the full example save graph
+
+Observed pattern:
+
+- very low `resolution_parameter` values can collapse a graph to a single community
+- larger values quickly increase fragmentation
+- on the full example graph, `resolution_parameter=1.0` produced a very fragmented result, not a runtime problem
+
+Representative results:
+
+| Graph | Resolution | Communities | Runtime |
+| --- | ---: | ---: | ---: |
+| BFS 100 | `0.001` | `1` | `~0.006s` |
+| BFS 100 | `1.0` | `73` | `~0.018s` |
+| BFS 300 | `0.01` | `49` | `~0.035s` |
+| BFS 300 | `1.0` | `196` | `~0.042s` |
+| BFS 1000 | `0.01` | `263` | `~5.3s` |
+| BFS 1000 | `1.0` | `546` | `~0.324s` |
+| Full graph (`10195` nodes) | `0.001` | `1545` | `~7.4s` |
+| Full graph (`10195` nodes) | `1.0` | `7630` | `~12.1s` |
+
+Project consequence:
+
+- the GUI shows a pre-run `CPM` popup
+- the popup includes a benchmark-based runtime estimate
+- the popup also includes a benchmark-based estimated community count
+- both estimates are heuristic and should be treated as guidance only
+
+## Async Fluid
+
+`Async Fluid` is fast on the graph families tested for this project.
+
+### Runtime baselines
+
+Benchmarks were run on undirected graph families with:
+
+- `acyclic`
+- `cyclic`
+- `cyclic_self`
+
+and with `k` in `{2, 3, 5}`.
+
+Observed runtimes:
+
+| Nodes | Acyclic | Cyclic | Cyclic + self-loops |
+| --- | ---: | ---: | ---: |
+| 20 | `0.0003s` to `0.0008s` | `0.0002s` to `0.0006s` | `0.0003s` to `0.0004s` |
+| 100 | `0.0059s` to `0.0133s` | `0.0024s` to `0.0027s` | `0.0026s` to `0.0040s` |
+| 300 | `0.0351s` to `0.0648s` | `0.0145s` to `0.0296s` | `0.0163s` to `0.0199s` |
+| 1000 | `0.2049s` to `0.4329s` | `0.1797s` to `0.5014s` | `0.2746s` to `0.3410s` |
+
+Observed behavior:
+
+- runtime stays low even at `1000` nodes
+- the returned community count follows `k`, which is expected for this method
+
+Project consequence:
+
+- the GUI shows a lightweight pre-run `Async Fluid` popup
+- the popup includes a benchmark-based runtime estimate
+- it also reminds the user that the expected number of communities follows `k`

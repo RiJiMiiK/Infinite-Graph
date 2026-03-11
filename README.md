@@ -137,6 +137,8 @@ The application also includes:
 - algorithm-specific parameter inputs for supported community methods such as `AGDL`
 - pre-run warnings for high-risk algorithms before launching a community computation
 - benchmark-based pre-run estimates for `Belief` runtime and expected community count
+- benchmark-based pre-run estimates for `CPM` runtime and expected community count
+- benchmark-based pre-run estimates for `Async Fluid` runtime and expected community count
 
 Current visibility rules:
 
@@ -172,6 +174,27 @@ Current `Belief` warning:
 - these estimates are calculated from project benchmark reference data rather than from hardcoded if/else thresholds
 - they should be treated as heuristics, not guarantees
 - benchmark notes also document a theory-based interpretation of why `Belief` can collapse to a single dominant community and why its runtime can increase sharply on some graph families
+
+Current `CPM` warning:
+
+- `CPM` stays available, and the application shows a pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph and `resolution_parameter`
+  - an estimated community count for the current graph and `resolution_parameter`
+- these estimates are derived from project-side benchmarks on real Infinite Graph subgraphs and the full example save
+- they should be treated as heuristics, not guarantees
+- the main practical effect of `resolution_parameter` is fragmentation:
+  - very low values can merge large portions of the graph
+  - higher values can split the graph into many small communities very quickly
+
+Current `Async Fluid` warning:
+
+- `Async Fluid` stays available, and the application shows a lightweight pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph and `k`
+  - an estimated community count for the current graph and `k`
+- the expected community count follows `k` by design for this method
+- project benchmarks show that `Async Fluid` remains fast on the tested graph families, including at `1000` nodes
 
 ### Generation flow
 
