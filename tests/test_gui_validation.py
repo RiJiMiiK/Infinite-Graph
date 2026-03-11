@@ -311,6 +311,7 @@ def test_window_has_communities_tab(qapp) -> None:
     assert window.community_parameters_group.isHidden() is True
     assert window.community_summary_label.text() == "No community analysis has been run yet."
     assert window.community_details.toPlainText() == "No community selected."
+    assert "QComboBox QAbstractItemView" in window.styleSheet()
     window.close()
 
 

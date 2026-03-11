@@ -176,7 +176,8 @@ QLabel {
 QLineEdit,
 QTextEdit,
 QListWidget,
-QTableView {
+QTableView,
+QComboBox {
     background: #0b1220;
     border: 1px solid #334155;
     border-radius: 10px;
@@ -188,6 +189,21 @@ QTextEdit,
 QListWidget,
 QTableView {
     background: #09111f;
+}
+QComboBox {
+    background: #0b1220;
+    padding-right: 28px;
+}
+QComboBox QAbstractItemView {
+    background: #09111f;
+    border: 1px solid #334155;
+    selection-background-color: #1d4ed8;
+    selection-color: #eff6ff;
+    outline: 0;
+}
+QComboBox::drop-down {
+    border: 0;
+    width: 26px;
 }
 QPushButton {
     background: #16233a;
