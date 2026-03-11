@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import networkx as nx
 import pytest
 
-from src.infinite_graph import community_analysis
+from src.infinite_graph import community_analysis, community_belief
 
 
 def test_build_cdlib_graph_preserves_direction_and_edge_weights() -> None:
@@ -103,15 +103,18 @@ def test_algorithm_evaluation_lists_all_algorithms_with_compatibility_notes() ->
     assert "sbm_dl" not in visible_keys
     assert "sbm_dl_nested" not in visible_keys
     assert "ricci_community" not in visible_keys
-    assert next(item for item in algorithms if item["key"] == "infomap")[
-        "requires_graph_adaptation"
-    ] is False
-    assert next(item for item in algorithms if item["key"] == "leiden")[
-        "requires_graph_adaptation"
-    ] is True
-    assert next(item for item in algorithms if item["key"] == "rber_pots")[
-        "requires_graph_adaptation"
-    ] is True
+    assert (
+        next(item for item in algorithms if item["key"] == "infomap")["requires_graph_adaptation"]
+        is False
+    )
+    assert (
+        next(item for item in algorithms if item["key"] == "leiden")["requires_graph_adaptation"]
+        is True
+    )
+    assert (
+        next(item for item in algorithms if item["key"] == "rber_pots")["requires_graph_adaptation"]
+        is True
+    )
     assert community_analysis.get_default_mono_community_algorithm() == "infomap"
     assert community_analysis.uses_directed_community_graph() is True
     assert community_analysis.uses_edge_weights_only() is True
@@ -119,7 +122,10 @@ def test_algorithm_evaluation_lists_all_algorithms_with_compatibility_notes() ->
 
 
 def test_algorithm_visibility_rules() -> None:
-    assert community_analysis._is_mono_community_algorithm_visible("label_propagation_raghavan") is False
+    assert (
+        community_analysis._is_mono_community_algorithm_visible("label_propagation_raghavan")
+        is False
+    )
     assert community_analysis._is_mono_community_algorithm_visible("sbm_dl") is False
     assert community_analysis._is_mono_community_algorithm_visible("sbm_dl_nested") is False
     assert community_analysis._is_mono_community_algorithm_visible("ricci_community") is False
@@ -146,6 +152,51 @@ def test_get_mono_community_algorithm_parameters() -> None:
             "default": 2,
             "minimum": 2,
         }
+    ]
+
+    belief_parameters = community_analysis.get_mono_community_algorithm_parameters("belief")
+    assert belief_parameters == [
+        {
+            "name": "max_it",
+            "label": "Max iterations",
+            "type": "int",
+            "default": 100,
+            "minimum": 1,
+        },
+        {
+            "name": "eps",
+            "label": "Epsilon",
+            "type": "float",
+            "default": 0.0001,
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "decimals": 4,
+            "step": 0.0001,
+        },
+        {
+            "name": "reruns_if_not_conv",
+            "label": "Reruns if not converged",
+            "type": "int",
+            "default": 5,
+            "minimum": 0,
+        },
+        {
+            "name": "threshold",
+            "label": "Threshold",
+            "type": "float",
+            "default": 0.005,
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "decimals": 4,
+            "step": 0.0001,
+        },
+        {
+            "name": "q_max",
+            "label": "Q max",
+            "type": "int",
+            "default": 7,
+            "minimum": 1,
+        },
     ]
 
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
@@ -189,6 +240,9 @@ def test_get_mono_community_algorithm_warning() -> None:
     assert agdl_warning is not None
     assert "experimental in this environment" in agdl_warning
     assert "karate_club_graph()" in agdl_warning
+    belief_warning = community_analysis.get_mono_community_algorithm_warning("belief")
+    assert belief_warning is not None
+    assert "several minutes at 1000 nodes" in belief_warning
     leiden_warning = community_analysis.get_mono_community_algorithm_warning("leiden")
     assert leiden_warning is not None
     assert "does not support directed graphs directly" in leiden_warning
@@ -219,6 +273,56 @@ def test_get_mono_community_algorithm_pre_run_warning_for_bayan(monkeypatch) -> 
     assert "checked again around 07:00" in warning
     assert "no equivalent test was run with a full license" in warning
     assert "far less problematic" in warning
+
+
+def test_estimate_belief_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_analysis.estimate_belief_runtime_and_communities(
+        graph,
+        max_it=100,
+        eps=0.0001,
+        reruns_if_not_conv=5,
+        threshold=0.005,
+        q_max=7,
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) >= 1
+    assert estimate["confidence"] in {"high", "medium", "low"}
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_belief() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "belief",
+        graph,
+        {
+            "max_it": 100,
+            "eps": 0.0001,
+            "reruns_if_not_conv": 5,
+            "threshold": 0.005,
+            "q_max": 7,
+        },
+    )
+
+    assert warning is not None
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
+
+
+def test_format_duration_covers_all_ranges() -> None:
+    assert community_belief.format_duration(12.5) == "12.5s"
+    assert community_belief.format_duration(75.5) == "1m 15.5s"
+    assert community_belief.format_duration(3671.2) == "1h 1m 11.2s"
 
 
 def test_get_bayan_gurobi_status_when_gurobi_is_missing(monkeypatch) -> None:
@@ -325,9 +429,11 @@ def test_prepare_mono_community_algorithm_input_adapts_graph_and_warnings() -> N
     graph.add_edge("Water", "Steam", weight=2.0, elements=["Fire"])
     graph.add_edge("Steam", "Water", weight=5.0, elements=["Cloud"])
 
-    adapted_graph, call_kwargs, warnings = community_analysis.prepare_mono_community_algorithm_input(
-        graph,
-        "leiden",
+    adapted_graph, call_kwargs, warnings = (
+        community_analysis.prepare_mono_community_algorithm_input(
+            graph,
+            "leiden",
+        )
     )
     assert isinstance(adapted_graph, nx.Graph)
     assert adapted_graph["Water"]["Steam"]["weight"] == 7.0
@@ -335,9 +441,11 @@ def test_prepare_mono_community_algorithm_input_adapts_graph_and_warnings() -> N
     assert call_kwargs == {"weights": "weight"}
     assert len(warnings) == 1
 
-    adapted_graph, call_kwargs, warnings = community_analysis.prepare_mono_community_algorithm_input(
-        graph,
-        "rber_pots",
+    adapted_graph, call_kwargs, warnings = (
+        community_analysis.prepare_mono_community_algorithm_input(
+            graph,
+            "rber_pots",
+        )
     )
     assert isinstance(adapted_graph, nx.Graph)
     assert "weight" not in adapted_graph["Water"]["Steam"]
@@ -377,6 +485,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("bayan", graph, kwargs))
         return "bayan-result"
 
+    def fake_belief(graph, **kwargs):
+        calls.append(("belief", graph, kwargs))
+        return "belief-result"
+
     def fake_leiden(graph, **kwargs):
         calls.append(("leiden", graph, kwargs))
         return "leiden-result"
@@ -391,6 +503,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     monkeypatch.setattr(community_analysis.algorithms, "agdl", fake_agdl)
     monkeypatch.setattr(community_analysis.algorithms, "async_fluid", fake_async_fluid)
     monkeypatch.setattr(community_analysis.algorithms, "bayan", fake_bayan)
+    monkeypatch.setattr(community_analysis.algorithms, "belief", fake_belief)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
         community_analysis.algorithms,
@@ -417,6 +530,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         == "async-fluid-result"
     )
     assert community_analysis.run_mono_community_algorithm(graph, "bayan") == "bayan-result"
+    assert community_analysis.run_mono_community_algorithm(graph, "belief") == "belief-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
     assert (
         community_analysis.run_mono_community_algorithm(
@@ -438,11 +552,20 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[5][0] == "bayan"
     assert isinstance(calls[5][1], nx.Graph)
     assert calls[5][2] == {}
+    assert calls[6][0] == "belief"
     assert isinstance(calls[6][1], nx.Graph)
-    assert calls[6][2] == {"weights": "weight"}
-    assert calls[7][0] == "label_propagation"
+    assert calls[6][2] == {
+        "max_it": 100,
+        "eps": 0.0001,
+        "reruns_if_not_conv": 5,
+        "threshold": 0.005,
+        "q_max": 7,
+    }
     assert isinstance(calls[7][1], nx.Graph)
-    assert calls[7][2] == {}
+    assert calls[7][2] == {"weights": "weight"}
+    assert calls[8][0] == "label_propagation"
+    assert isinstance(calls[8][1], nx.Graph)
+    assert calls[8][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

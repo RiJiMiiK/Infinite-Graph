@@ -136,6 +136,7 @@ The application also includes:
 - community summary, list, and details panels ready for the next analysis steps
 - algorithm-specific parameter inputs for supported community methods such as `AGDL`
 - pre-run warnings for high-risk algorithms before launching a community computation
+- benchmark-based pre-run estimates for `Belief` runtime and expected community count
 
 Current visibility rules:
 
@@ -148,6 +149,7 @@ Current stability note:
 - benchmark runs reproduced upstream CDlib crashes on several graph families
 - the failure also reproduces on the documented `karate_club_graph()` example in this environment
 - treat `AGDL` as a best-effort option, not as a stable default
+- detailed benchmark notes are tracked in `docs/community_benchmarks.md`
 
 Current solver warning:
 
@@ -160,6 +162,16 @@ Current solver warning:
 - that observation was made with a restricted Gurobi license only
 - no equivalent runtime validation was completed with a full Gurobi license
 - with a proper full license, this specific risk is expected to be much lower
+
+Current `Belief` warning:
+
+- `Belief` stays available, but the application shows a pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph and parameter set
+  - an estimated community count for the current graph and parameter set
+- these estimates are calculated from project benchmark reference data rather than from hardcoded if/else thresholds
+- they should be treated as heuristics, not guarantees
+- benchmark notes also document a theory-based interpretation of why `Belief` can collapse to a single dominant community and why its runtime can increase sharply on some graph families
 
 ### Generation flow
 
@@ -250,6 +262,7 @@ python main.py
 - `src/infinite_graph`: application code
 - `tests`: full automated test suite
 - `tools/test_crisp_algorithms.py`: manual crisp mono-community benchmark script
+- `docs/community_benchmarks.md`: benchmark notes used to document community-algorithm behavior
 - `docker/`: Linux benchmark containers for community algorithms
 - `ROADMAP.md`: project roadmap
 - `CHANGELOG.md`: release history

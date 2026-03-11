@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QMessageBox, QSpinBox
+from PySide6.QtWidgets import QDoubleSpinBox, QLabel, QMessageBox, QSpinBox
 
 
 class WindowCommunitiesMixin:
@@ -39,15 +39,28 @@ class WindowCommunitiesMixin:
             return
 
         for parameter in parameter_definitions:
-            if parameter.get("type") != "int":
-                continue
             parameter_name = str(parameter["name"])
-            spin_box = QSpinBox()
-            minimum = int(parameter.get("minimum", 0))
-            maximum = int(parameter.get("maximum", 999_999))
-            default = int(parameter.get("default", minimum))
-            spin_box.setRange(minimum, maximum)
-            spin_box.setValue(max(default, minimum))
+            parameter_type = str(parameter.get("type", ""))
+            if parameter_type == "int":
+                spin_box = QSpinBox()
+                minimum = int(parameter.get("minimum", 0))
+                maximum = int(parameter.get("maximum", 999_999))
+                default = int(parameter.get("default", minimum))
+                spin_box.setRange(minimum, maximum)
+                spin_box.setValue(max(default, minimum))
+            elif parameter_type == "float":
+                spin_box = QDoubleSpinBox()
+                minimum = float(parameter.get("minimum", 0.0))
+                maximum = float(parameter.get("maximum", 999_999.0))
+                default = float(parameter.get("default", minimum))
+                decimals = int(parameter.get("decimals", 4))
+                step = float(parameter.get("step", 0.1))
+                spin_box.setDecimals(decimals)
+                spin_box.setSingleStep(step)
+                spin_box.setRange(minimum, maximum)
+                spin_box.setValue(max(default, minimum))
+            else:
+                continue
             spin_box.setObjectName(f"community_parameter_{parameter_name}")
             spin_box.setToolTip(str(parameter.get("label", parameter_name)))
             self.community_parameters_layout.addRow(
@@ -65,6 +78,8 @@ class WindowCommunitiesMixin:
         for parameter_name, widget in self._community_parameter_inputs.items():
             if isinstance(widget, QSpinBox):
                 values[parameter_name] = int(widget.value())
+            elif isinstance(widget, QDoubleSpinBox):
+                values[parameter_name] = float(widget.value())
         return values
 
     def _compute_communities(self) -> None:
@@ -79,7 +94,9 @@ class WindowCommunitiesMixin:
         graph = self._current_result["community_graph"]
         algorithm_parameters = self._read_community_parameter_values()
         pre_run_warning = gui_module.get_mono_community_algorithm_pre_run_warning(
-            str(algorithm_name)
+            str(algorithm_name),
+            graph,
+            algorithm_parameters,
         )
         if pre_run_warning:
             response = QMessageBox.warning(

@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-from contextlib import redirect_stderr, redirect_stdout
-from collections.abc import Mapping
-from functools import lru_cache
 import importlib
 import io
 import os
+from collections.abc import Mapping
+from contextlib import redirect_stderr, redirect_stdout
+from functools import lru_cache
 
 import networkx as nx
 from cdlib import algorithms
+
+from .community_belief import estimate_belief_runtime_and_communities, format_duration
 
 MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
     "agdl": {
@@ -94,6 +96,62 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Belief",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": (
+            "Belief can become expensive quickly as the graph grows. "
+            "Project benchmarks showed runs moving from sub-second at 20 nodes "
+            "to several minutes at 1000 nodes depending on graph structure and parameters. "
+            "Use the pre-run estimate as a guide before launching it on a large save."
+        ),
+        "parameter_definitions": [
+            {
+                "name": "max_it",
+                "label": "Max iterations",
+                "type": "int",
+                "default": 100,
+                "minimum": 1,
+            },
+            {
+                "name": "eps",
+                "label": "Epsilon",
+                "type": "float",
+                "default": 0.0001,
+                "minimum": 0.0,
+                "maximum": 1.0,
+                "decimals": 4,
+                "step": 0.0001,
+            },
+            {
+                "name": "reruns_if_not_conv",
+                "label": "Reruns if not converged",
+                "type": "int",
+                "default": 5,
+                "minimum": 0,
+            },
+            {
+                "name": "threshold",
+                "label": "Threshold",
+                "type": "float",
+                "default": 0.005,
+                "minimum": 0.0,
+                "maximum": 1.0,
+                "decimals": 4,
+                "step": 0.0001,
+            },
+            {
+                "name": "q_max",
+                "label": "Q max",
+                "type": "int",
+                "default": 7,
+                "minimum": 1,
+            },
+        ],
+        "default_parameters": {
+            "max_it": 100,
+            "eps": 0.0001,
+            "reruns_if_not_conv": 5,
+            "threshold": 0.005,
+            "q_max": 7,
+        },
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",
@@ -414,10 +472,8 @@ def build_cdlib_graph(
     graph = nx.DiGraph()
     for node in graph_nodes:
         node_id = str(node["id"])
-        graph.add_node(
-            node_id,
-            label=str(node.get("label", node_id)),
-        )
+        label = str(node.get("label", node_id))
+        graph.add_node(node_id, label=label)
 
     for edge in graph_edges:
         source = str(edge["source"])
@@ -428,8 +484,19 @@ def build_cdlib_graph(
             weight=float(edge.get("weight", 1.0)),
             elements=list(edge.get("elements", [])),
         )
-
     return graph
+
+
+def _is_unix_platform() -> bool:
+    return os.name == "posix"
+
+
+def _is_mono_community_algorithm_visible(algorithm_name: str) -> bool:
+    if algorithm_name == "label_propagation_raghavan":
+        return False
+    if algorithm_name in {"ricci_community", "sbm_dl", "sbm_dl_nested"} and not _is_unix_platform():
+        return False
+    return True
 
 
 def get_mono_community_algorithm_evaluation() -> list[dict[str, object]]:
@@ -443,18 +510,6 @@ def get_mono_community_algorithm_evaluation() -> list[dict[str, object]]:
         }
         for key, metadata in MONO_COMMUNITY_ALGORITHM_EVALUATION.items()
     ]
-
-
-def _is_unix_platform() -> bool:
-    return os.name == "posix"
-
-
-def _is_mono_community_algorithm_visible(algorithm_name: str) -> bool:
-    if algorithm_name == "label_propagation_raghavan":
-        return False
-    if algorithm_name in {"ricci_community", "sbm_dl", "sbm_dl_nested"} and not _is_unix_platform():
-        return False
-    return True
 
 
 def get_mono_community_algorithms() -> list[dict[str, object]]:
@@ -538,7 +593,11 @@ def get_bayan_gurobi_status() -> dict[str, object]:
     }
 
 
-def get_mono_community_algorithm_pre_run_warning(algorithm_name: str) -> str | None:
+def get_mono_community_algorithm_pre_run_warning(
+    algorithm_name: str,
+    graph: nx.DiGraph | None = None,
+    parameters: Mapping[str, object] | None = None,
+) -> str | None:
     """Return a warning that should be shown before starting an algorithm run."""
     metadata = MONO_COMMUNITY_ALGORITHM_EVALUATION.get(algorithm_name)
     if metadata is None:
@@ -576,6 +635,26 @@ def get_mono_community_algorithm_pre_run_warning(algorithm_name: str) -> str | N
                 warning_lines.append(f"Gurobi banner: {message}")
             warnings.append("\n".join(warning_lines))
 
+    if algorithm_name == "belief" and graph is not None:
+        estimate = estimate_belief_runtime_and_communities(graph, **dict(parameters or {}))
+        warnings.append(
+            "\n".join(
+                [
+                    "Belief benchmark-based estimate for the current graph and parameters:",
+                    (
+                        "- Estimated runtime: "
+                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                    ),
+                    f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                    f"- Confidence: {estimate['confidence']}",
+                    (
+                        "This estimate is heuristic and derived from project benchmark data, "
+                        "not a guarantee."
+                    ),
+                ]
+            )
+        )
+
     return "\n\n".join(warnings) if warnings else None
 
 
@@ -609,8 +688,7 @@ def prepare_mono_community_algorithm_input(
     if algorithm_name not in MONO_COMMUNITY_ALGORITHM_EVALUATION:
         available = ", ".join(sorted(MONO_COMMUNITY_ALGORITHM_EVALUATION))
         raise ValueError(
-            f"Unsupported mono-community algorithm: {algorithm_name}. "
-            f"Available: {available}"
+            f"Unsupported mono-community algorithm: {algorithm_name}. " f"Available: {available}"
         )
 
     metadata = MONO_COMMUNITY_ALGORITHM_EVALUATION[algorithm_name]
