@@ -140,6 +140,7 @@ The application also includes:
 - benchmark-based pre-run estimates for `CPM` runtime and expected community count
 - benchmark-based pre-run estimates for `Async Fluid` runtime and expected community count
 - benchmark-based pre-run estimates for `DER` runtime and expected community count
+- benchmark-based pre-run estimates for `EM` runtime and expected community count
 - benchmark-based pre-run estimates for `Eigenvector` runtime and expected community count
 - guided warning/error handling for `Eigenvector` ARPACK failures on large graphs
 
@@ -211,6 +212,15 @@ Current `DER` warning:
   - an estimated community count for the current graph and parameter set
 - benchmark runs showed that `DER` stays fast on the tested graph families, including very large synthetic cases
 - the main runtime cost drivers observed were very large `walk_len` and `iter_bound` values
+- the estimate is heuristic and should be treated as guidance only
+
+Current `EM` warning:
+
+- `EM` stays available, and the application shows a lightweight pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph and `k`
+  - an estimated community count for the current graph and `k`
+- benchmarks showed that `EM` remains practical overall, but large acyclic-like graphs with high `k` are the slowest observed cases
 - the estimate is heuristic and should be treated as guidance only
 
 Current `Eigenvector` warning:

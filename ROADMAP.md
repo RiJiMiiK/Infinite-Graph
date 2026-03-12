@@ -228,7 +228,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Integrate `CPM` execution from the `Communities` tab
 - [x] Integrate `DER` execution from the `Communities` tab
 - [x] Integrate `Eigenvector` execution from the `Communities` tab
-- [ ] Integrate `EM` execution from the `Communities` tab
+- [x] Integrate `EM` execution from the `Communities` tab
 - [ ] Integrate `GA` execution from the `Communities` tab
 - [ ] Integrate `GDMP2` execution from the `Communities` tab
 - [ ] Integrate `Girvan-Newman` execution from the `Communities` tab

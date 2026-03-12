@@ -241,6 +241,38 @@ Project consequence:
 - it also includes a benchmark-based estimated community count
 - the message explicitly notes that extreme `walk_len` and `iter_bound` values can slow large runs
 
+## EM
+
+`EM` stayed practical across the benchmark families tested in this project.
+
+### Runtime baselines with varying `k`
+
+Observed pattern:
+
+- the detected community count follows `k`
+- runtime grows with `k`
+- the slowest observed family was `acyclic`
+
+Representative points:
+
+- `1000` nodes
+  - `acyclic`, `k=2` -> `0.0429s`
+  - `acyclic`, `k=10` -> `0.2529s`
+  - `cyclic`, `k=10` -> `0.0353s`
+  - `cyclic_self`, `k=10` -> `0.0318s`
+- `10000` nodes
+  - `acyclic`, `k=10` -> `11.6020s`
+  - `acyclic`, `k=30` -> `22.2000s`
+  - `cyclic`, `k=30` -> `1.0561s`
+  - `cyclic_self`, `k=30` -> `1.0221s`
+
+### Product consequence
+
+- the GUI shows a lightweight pre-run `EM` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- it explicitly reflects that large acyclic-like graphs with high `k` are the costliest observed cases
+
 ## Eigenvector
 
 `Eigenvector` stayed fast on small and medium synthetic graph families, but became slower and less numerically stable on larger ones.

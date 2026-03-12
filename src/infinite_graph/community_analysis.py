@@ -12,13 +12,11 @@ from functools import lru_cache
 import networkx as nx
 from cdlib import algorithms
 
-from .community_agdl import estimate_agdl_runtime_and_communities
-from .community_async_fluid import estimate_async_fluid_runtime_and_communities
-from .community_belief import estimate_belief_runtime_and_communities, format_duration
-from .community_cpm import estimate_cpm_runtime_and_communities
-from .community_der import estimate_der_runtime_and_communities
-from .community_eigenvector import estimate_eigenvector_runtime_and_communities
 from . import community_messages
+from .community_belief import (
+    estimate_belief_runtime_and_communities as _estimate_belief_runtime_and_communities,
+)
+from .community_preview import build_algorithm_preview_warning
 
 format_mono_community_algorithm_failure = (
     community_messages.format_mono_community_algorithm_failure
@@ -259,6 +257,20 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "EM",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": (
+            "EM is usually practical in this project. Runtime mainly grows with graph size and k, "
+            "and large acyclic-like graphs are the costliest cases observed in benchmarks."
+        ),
+        "parameter_definitions": [
+            {
+                "name": "k",
+                "label": "K",
+                "type": "int",
+                "default": 3,
+                "minimum": 1,
+            },
+        ],
+        "default_parameters": {"k": 3},
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",
@@ -535,6 +547,14 @@ def ignores_node_weights() -> bool:
     return True
 
 
+def estimate_belief_runtime_and_communities(
+    graph: nx.DiGraph,
+    **parameters: object,
+) -> dict[str, object]:
+    """Expose the Belief estimator through the main community analysis module."""
+    return _estimate_belief_runtime_and_communities(graph, **parameters)
+
+
 def build_cdlib_graph(
     graph_nodes: list[dict[str, object]],
     graph_edges: list[dict[str, object]],
@@ -710,139 +730,14 @@ def get_mono_community_algorithm_pre_run_warning(
                 warning_lines.append(f"Gurobi banner: {message}")
                 warnings.append("\n".join(warning_lines))
 
-    if algorithm_name == "agdl" and graph is not None:
-        estimate = estimate_agdl_runtime_and_communities(graph, **dict(parameters or {}))
-        warnings.append(
-            "\n".join(
-                [
-                    "AGDL benchmark-based estimate for the current graph and parameters:",
-                    (
-                        "- Estimated runtime: "
-                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
-                    ),
-                    f"- Estimated communities: {int(estimate['estimated_community_count'])}",
-                    f"- Confidence: {estimate['confidence']}",
-                    (
-                        "This estimate is heuristic and derived from the AGDL benchmark cases "
-                        "that actually completed in this project."
-                    ),
-                ]
-            )
-        )
-
-    if algorithm_name == "belief" and graph is not None:
-        estimate = estimate_belief_runtime_and_communities(graph, **dict(parameters or {}))
-        warnings.append(
-            "\n".join(
-                [
-                    "Belief benchmark-based estimate for the current graph and parameters:",
-                    (
-                        "- Estimated runtime: "
-                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
-                    ),
-                    f"- Estimated communities: {int(estimate['estimated_community_count'])}",
-                    f"- Confidence: {estimate['confidence']}",
-                    (
-                        "This estimate is heuristic and derived from project benchmark data, "
-                        "not a guarantee."
-                    ),
-                ]
-            )
-        )
-
-    if algorithm_name == "async_fluid" and graph is not None:
-        estimate = estimate_async_fluid_runtime_and_communities(
+    if graph is not None:
+        preview_warning = build_algorithm_preview_warning(
+            algorithm_name,
             graph,
-            **dict(parameters or {}),
+            parameters,
         )
-        warnings.append(
-            "\n".join(
-                [
-                    "Async Fluid benchmark-based estimate for the current graph and parameters:",
-                    (
-                        "- Estimated runtime: "
-                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
-                    ),
-                    (
-                        "- Estimated communities: "
-                        f"{int(estimate['estimated_community_count'])} "
-                        "(this follows k by design)"
-                    ),
-                    f"- Confidence: {estimate['confidence']}",
-                    (
-                        "This estimate is heuristic and derived from project benchmark data, "
-                        "not a guarantee."
-                    ),
-                ]
-            )
-        )
-
-    if algorithm_name == "cpm" and graph is not None:
-        estimate = estimate_cpm_runtime_and_communities(graph, **dict(parameters or {}))
-        warnings.append(
-            "\n".join(
-                [
-                    "CPM benchmark-based estimate for the current graph and parameters:",
-                    (
-                        "- Estimated runtime: "
-                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
-                    ),
-                    f"- Estimated communities: {int(estimate['estimated_community_count'])}",
-                    f"- Confidence: {estimate['confidence']}",
-                    (
-                        "This estimate is heuristic and derived from project benchmark data, "
-                        "not a guarantee."
-                    ),
-                ]
-            )
-        )
-
-    if algorithm_name == "der" and graph is not None:
-        estimate = estimate_der_runtime_and_communities(graph, **dict(parameters or {}))
-        warnings.append(
-            "\n".join(
-                [
-                    "DER benchmark-based estimate for the current graph and parameters:",
-                    (
-                        "- Estimated runtime: "
-                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
-                    ),
-                    f"- Estimated communities: {int(estimate['estimated_community_count'])}",
-                    f"- Confidence: {estimate['confidence']}",
-                    (
-                        "DER stayed fast in the project benchmarks, but extreme walk_len and "
-                        "iter_bound values were measurably slower on large graphs."
-                    ),
-                    (
-                        "This estimate is heuristic and derived from project benchmark data, "
-                        "not a guarantee."
-                    ),
-                ]
-            )
-        )
-
-    if algorithm_name == "eigenvector" and graph is not None and graph.number_of_nodes() >= 1000:
-        estimate = estimate_eigenvector_runtime_and_communities(graph)
-        warnings.append(
-            "\n".join(
-                [
-                    "Eigenvector warning for the current graph:",
-                    (
-                        "- Estimated runtime: "
-                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
-                    ),
-                    (
-                        "- Estimated communities: "
-                        f"{estimate['estimated_community_count']}"
-                    ),
-                    f"- Confidence: {estimate['confidence']}.",
-                    "- Large graphs can trigger an ARPACK precision failure instead of a result.",
-                    "- This has already been reproduced on the project example save.",
-                    f"- Estimated ARPACK failure risk: {estimate['arpack_risk']}.",
-                    "- If it fails, try a smaller subgraph or another community algorithm.",
-                ]
-            )
-        )
+        if preview_warning:
+            warnings.append(preview_warning)
 
     return "\n\n".join(warnings) if warnings else None
 

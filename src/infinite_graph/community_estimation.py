@@ -87,3 +87,24 @@ def build_reference_points(
         "communities",
     )
     return tuple(dict(zip(keys, row, strict=True)) for row in rows)
+
+
+def build_k_reference(
+    nodes: float,
+    edges_per_node: float,
+    self_loop_ratio: float,
+    reciprocal_ratio: float,
+    k_value: float,
+    elapsed: float,
+    communities: float,
+) -> dict[str, float]:
+    """Build a benchmark reference point for algorithms whose main parameter is k."""
+    return {
+        "nodes": nodes,
+        "edges_per_node": edges_per_node,
+        "self_loop_ratio": self_loop_ratio,
+        "reciprocal_ratio": reciprocal_ratio,
+        "k": k_value,
+        "elapsed": elapsed,
+        "communities": communities,
+    }
