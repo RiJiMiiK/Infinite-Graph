@@ -139,6 +139,9 @@ The application also includes:
 - benchmark-based pre-run estimates for `Belief` runtime and expected community count
 - benchmark-based pre-run estimates for `CPM` runtime and expected community count
 - benchmark-based pre-run estimates for `Async Fluid` runtime and expected community count
+- benchmark-based pre-run estimates for `DER` runtime and expected community count
+- benchmark-based pre-run estimates for `Eigenvector` runtime and expected community count
+- guided warning/error handling for `Eigenvector` ARPACK failures on large graphs
 
 Current visibility rules:
 
@@ -148,6 +151,10 @@ Current visibility rules:
 Current stability note:
 
 - `AGDL` is available, but it is marked as experimental
+- the pre-run warning now also includes:
+  - an estimated runtime
+  - an estimated community count
+  - a low-confidence note
 - benchmark runs reproduced upstream CDlib crashes on several graph families
 - the failure also reproduces on the documented `karate_club_graph()` example in this environment
 - treat `AGDL` as a best-effort option, not as a stable default
@@ -195,6 +202,26 @@ Current `Async Fluid` warning:
   - an estimated community count for the current graph and `k`
 - the expected community count follows `k` by design for this method
 - project benchmarks show that `Async Fluid` remains fast on the tested graph families, including at `1000` nodes
+
+Current `DER` warning:
+
+- `DER` stays available, and the application shows a lightweight pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph and parameter set
+  - an estimated community count for the current graph and parameter set
+- benchmark runs showed that `DER` stays fast on the tested graph families, including very large synthetic cases
+- the main runtime cost drivers observed were very large `walk_len` and `iter_bound` values
+- the estimate is heuristic and should be treated as guidance only
+
+Current `Eigenvector` warning:
+
+- `Eigenvector` stays available, but the application warns on large graphs before execution
+- the warning includes:
+  - an estimated runtime
+  - an estimated community count
+  - an estimated ARPACK failure risk
+- large saves can fail inside ARPACK with a numerical precision error instead of returning a partition
+- if that happens, the GUI now shows a guided error message recommending a smaller subgraph or another algorithm
 
 ### Generation flow
 

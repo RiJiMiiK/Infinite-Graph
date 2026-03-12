@@ -14,9 +14,13 @@
 - UI cleanup and dark mode across the application and graph view
 - added `community_analysis.py` for CDlib-backed mono-community metadata, graph preparation, and result summaries
 - added a strong AGDL runtime warning in the community-analysis flow and documented its upstream instability
+- added a benchmark-based `AGDL` preview estimate with runtime and estimated community count
 - added a benchmark-based `Belief` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `CPM` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Async Fluid` pre-run warning with estimated runtime and expected community count
+- added a benchmark-based `DER` pre-run warning with estimated runtime and estimated community count
+- added a benchmark-based `Eigenvector` pre-run estimate with runtime and estimated community count
+- added guided warnings and error handling for `Eigenvector` ARPACK failures on large graphs
 - added `tools/test_crisp_algorithms.py` and Docker benchmark environments for cross-platform crisp mono-community validation
 - validated community algorithm availability across Windows/Linux and now hide:
   - `label_propagation_raghavan` everywhere

@@ -16,6 +16,10 @@ Project consequence:
 
 - `AGDL` stays available, but it is documented as unstable
 - the GUI shows a strong warning before/after use
+- the pre-run popup now also includes:
+  - a benchmark-based runtime estimate
+  - a benchmark-based estimated community count
+  - an explicit low-confidence note because only a subset of AGDL benchmark cases completed reliably
 
 ## Belief
 
@@ -184,3 +188,93 @@ Project consequence:
 - the GUI shows a lightweight pre-run `Async Fluid` popup
 - the popup includes a benchmark-based runtime estimate
 - it also reminds the user that the expected number of communities follows `k`
+
+## DER
+
+`DER` stayed fast across the project benchmark families, including larger graphs.
+
+### Runtime baselines
+
+Initial benchmark families:
+
+- `acyclic`
+- `cyclic`
+- `cyclic_self`
+
+with default-style parameters on weighted undirected graph views.
+
+Observed runtimes:
+
+| Nodes | Acyclic | Cyclic | Cyclic + self-loops |
+| --- | ---: | ---: | ---: |
+| 20 | `0.0028s` to `0.0038s` | `0.0021s` to `0.0034s` | `0.0021s` to `0.0036s` |
+| 100 | `0.0028s` to `0.0085s` | `0.0033s` to `0.0064s` | `0.0028s` to `0.0060s` |
+| 300 | `0.0044s` to `0.0088s` | `0.0051s` to `0.0075s` | `0.0055s` to `0.0088s` |
+| 1000 | `0.0112s` to `0.0178s` | `0.0114s` to `0.0153s` | `0.0124s` to `0.0178s` |
+| 3000 | `0.0287s` to `0.0962s` | `0.0289s` to `0.0363s` | `0.0331s` to `0.0425s` |
+| 10000 | `0.0911s` to `0.2122s` | `0.0899s` to `0.2654s` | `0.1047s` to `0.2122s` |
+
+### Extended parameter exploration
+
+Broader tests pushed the parameter ranges further:
+
+- `walk_len` up to `100`
+- `threshold` from `1e-09` to `0.5`
+- `iter_bound` up to `1000`
+
+On a reduced extreme grid at `10000` nodes:
+
+- `acyclic`: `0.1021s` to `4.3012s`
+- `cyclic`: `0.1202s` to `4.7252s`
+- `cyclic_self`: `0.1400s` to `6.0624s`
+
+Observed behavior:
+
+- the returned community count stayed at `2` on the tested synthetic families
+- the main runtime cost drivers were very large `walk_len` and `iter_bound` values
+- even then, DER remained practical compared with the slower algorithms benchmarked in this project
+
+Project consequence:
+
+- the GUI shows a lightweight pre-run `DER` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- the message explicitly notes that extreme `walk_len` and `iter_bound` values can slow large runs
+
+## Eigenvector
+
+`Eigenvector` stayed fast on small and medium synthetic graph families, but became slower and less numerically stable on larger ones.
+
+### Runtime and community-count baselines
+
+- `20` nodes:
+  - `acyclic`: `0.0014s`, `4` communities
+  - `cyclic`: `0.0006s`, `4` communities
+  - `cyclic_self`: `0.0009s`, `4` communities
+- `100` nodes:
+  - `acyclic`: `0.0027s`, `8` communities
+  - `cyclic`: `0.0023s`, `8` communities
+  - `cyclic_self`: `0.0026s`, `8` communities
+- `300` nodes:
+  - `acyclic`: `0.0151s`, `20` communities
+  - `cyclic`: `0.0161s`, `16` communities
+  - `cyclic_self`: `0.0154s`, `16` communities
+- `1000` nodes:
+  - `acyclic`: `0.1397s`, `33` communities
+  - `cyclic`: `0.1572s`, `32` communities
+  - `cyclic_self`: `0.1645s`, `32` communities
+- `3000` nodes:
+  - `acyclic`: `3.9089s`, `54` communities
+  - `cyclic`: `5.7967s`, `32` communities
+  - `cyclic_self`: `4.8009s`, `64` communities
+
+Project example save:
+- runtime before failure: `6.5531s`
+- result: `ARPACK` precision failure
+
+### Product consequence
+
+- the GUI shows a pre-run `Eigenvector` popup on large graphs
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- it also surfaces an estimated `ARPACK` failure risk level
