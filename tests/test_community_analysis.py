@@ -14,6 +14,7 @@ from src.infinite_graph import (
     community_der,
     community_em,
     community_eigenvector,
+    community_ga,
 )
 
 
@@ -262,6 +263,34 @@ def test_get_mono_community_algorithm_parameters() -> None:
             "default": 3,
             "minimum": 1,
         }
+    ]
+
+    ga_parameters = community_analysis.get_mono_community_algorithm_parameters("ga")
+    assert ga_parameters == [
+        {
+            "name": "population",
+            "label": "Population",
+            "type": "int",
+            "default": 300,
+            "minimum": 1,
+        },
+        {
+            "name": "generation",
+            "label": "Generation",
+            "type": "int",
+            "default": 30,
+            "minimum": 1,
+        },
+        {
+            "name": "r",
+            "label": "R",
+            "type": "float",
+            "default": 1.5,
+            "minimum": 0.0,
+            "maximum": 1000.0,
+            "decimals": 2,
+            "step": 0.1,
+        },
     ]
 
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
@@ -519,6 +548,24 @@ def test_estimate_em_runtime_and_communities() -> None:
     assert estimate["confidence"] in {"high", "medium", "low"}
 
 
+def test_estimate_ga_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_ga.estimate_ga_runtime_and_communities(
+        graph,
+        population=300,
+        generation=30,
+        r=1.5,
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) >= 1
+    assert estimate["confidence"] in {"high", "medium", "low"}
+
+
 def test_get_mono_community_algorithm_pre_run_warning_for_cpm() -> None:
     graph = nx.DiGraph()
     graph.add_edge("A", "B", weight=1.0)
@@ -571,6 +618,25 @@ def test_get_mono_community_algorithm_pre_run_warning_for_em() -> None:
 
     assert warning is not None
     assert "EM benchmark-based estimate" in warning
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_ga() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "ga",
+        graph,
+        {"population": 300, "generation": 30, "r": 1.5},
+    )
+
+    assert warning is not None
+    assert "GA can become expensive quickly" in warning
     assert "Estimated runtime:" in warning
     assert "Estimated communities:" in warning
     assert "Confidence:" in warning
@@ -812,6 +878,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("em", graph, kwargs))
         return "em-result"
 
+    def fake_ga(graph, **kwargs):
+        calls.append(("ga", graph, kwargs))
+        return "ga-result"
+
     def fake_cpm(graph, **kwargs):
         calls.append(("cpm", graph, kwargs))
         return "cpm-result"
@@ -834,6 +904,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     monkeypatch.setattr(community_analysis.algorithms, "der", fake_der)
     monkeypatch.setattr(community_analysis.algorithms, "eigenvector", fake_eigenvector)
     monkeypatch.setattr(community_analysis.algorithms, "em", fake_em)
+    monkeypatch.setattr(community_analysis.algorithms, "ga", fake_ga)
     monkeypatch.setattr(community_analysis.algorithms, "cpm", fake_cpm)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
@@ -868,6 +939,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         == "eigenvector-result"
     )
     assert community_analysis.run_mono_community_algorithm(graph, "em") == "em-result"
+    assert community_analysis.run_mono_community_algorithm(graph, "ga") == "ga-result"
     assert community_analysis.run_mono_community_algorithm(graph, "cpm") == "cpm-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
     assert (
@@ -912,17 +984,24 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[9][0] == "em"
     assert isinstance(calls[9][1], nx.Graph)
     assert calls[9][2] == {"k": 3}
-    assert calls[10][0] == "cpm"
+    assert calls[10][0] == "ga"
     assert isinstance(calls[10][1], nx.Graph)
     assert calls[10][2] == {
+        "population": 300,
+        "generation": 30,
+        "r": 1.5,
+    }
+    assert calls[11][0] == "cpm"
+    assert isinstance(calls[11][1], nx.Graph)
+    assert calls[11][2] == {
         "resolution_parameter": 1.0,
         "weights": "weight",
     }
-    assert isinstance(calls[11][1], nx.Graph)
-    assert calls[11][2] == {"weights": "weight"}
-    assert calls[12][0] == "label_propagation"
     assert isinstance(calls[12][1], nx.Graph)
-    assert calls[12][2] == {}
+    assert calls[12][2] == {"weights": "weight"}
+    assert calls[13][0] == "label_propagation"
+    assert isinstance(calls[13][1], nx.Graph)
+    assert calls[13][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

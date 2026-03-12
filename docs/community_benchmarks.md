@@ -310,3 +310,73 @@ Project example save:
 - the popup includes a benchmark-based runtime estimate
 - it also includes a benchmark-based estimated community count
 - it also surfaces an estimated `ARPACK` failure risk level
+
+## GA
+
+`GA` is available, but it becomes expensive quickly as graph size grows.
+
+### Runtime baselines
+
+Default-style benchmark settings:
+
+- `population=300`
+- `generation=30`
+- `r=1.5`
+
+Observed runtimes:
+
+| Nodes | Acyclic | Cyclic | Cyclic + self-loops |
+| --- | ---: | ---: | ---: |
+| 20 | `8.22s` | `8.58s` | `8.18s` |
+| 50 | `13.19s` | `12.79s` | `12.07s` |
+| 100 | `23.03s` | `24.51s` | `24.10s` |
+| 150 | `55.44s` | `54.09s` | `47.00s` |
+| 200 | `90.98s` | `88.87s` | `74.91s` |
+| 250 | `149.19s` | `146.96s` | `123.52s` |
+| 300 | `209.75s` | `208.49s` | `176.76s` |
+| 350 | `288.95s` | `283.01s` | `239.78s` |
+| 400 | `382.96s` | `382.88s` | `309.22s` |
+| 450 | `673.48s` | `665.82s` | `552.33s` |
+| 500 | `816.01s` | `812.86s` | `691.79s` |
+
+### Parameter exploration on 100-node graphs
+
+Main observations:
+
+- `population` is the main runtime driver
+- `generation` is the secondary runtime driver
+- `r` mostly changes fragmentation rather than cost
+
+Representative points:
+
+- `population=50`, `generation=30`, `r=1.5`
+  - `acyclic`: `4.77s`
+  - `cyclic`: `3.31s`
+  - `cyclic_self`: `3.24s`
+- `population=600`, `generation=30`, `r=1.5`
+  - `acyclic`: `50.28s`
+  - `cyclic`: `58.88s`
+  - `cyclic_self`: `57.24s`
+- `population=300`, `generation=60`, `r=1.5`
+  - `acyclic`: `35.72s`
+  - `cyclic`: `32.09s`
+  - `cyclic_self`: `27.43s`
+
+Fragmentation effect of `r` on 100-node graphs:
+
+- `acyclic`
+  - `r=0.5` -> `16` communities
+  - `r=2.0` -> `23` communities
+- `cyclic`
+  - `r=0.5` -> `15` communities
+  - `r=2.0` -> `22` communities
+- `cyclic_self`
+  - `r=0.5` -> `22` communities
+  - `r=3.0` -> `42` communities
+
+Project consequence:
+
+- the GUI shows a pre-run `GA` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- the warning explicitly notes that `population` dominates runtime, `generation` is the second cost driver, and `r` mostly changes fragmentation

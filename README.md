@@ -141,6 +141,7 @@ The application also includes:
 - benchmark-based pre-run estimates for `Async Fluid` runtime and expected community count
 - benchmark-based pre-run estimates for `DER` runtime and expected community count
 - benchmark-based pre-run estimates for `EM` runtime and expected community count
+- benchmark-based pre-run estimates for `GA` runtime and expected community count
 - benchmark-based pre-run estimates for `Eigenvector` runtime and expected community count
 - guided warning/error handling for `Eigenvector` ARPACK failures on large graphs
 
@@ -221,6 +222,17 @@ Current `EM` warning:
   - an estimated runtime for the current graph and `k`
   - an estimated community count for the current graph and `k`
 - benchmarks showed that `EM` remains practical overall, but large acyclic-like graphs with high `k` are the slowest observed cases
+- the estimate is heuristic and should be treated as guidance only
+
+Current `GA` warning:
+
+- `GA` stays available, and the application shows a pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph and parameter set
+  - an estimated community count for the current graph and parameter set
+- benchmark runs showed that `GA` becomes expensive quickly as graph size grows, reaching double-digit minutes around `500` nodes with default-style settings
+- the main runtime cost drivers observed were `population` first and `generation` second
+- the parameter `r` mostly changed fragmentation, not cost
 - the estimate is heuristic and should be treated as guidance only
 
 Current `Eigenvector` warning:

@@ -268,7 +268,11 @@ class WindowBuildMixin:
 
         width = preferences.get("window_width")
         height = preferences.get("window_height")
-        if isinstance(width, int) and isinstance(height, int):
+        if (
+            isinstance(width, int)
+            and isinstance(height, int)
+            and self._saved_window_size_fits_screen(width, height)
+        ):
             self.resize(max(width, 960), max(height, 720))
 
         if isinstance(preferences.get("layout_iterations"), int):
@@ -353,6 +357,13 @@ class WindowBuildMixin:
             and all(isinstance(size, int) and size > 0 for size in sizes)
         ):
             splitter.setSizes(sizes)
+
+    def _saved_window_size_fits_screen(self, width: int, height: int) -> bool:
+        screen = self.screen()
+        if screen is None:
+            return True
+        available_geometry = screen.availableGeometry()
+        return width <= available_geometry.width() and height <= available_geometry.height()
 
     def _build_graph_tab(self) -> QWidget:
         tab = QWidget()

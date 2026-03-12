@@ -290,6 +290,25 @@ def test_window_ui_preferences_roundtrip(qapp, monkeypatch) -> None:
     window.close()
 
 
+def test_window_skips_saved_size_that_does_not_fit_screen(qapp, monkeypatch) -> None:
+    monkeypatch.setattr(
+        gui,
+        "load_ui_preferences",
+        lambda: {
+            "window_width": 4000,
+            "window_height": 3000,
+        },
+    )
+
+    original_width = 1480
+    original_height = 940
+    window = gui.InfiniteGraphWindow()
+
+    assert window.width() == original_width
+    assert window.height() == original_height
+    window.close()
+
+
 def test_window_has_communities_tab(qapp) -> None:
     window = gui.InfiniteGraphWindow()
     tab_titles = [window._main_tabs.tabText(index) for index in range(window._main_tabs.count())]
@@ -444,6 +463,17 @@ def test_window_community_parameters_visibility_updates_with_algorithm_selection
     )
     assert window.community_parameters_group.isHidden() is False
     assert set(window._community_parameter_inputs) == {"k"}
+
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("ga")
+    )
+    assert window.community_parameters_group.isHidden() is False
+    assert set(window._community_parameter_inputs) == {
+        "population",
+        "generation",
+        "r",
+    }
+    assert isinstance(window._community_parameter_inputs["r"], QDoubleSpinBox)
 
     window.community_algorithm_combo.setCurrentIndex(
         window.community_algorithm_combo.findData("infomap")
@@ -896,6 +926,69 @@ def test_window_compute_communities_supports_em_parameters(
     window.close()
 
 
+def test_window_compute_communities_supports_ga_parameters(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("ga")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="ga",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "ga",
+            "parameters": result.method_parameters,
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: None,
+    )
+
+    window._community_parameter_inputs["population"].setValue(123)
+    window._community_parameter_inputs["generation"].setValue(45)
+    window._community_parameter_inputs["r"].setValue(2.3)
+    window._compute_communities()
+
+    assert calls == [
+        (
+            sample_result["community_graph"],
+            "ga",
+            {"population": 123, "generation": 45, "r": 2.3},
+        )
+    ]
+    assert "Algorithm: GA" in window.community_summary_label.text()
+    assert "Method name: ga" in window.community_summary_label.text()
+    assert "population=123" in window.community_summary_label.text()
+    assert "generation=45" in window.community_summary_label.text()
+    assert "r=2.3" in window.community_summary_label.text()
+    window.close()
+
+
 def test_window_compute_communities_em_warning_can_cancel(
     qapp, sample_result, monkeypatch
 ) -> None:
@@ -912,6 +1005,41 @@ def test_window_compute_communities_em_warning_can_cancel(
         gui,
         "get_mono_community_algorithm_pre_run_warning",
         lambda *args, **kwargs: "EM estimate warning.",
+    )
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "warning",
+        lambda *args: gui.QMessageBox.Cancel,
+    )
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    window._compute_communities()
+
+    assert calls == []
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
+    window.close()
+
+
+def test_window_compute_communities_ga_warning_can_cancel(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("ga")
+    )
+
+    calls = []
+
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: "GA estimate warning.",
     )
     monkeypatch.setattr(
         gui.QMessageBox,

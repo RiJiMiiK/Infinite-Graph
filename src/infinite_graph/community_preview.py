@@ -13,6 +13,7 @@ from .community_cpm import estimate_cpm_runtime_and_communities
 from .community_der import estimate_der_runtime_and_communities
 from .community_em import estimate_em_runtime_and_communities
 from .community_eigenvector import estimate_eigenvector_runtime_and_communities
+from .community_ga import estimate_ga_runtime_and_communities
 
 
 def build_algorithm_preview_warning(
@@ -152,6 +153,27 @@ def build_algorithm_preview_warning(
                 "- This has already been reproduced on the project example save.",
                 f"- Estimated ARPACK failure risk: {estimate['arpack_risk']}.",
                 "- If it fails, try a smaller subgraph or another community algorithm.",
+            ]
+        )
+    elif algorithm_name == "ga":
+        estimate = estimate_ga_runtime_and_communities(graph, **params)
+        warning = "\n".join(
+            [
+                "GA benchmark-based estimate for the current graph and parameters:",
+                (
+                    "- Estimated runtime: "
+                    f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                ),
+                f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                f"- Confidence: {estimate['confidence']}",
+                (
+                    "GA benchmarks showed that population is the main runtime driver, "
+                    "generation is the secondary one, and r mostly changes fragmentation."
+                ),
+                (
+                    "This estimate is heuristic and derived from project benchmark data, "
+                    "not a guarantee."
+                ),
             ]
         )
 

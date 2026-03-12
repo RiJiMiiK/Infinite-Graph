@@ -279,6 +279,42 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "GA",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": (
+            "GA can become expensive quickly as graph size, population, and generation grow. "
+            "Project benchmarks already reached double-digit minutes around 500 nodes with "
+            "default-style settings."
+        ),
+        "parameter_definitions": [
+            {
+                "name": "population",
+                "label": "Population",
+                "type": "int",
+                "default": 300,
+                "minimum": 1,
+            },
+            {
+                "name": "generation",
+                "label": "Generation",
+                "type": "int",
+                "default": 30,
+                "minimum": 1,
+            },
+            {
+                "name": "r",
+                "label": "R",
+                "type": "float",
+                "default": 1.5,
+                "minimum": 0.0,
+                "maximum": 1000.0,
+                "decimals": 2,
+                "step": 0.1,
+            },
+        ],
+        "default_parameters": {
+            "population": 300,
+            "generation": 30,
+            "r": 1.5,
+        },
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",
