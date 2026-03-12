@@ -27,6 +27,7 @@ from .discard_store import (
     remove_discarded_pair as _remove_discarded_pair,
 )
 from .community_analysis import (
+    format_mono_community_algorithm_failure as _format_mono_community_algorithm_failure,
     get_bayan_gurobi_status as _get_bayan_gurobi_status,
     get_default_mono_community_algorithm as _get_default_mono_community_algorithm,
     get_mono_community_algorithms as _get_mono_community_algorithms,
@@ -89,7 +90,7 @@ __all__ += ["get_mono_community_algorithms", "get_default_mono_community_algorit
 __all__ += ["get_mono_community_algorithm_parameters"]
 __all__ += ["get_bayan_gurobi_status", "get_mono_community_algorithm_pre_run_warning"]
 __all__ += ["get_mono_community_algorithm_warning", "run_mono_community_algorithm"]
-__all__ += ["summarize_mono_community_result"]
+__all__ += ["summarize_mono_community_result", "format_mono_community_algorithm_failure"]
 
 PUBLIC_REEXPORTS = (LAYOUT_PROGRESS_END, _layout_cache_file, layout_cache_dir)
 PUBLIC_REEXPORTS += (load_cached_layout, nx, pg, save_cached_layout)
@@ -116,6 +117,7 @@ remove_discarded_pair = _remove_discarded_pair
 get_mono_community_algorithms = _get_mono_community_algorithms
 get_default_mono_community_algorithm = _get_default_mono_community_algorithm
 get_bayan_gurobi_status = _get_bayan_gurobi_status
+format_mono_community_algorithm_failure = _format_mono_community_algorithm_failure
 get_mono_community_algorithm_parameters = _get_mono_community_algorithm_parameters
 get_mono_community_algorithm_pre_run_warning = _get_mono_community_algorithm_pre_run_warning
 get_mono_community_algorithm_warning = _get_mono_community_algorithm_warning

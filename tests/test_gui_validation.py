@@ -429,6 +429,17 @@ def test_window_community_parameters_visibility_updates_with_algorithm_selection
     )
 
     window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("der")
+    )
+    assert window.community_parameters_group.isHidden() is False
+    assert set(window._community_parameter_inputs) == {
+        "walk_len",
+        "threshold",
+        "iter_bound",
+    }
+    assert isinstance(window._community_parameter_inputs["threshold"], QDoubleSpinBox)
+
+    window.community_algorithm_combo.setCurrentIndex(
         window.community_algorithm_combo.findData("infomap")
     )
     assert window.community_parameters_group.isHidden() is True
@@ -706,6 +717,196 @@ def test_window_compute_communities_supports_cpm_parameters(
     window.close()
 
 
+def test_window_compute_communities_supports_der_parameters(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("der")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="DER",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "DER",
+            "parameters": result.method_parameters,
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: None,
+    )
+
+    window._community_parameter_inputs["walk_len"].setValue(4)
+    window._community_parameter_inputs["threshold"].setValue(0.00042)
+    window._community_parameter_inputs["iter_bound"].setValue(60)
+    window._compute_communities()
+
+    assert calls == [
+        (
+            sample_result["community_graph"],
+            "der",
+            {
+                "walk_len": 4,
+                "threshold": 0.00042,
+                "iter_bound": 60,
+            },
+        )
+    ]
+    assert "Algorithm: DER" in window.community_summary_label.text()
+    assert "Method name: DER" in window.community_summary_label.text()
+    assert "walk_len=4" in window.community_summary_label.text()
+    assert "threshold=0.00042" in window.community_summary_label.text()
+    assert "iter_bound=60" in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_supports_eigenvector(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("eigenvector")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="Eigenvector",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "Eigenvector",
+            "parameters": result.method_parameters,
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: None,
+    )
+
+    window._compute_communities()
+
+    assert calls == [(sample_result["community_graph"], "eigenvector", {})]
+    assert "Algorithm: Eigenvector" in window.community_summary_label.text()
+    assert "Method name: Eigenvector" in window.community_summary_label.text()
+    assert "Detected communities: 2" in window.community_summary_label.text()
+    assert "Parameters:" not in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_eigenvector_warning_can_cancel(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("eigenvector")
+    )
+
+    calls = []
+
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: "Eigenvector estimate warning.",
+    )
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "warning",
+        lambda *args: gui.QMessageBox.Cancel,
+    )
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    window._compute_communities()
+
+    assert calls == []
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
+    window.close()
+
+
+def test_window_compute_communities_der_warning_can_cancel(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("der")
+    )
+
+    calls = []
+
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: "DER estimate warning.",
+    )
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "warning",
+        lambda *args: gui.QMessageBox.Cancel,
+    )
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    window._compute_communities()
+
+    assert calls == []
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
+    window.close()
+
+
 def test_window_compute_communities_cpm_warning_can_cancel(
     qapp, sample_result, monkeypatch
 ) -> None:
@@ -879,6 +1080,41 @@ def test_window_compute_communities_failure_shows_error(qapp, sample_result, mon
     assert "No community analysis has been run yet." == window.community_summary_label.text()
     assert window.community_list.count() == 0
     assert "No community selected." == window.community_details.toPlainText()
+    window.close()
+
+
+def test_window_compute_communities_eigenvector_failure_shows_guided_error(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("eigenvector")
+    )
+    errors = []
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            RuntimeError(
+                "Error at src/community/leading_eigenvector.c:567: "
+                "No eigenvalues to sufficient accuracy. -- ARPACK error"
+            )
+        ),
+    )
+    monkeypatch.setattr(gui.QMessageBox, "critical", lambda *args: errors.append(args))
+
+    window._compute_communities()
+
+    assert errors
+    assert "Algorithm: eigenvector" in errors[0][2]
+    assert "ARPACK could not compute eigenvalues with sufficient accuracy" in errors[0][2]
     window.close()
 
 

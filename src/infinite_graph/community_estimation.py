@@ -70,3 +70,20 @@ def build_graph_structure_features(graph: nx.DiGraph) -> dict[str, float]:
         "self_loop_ratio": float(self_loops) / float(node_count),
         "reciprocal_ratio": float(reciprocal_pairs) / float(node_count),
     }
+
+
+def build_reference_points(
+    rows: tuple[tuple[float, ...], ...],
+    extra_keys: tuple[str, ...] = (),
+) -> tuple[dict[str, float], ...]:
+    """Build benchmark reference points with shared graph-structure keys."""
+    keys = (
+        "nodes",
+        "edges_per_node",
+        "self_loop_ratio",
+        "reciprocal_ratio",
+        *extra_keys,
+        "elapsed",
+        "communities",
+    )
+    return tuple(dict(zip(keys, row, strict=True)) for row in rows)

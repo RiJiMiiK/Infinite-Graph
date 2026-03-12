@@ -12,9 +12,17 @@ from functools import lru_cache
 import networkx as nx
 from cdlib import algorithms
 
+from .community_agdl import estimate_agdl_runtime_and_communities
 from .community_async_fluid import estimate_async_fluid_runtime_and_communities
 from .community_belief import estimate_belief_runtime_and_communities, format_duration
 from .community_cpm import estimate_cpm_runtime_and_communities
+from .community_der import estimate_der_runtime_and_communities
+from .community_eigenvector import estimate_eigenvector_runtime_and_communities
+from . import community_messages
+
+format_mono_community_algorithm_failure = (
+    community_messages.format_mono_community_algorithm_failure
+)
 
 MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
     "agdl": {
@@ -193,15 +201,56 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
     "der": {
         "label": "DER",
         "supports_directed": False,
-        "supports_weighted": False,
+        "supports_weighted": True,
+        "runtime_warning": (
+            "DER is generally fast in this project, but very large walk lengths and iteration "
+            "bounds can still increase runtime noticeably on large graphs. Use the pre-run "
+            "estimate if you push those parameters far above the defaults."
+        ),
+        "parameter_definitions": [
+            {
+                "name": "walk_len",
+                "label": "Walk length",
+                "type": "int",
+                "default": 3,
+                "minimum": 1,
+            },
+            {
+                "name": "threshold",
+                "label": "Threshold",
+                "type": "float",
+                "default": 0.00001,
+                "minimum": 0.0,
+                "maximum": 1.0,
+                "decimals": 5,
+                "step": 0.00001,
+            },
+            {
+                "name": "iter_bound",
+                "label": "Iteration bound",
+                "type": "int",
+                "default": 50,
+                "minimum": 1,
+            },
+        ],
+        "default_parameters": {
+            "walk_len": 3,
+            "threshold": 0.00001,
+            "iter_bound": 50,
+        },
         "weight_parameter": None,
         "weight_value": None,
-        "compatibility_note": "Will run on an undirected unweighted view of the graph.",
+        "compatibility_note": "Will run on an undirected weighted view of the graph.",
     },
     "eigenvector": {
         "label": "Eigenvector",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": (
+            "Eigenvector relies on ARPACK and can fail on large graphs with a numerical "
+            "precision error instead of returning a partition. If that happens, try a smaller "
+            "subgraph or switch to a more robust algorithm for large saves."
+        ),
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",
@@ -659,7 +708,27 @@ def get_mono_community_algorithm_pre_run_warning(
             message = str(gurobi_status.get("message", "")).strip()
             if message:
                 warning_lines.append(f"Gurobi banner: {message}")
-            warnings.append("\n".join(warning_lines))
+                warnings.append("\n".join(warning_lines))
+
+    if algorithm_name == "agdl" and graph is not None:
+        estimate = estimate_agdl_runtime_and_communities(graph, **dict(parameters or {}))
+        warnings.append(
+            "\n".join(
+                [
+                    "AGDL benchmark-based estimate for the current graph and parameters:",
+                    (
+                        "- Estimated runtime: "
+                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                    ),
+                    f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                    f"- Confidence: {estimate['confidence']}",
+                    (
+                        "This estimate is heuristic and derived from the AGDL benchmark cases "
+                        "that actually completed in this project."
+                    ),
+                ]
+            )
+        )
 
     if algorithm_name == "belief" and graph is not None:
         estimate = estimate_belief_runtime_and_communities(graph, **dict(parameters or {}))
@@ -724,6 +793,53 @@ def get_mono_community_algorithm_pre_run_warning(
                         "This estimate is heuristic and derived from project benchmark data, "
                         "not a guarantee."
                     ),
+                ]
+            )
+        )
+
+    if algorithm_name == "der" and graph is not None:
+        estimate = estimate_der_runtime_and_communities(graph, **dict(parameters or {}))
+        warnings.append(
+            "\n".join(
+                [
+                    "DER benchmark-based estimate for the current graph and parameters:",
+                    (
+                        "- Estimated runtime: "
+                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                    ),
+                    f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                    f"- Confidence: {estimate['confidence']}",
+                    (
+                        "DER stayed fast in the project benchmarks, but extreme walk_len and "
+                        "iter_bound values were measurably slower on large graphs."
+                    ),
+                    (
+                        "This estimate is heuristic and derived from project benchmark data, "
+                        "not a guarantee."
+                    ),
+                ]
+            )
+        )
+
+    if algorithm_name == "eigenvector" and graph is not None and graph.number_of_nodes() >= 1000:
+        estimate = estimate_eigenvector_runtime_and_communities(graph)
+        warnings.append(
+            "\n".join(
+                [
+                    "Eigenvector warning for the current graph:",
+                    (
+                        "- Estimated runtime: "
+                        f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                    ),
+                    (
+                        "- Estimated communities: "
+                        f"{estimate['estimated_community_count']}"
+                    ),
+                    f"- Confidence: {estimate['confidence']}.",
+                    "- Large graphs can trigger an ARPACK precision failure instead of a result.",
+                    "- This has already been reproduced on the project example save.",
+                    f"- Estimated ARPACK failure risk: {estimate['arpack_risk']}.",
+                    "- If it fails, try a smaller subgraph or another community algorithm.",
                 ]
             )
         )

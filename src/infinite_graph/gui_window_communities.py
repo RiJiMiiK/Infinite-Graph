@@ -120,10 +120,10 @@ class WindowCommunitiesMixin:
             QMessageBox.critical(
                 self,
                 "Community computation failed",
-                (
-                    "Unable to compute communities with the selected algorithm.\n\n"
-                    f"Algorithm: {algorithm_name}\n"
-                    f"Details: {exc}"
+                gui_module.format_mono_community_algorithm_failure(
+                    str(algorithm_name),
+                    exc,
+                    graph,
                 ),
             )
             return
