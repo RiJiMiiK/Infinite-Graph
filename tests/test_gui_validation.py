@@ -476,6 +476,13 @@ def test_window_community_parameters_visibility_updates_with_algorithm_selection
     assert isinstance(window._community_parameter_inputs["r"], QDoubleSpinBox)
 
     window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("gdmp2")
+    )
+    assert window.community_parameters_group.isHidden() is False
+    assert set(window._community_parameter_inputs) == {"min_threshold"}
+    assert isinstance(window._community_parameter_inputs["min_threshold"], QDoubleSpinBox)
+
+    window.community_algorithm_combo.setCurrentIndex(
         window.community_algorithm_combo.findData("infomap")
     )
     assert window.community_parameters_group.isHidden() is True
@@ -986,6 +993,100 @@ def test_window_compute_communities_supports_ga_parameters(
     assert "population=123" in window.community_summary_label.text()
     assert "generation=45" in window.community_summary_label.text()
     assert "r=2.3" in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_supports_gdmp2_parameters(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("gdmp2")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="GDMP2",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "GDMP2",
+            "parameters": result.method_parameters,
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: None,
+    )
+
+    window._community_parameter_inputs["min_threshold"].setValue(0.42)
+    window._compute_communities()
+
+    assert calls == [
+        (
+            sample_result["community_graph"],
+            "gdmp2",
+            {"min_threshold": 0.42},
+        )
+    ]
+    assert "Algorithm: GDMP2" in window.community_summary_label.text()
+    assert "Method name: GDMP2" in window.community_summary_label.text()
+    assert "min_threshold=0.42" in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_gdmp2_warning_can_cancel(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("gdmp2")
+    )
+
+    calls = []
+
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: "GDMP2 estimate warning.",
+    )
+    monkeypatch.setattr(
+        gui.QMessageBox,
+        "warning",
+        lambda *args: gui.QMessageBox.Cancel,
+    )
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    window._compute_communities()
+
+    assert calls == []
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
     window.close()
 
 

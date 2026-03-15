@@ -380,3 +380,42 @@ Project consequence:
 - the popup includes a benchmark-based runtime estimate
 - it also includes a benchmark-based estimated community count
 - the warning explicitly notes that `population` dominates runtime, `generation` is the second cost driver, and `r` mostly changes fragmentation
+
+## GDMP2
+
+`GDMP2` stayed fast on smaller benchmark graphs, but it showed a structural recursion limit on larger ones in this project environment.
+
+### Runtime and threshold exploration
+
+Default-style benchmark results:
+
+- `20` nodes
+  - `acyclic`: `0.0054s`, `1` community
+  - `cyclic`: `0.0037s`, `1` community
+  - `cyclic_self`: `0.0043s`, `1` community
+- `100` nodes
+  - `acyclic`: `0.0769s`, `1` community
+  - `cyclic`: `0.0709s`, `1` community
+  - `cyclic_self`: `0.0755s`, `1` community
+- `300` nodes
+  - `acyclic`: `0.8507s`, `1` community
+  - `cyclic`: `0.7307s`, `1` community
+  - `cyclic_self`: `0.6642s`, `1` community
+
+At `1000` nodes, every tested family failed with `RecursionError`, with runtimes around `14s` to `19s` before the crash.
+
+Threshold exploration showed:
+
+- on `300` nodes, `min_threshold` changes fragmentation
+- very small thresholds such as `0.001` and `0.01` can collapse the synthetic graphs into a single giant community
+- intermediate thresholds such as `0.05` can split some `acyclic` cases into `2` communities
+- higher thresholds shrink the dominant community but still often leave the synthetic result at `1` community
+- on `1000` nodes, none of the tested `min_threshold` values avoided the recursion failure
+
+Project consequence:
+
+- the GUI now shows a pre-run `GDMP2` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- it explicitly surfaces an estimated recursion-failure risk
+- the warning states that changing `min_threshold` can alter fragmentation, but did not remove the large-graph recursion problem in project benchmarks

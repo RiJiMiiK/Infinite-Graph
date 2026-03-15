@@ -142,6 +142,7 @@ The application also includes:
 - benchmark-based pre-run estimates for `DER` runtime and expected community count
 - benchmark-based pre-run estimates for `EM` runtime and expected community count
 - benchmark-based pre-run estimates for `GA` runtime and expected community count
+- benchmark-based pre-run estimates for `GDMP2` runtime and expected community count
 - benchmark-based pre-run estimates for `Eigenvector` runtime and expected community count
 - guided warning/error handling for `Eigenvector` ARPACK failures on large graphs
 
@@ -233,6 +234,18 @@ Current `GA` warning:
 - benchmark runs showed that `GA` becomes expensive quickly as graph size grows, reaching double-digit minutes around `500` nodes with default-style settings
 - the main runtime cost drivers observed were `population` first and `generation` second
 - the parameter `r` mostly changed fragmentation, not cost
+- the estimate is heuristic and should be treated as guidance only
+
+Current `GDMP2` warning:
+
+- `GDMP2` stays available, and the application shows a pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph and `min_threshold`
+  - an estimated community count for the current graph and `min_threshold`
+  - an estimated recursion-failure risk
+- benchmark runs showed that `GDMP2` stays fast on small and medium tested graphs
+- the same benchmarks also reproduced `RecursionError` failures around `1000` nodes for every tested `min_threshold`
+- `min_threshold` changes fragmentation on smaller graphs, but did not remove the large-graph recursion issue in project tests
 - the estimate is heuristic and should be treated as guidance only
 
 Current `Eigenvector` warning:

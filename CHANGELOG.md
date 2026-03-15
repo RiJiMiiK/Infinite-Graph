@@ -21,6 +21,7 @@
 - added a benchmark-based `DER` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `EM` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `GA` pre-run warning with estimated runtime and estimated community count
+- added a benchmark-based `GDMP2` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Eigenvector` pre-run estimate with runtime and estimated community count
 - added guided warnings and error handling for `Eigenvector` ARPACK failures on large graphs
 - added `tools/test_crisp_algorithms.py` and Docker benchmark environments for cross-platform crisp mono-community validation

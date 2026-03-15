@@ -15,6 +15,7 @@ from src.infinite_graph import (
     community_em,
     community_eigenvector,
     community_ga,
+    community_gdmp2,
 )
 
 
@@ -293,6 +294,20 @@ def test_get_mono_community_algorithm_parameters() -> None:
         },
     ]
 
+    gdmp2_parameters = community_analysis.get_mono_community_algorithm_parameters("gdmp2")
+    assert gdmp2_parameters == [
+        {
+            "name": "min_threshold",
+            "label": "Min threshold",
+            "type": "float",
+            "default": 0.75,
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "decimals": 3,
+            "step": 0.01,
+        },
+    ]
+
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
     assert agdl_parameters == [
         {
@@ -346,6 +361,9 @@ def test_get_mono_community_algorithm_warning() -> None:
     eigenvector_warning = community_analysis.get_mono_community_algorithm_warning("eigenvector")
     assert eigenvector_warning is not None
     assert "ARPACK" in eigenvector_warning
+    gdmp2_warning = community_analysis.get_mono_community_algorithm_warning("gdmp2")
+    assert gdmp2_warning is not None
+    assert "RecursionError around 1000 nodes" in gdmp2_warning
     assert community_analysis.get_mono_community_algorithm_warning("unknown") is None
 
 
@@ -566,6 +584,23 @@ def test_estimate_ga_runtime_and_communities() -> None:
     assert estimate["confidence"] in {"high", "medium", "low"}
 
 
+def test_estimate_gdmp2_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_gdmp2.estimate_gdmp2_runtime_and_communities(
+        graph,
+        min_threshold=0.42,
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) >= 1
+    assert estimate["confidence"] in {"high", "medium", "low"}
+    assert estimate["recursion_risk"] in {"high", "medium", "low"}
+
+
 def test_get_mono_community_algorithm_pre_run_warning_for_cpm() -> None:
     graph = nx.DiGraph()
     graph.add_edge("A", "B", weight=1.0)
@@ -640,6 +675,27 @@ def test_get_mono_community_algorithm_pre_run_warning_for_ga() -> None:
     assert "Estimated runtime:" in warning
     assert "Estimated communities:" in warning
     assert "Confidence:" in warning
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_gdmp2() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "gdmp2",
+        graph,
+        {"min_threshold": 0.42},
+    )
+
+    assert warning is not None
+    assert "GDMP2 stayed fast on small and medium benchmark graphs" in warning
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
+    assert "Estimated recursion failure risk:" in warning
+    assert "RecursionError" in warning
 
 
 def test_get_mono_community_algorithm_pre_run_warning_for_eigenvector_large_graph() -> None:
@@ -882,6 +938,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("ga", graph, kwargs))
         return "ga-result"
 
+    def fake_gdmp2(graph, **kwargs):
+        calls.append(("gdmp2", graph, kwargs))
+        return "gdmp2-result"
+
     def fake_cpm(graph, **kwargs):
         calls.append(("cpm", graph, kwargs))
         return "cpm-result"
@@ -905,6 +965,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     monkeypatch.setattr(community_analysis.algorithms, "eigenvector", fake_eigenvector)
     monkeypatch.setattr(community_analysis.algorithms, "em", fake_em)
     monkeypatch.setattr(community_analysis.algorithms, "ga", fake_ga)
+    monkeypatch.setattr(community_analysis.algorithms, "gdmp2", fake_gdmp2)
     monkeypatch.setattr(community_analysis.algorithms, "cpm", fake_cpm)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
@@ -940,6 +1001,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     )
     assert community_analysis.run_mono_community_algorithm(graph, "em") == "em-result"
     assert community_analysis.run_mono_community_algorithm(graph, "ga") == "ga-result"
+    assert community_analysis.run_mono_community_algorithm(graph, "gdmp2") == "gdmp2-result"
     assert community_analysis.run_mono_community_algorithm(graph, "cpm") == "cpm-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
     assert (
@@ -991,17 +1053,22 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         "generation": 30,
         "r": 1.5,
     }
-    assert calls[11][0] == "cpm"
+    assert calls[11][0] == "gdmp2"
     assert isinstance(calls[11][1], nx.Graph)
     assert calls[11][2] == {
+        "min_threshold": 0.75,
+    }
+    assert calls[12][0] == "cpm"
+    assert isinstance(calls[12][1], nx.Graph)
+    assert calls[12][2] == {
         "resolution_parameter": 1.0,
         "weights": "weight",
     }
-    assert isinstance(calls[12][1], nx.Graph)
-    assert calls[12][2] == {"weights": "weight"}
-    assert calls[13][0] == "label_propagation"
     assert isinstance(calls[13][1], nx.Graph)
-    assert calls[13][2] == {}
+    assert calls[13][2] == {"weights": "weight"}
+    assert calls[14][0] == "label_propagation"
+    assert isinstance(calls[14][1], nx.Graph)
+    assert calls[14][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

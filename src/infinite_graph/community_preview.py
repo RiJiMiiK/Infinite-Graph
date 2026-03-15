@@ -14,6 +14,7 @@ from .community_der import estimate_der_runtime_and_communities
 from .community_em import estimate_em_runtime_and_communities
 from .community_eigenvector import estimate_eigenvector_runtime_and_communities
 from .community_ga import estimate_ga_runtime_and_communities
+from .community_gdmp2 import estimate_gdmp2_runtime_and_communities
 
 
 def build_algorithm_preview_warning(
@@ -169,6 +170,35 @@ def build_algorithm_preview_warning(
                 (
                     "GA benchmarks showed that population is the main runtime driver, "
                     "generation is the secondary one, and r mostly changes fragmentation."
+                ),
+                (
+                    "This estimate is heuristic and derived from project benchmark data, "
+                    "not a guarantee."
+                ),
+            ]
+        )
+    elif algorithm_name == "gdmp2":
+        estimate = estimate_gdmp2_runtime_and_communities(graph, **params)
+        warning = "\n".join(
+            [
+                "GDMP2 benchmark-based estimate for the current graph and parameters:",
+                (
+                    "- Estimated runtime: "
+                    f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                ),
+                f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                f"- Confidence: {estimate['confidence']}",
+                (
+                    "- Estimated recursion failure risk: "
+                    f"{estimate['recursion_risk']}"
+                ),
+                (
+                    "Project benchmarks showed repeatable RecursionError failures around "
+                    "1000 nodes for every tested min_threshold value."
+                ),
+                (
+                    "min_threshold changed fragmentation on smaller graphs, but it did not "
+                    "remove the large-graph recursion issue."
                 ),
                 (
                     "This estimate is heuristic and derived from project benchmark data, "
