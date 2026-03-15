@@ -7,7 +7,7 @@ from collections.abc import Mapping
 
 import networkx as nx
 
-from .community_estimation import (
+from .estimation import (
     build_graph_structure_features,
     build_k_reference,
     finalize_estimate,

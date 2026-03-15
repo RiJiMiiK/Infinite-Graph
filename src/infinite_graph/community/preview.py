@@ -6,15 +6,15 @@ from collections.abc import Mapping
 
 import networkx as nx
 
-from .community_agdl import estimate_agdl_runtime_and_communities
-from .community_async_fluid import estimate_async_fluid_runtime_and_communities
-from .community_belief import estimate_belief_runtime_and_communities, format_duration
-from .community_cpm import estimate_cpm_runtime_and_communities
-from .community_der import estimate_der_runtime_and_communities
-from .community_em import estimate_em_runtime_and_communities
-from .community_eigenvector import estimate_eigenvector_runtime_and_communities
-from .community_ga import estimate_ga_runtime_and_communities
-from .community_gdmp2 import estimate_gdmp2_runtime_and_communities
+from .agdl import estimate_agdl_runtime_and_communities
+from .async_fluid import estimate_async_fluid_runtime_and_communities
+from .belief import estimate_belief_runtime_and_communities, format_duration
+from .cpm import estimate_cpm_runtime_and_communities
+from .der import estimate_der_runtime_and_communities
+from .em import estimate_em_runtime_and_communities
+from .eigenvector import estimate_eigenvector_runtime_and_communities
+from .ga import estimate_ga_runtime_and_communities
+from .gdmp2 import estimate_gdmp2_runtime_and_communities
 
 
 def build_algorithm_preview_warning(

@@ -262,7 +262,7 @@ class WindowBuildMixin:
             row_layout.setDirection(row_direction)
 
     def _load_ui_preferences_state(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         self._ui_preferences = gui_module.load_ui_preferences()
         preferences = self._ui_preferences
 
@@ -321,7 +321,7 @@ class WindowBuildMixin:
         self._update_responsive_layout(self.width())
 
     def _save_ui_preferences_state(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         preferences = {
             "window_width": int(self.width()),
             "window_height": int(self.height()),
@@ -575,7 +575,7 @@ class WindowBuildMixin:
         return tab
 
     def _build_communities_tab(self) -> QWidget:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         tab = QWidget()
         layout = QVBoxLayout(tab)
         layout.setContentsMargins(12, 12, 12, 12)
@@ -640,7 +640,7 @@ class WindowBuildMixin:
         return card
 
     def _pick_input(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         path, _ = gui_module.QFileDialog.getOpenFileName(
             self,
             "Choose an Infinite Craft save",

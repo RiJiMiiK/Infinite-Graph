@@ -4,17 +4,17 @@ from types import SimpleNamespace
 
 import networkx as nx
 
-from src.infinite_graph import (
-    community_agdl,
-    community_analysis,
-    community_async_fluid,
-    community_belief,
-    community_cpm,
-    community_der,
-    community_em,
-    community_eigenvector,
-    community_ga,
-    community_gdmp2,
+from src.infinite_graph.community import (
+    agdl as community_agdl,
+    analysis as community_analysis,
+    async_fluid as community_async_fluid,
+    belief as community_belief,
+    cpm as community_cpm,
+    der as community_der,
+    eigenvector as community_eigenvector,
+    em as community_em,
+    ga as community_ga,
+    gdmp2 as community_gdmp2,
 )
 
 

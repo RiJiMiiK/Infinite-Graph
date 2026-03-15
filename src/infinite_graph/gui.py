@@ -26,7 +26,7 @@ from .discard_store import (
     import_discarded_pairs as _import_discarded_pairs,
     remove_discarded_pair as _remove_discarded_pair,
 )
-from .community_analysis import (
+from .community.analysis import (
     format_mono_community_algorithm_failure as _format_mono_community_algorithm_failure,
     get_bayan_gurobi_status as _get_bayan_gurobi_status,
     get_default_mono_community_algorithm as _get_default_mono_community_algorithm,
@@ -38,19 +38,19 @@ from .community_analysis import (
     summarize_mono_community_result as _summarize_mono_community_result,
 )
 
-from .gui_bundles import (
+from .ui.bundles import (
     create_communities_bundle,
     create_controls_bundle,
     create_graph_bundle,
     create_info_bundle,
     create_stats_bundle,
 )
-from .gui_constants import (
+from .ui.constants import (
     GENERATION_STAGE_PROGRESS,
     INTERFACE_PROGRESS as _INTERFACE_PROGRESS,
     LAYOUT_PROGRESS_END,
 )
-from .gui_layout import (
+from .ui.layout import (
     _layout_cache_file,
     build_graph_render_data as _build_graph_render_data,
     build_subgraph_render_data as _build_subgraph_render_data,
@@ -60,19 +60,19 @@ from .gui_layout import (
     nx,
     save_cached_layout,
 )
-from .gui_preferences import (
+from .ui.preferences import (
     load_ui_preferences as _load_ui_preferences,
     save_ui_preferences as _save_ui_preferences,
     ui_preferences_path as _ui_preferences_path,
 )
-from .gui_table import ListTableModel as _ListTableModel
-from .gui_widgets import CopyLineEdit, GraphViewWidget, StatsCanvas as _StatsCanvas, pg
-from .gui_window_build import WindowBuildMixin
-from .gui_window_combinations import WindowCombinationsMixin
-from .gui_window_communities import WindowCommunitiesMixin
-from .gui_window_generation import WindowGenerationMixin
-from .gui_window_graph import WindowGraphMixin
-from .gui_worker import GenerateWorker
+from .ui.table import ListTableModel as _ListTableModel
+from .ui.widgets import CopyLineEdit, GraphViewWidget, StatsCanvas as _StatsCanvas, pg
+from .ui.window_build import WindowBuildMixin
+from .ui.window_combinations import WindowCombinationsMixin
+from .ui.window_communities import WindowCommunitiesMixin
+from .ui.window_generation import WindowGenerationMixin
+from .ui.window_graph import WindowGraphMixin
+from .ui.worker import GenerateWorker
 from .service import process_save as _process_save
 
 __all__ = ["CopyLineEdit", "GENERATION_STAGE_PROGRESS", "GenerateWorker", "GraphViewWidget"]
@@ -132,7 +132,7 @@ def ui_preferences_path():
 
 def load_ui_preferences():
     """Load persisted UI preferences using the public GUI hook."""
-    preferences_module = sys.modules[f"{__package__}.gui_preferences"]
+    preferences_module = sys.modules[f"{__package__}.ui.preferences"]
     original_path = preferences_module.ui_preferences_path
     preferences_module.ui_preferences_path = ui_preferences_path
     try:
@@ -143,7 +143,7 @@ def load_ui_preferences():
 
 def save_ui_preferences(preferences):
     """Persist UI preferences using the public GUI hook."""
-    preferences_module = sys.modules[f"{__package__}.gui_preferences"]
+    preferences_module = sys.modules[f"{__package__}.ui.preferences"]
     original_path = preferences_module.ui_preferences_path
     preferences_module.ui_preferences_path = ui_preferences_path
     try:

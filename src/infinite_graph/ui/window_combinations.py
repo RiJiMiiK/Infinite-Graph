@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 
-from .analyzer import candidate_result_weight, normalize_pair
+from ..analyzer import candidate_result_weight, normalize_pair
 
 
 class WindowCombinationsMixin:
@@ -146,7 +146,7 @@ class WindowCombinationsMixin:
         if not self._current_result or self._current_save_path is None:
             return
 
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         gui_module.remove_discarded_pair(self._current_save_path, pair)
         self._current_result["discarded_pairs"].remove(pair)
         self._current_result["skipped_pairs"].discard(pair)
@@ -213,7 +213,7 @@ class WindowCombinationsMixin:
             self._set_current_pair((str(pair[0]), str(pair[1])), "history")
 
     def _pick_random_combination(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         if not self._current_result:
             return
         pair = self._pick_random_indexed_candidate(include_skipped=False)
@@ -248,7 +248,7 @@ class WindowCombinationsMixin:
         self._record_suggestion(pair, "random")
 
     def _pick_cheapest_combination(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         if not self._current_result:
             return
         pair = self._pick_cheapest_indexed_candidate(include_skipped=False)
@@ -419,7 +419,7 @@ class WindowCombinationsMixin:
         self.element2_edit.clear()
 
     def _discard_current_combination(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         if not self._current_result or self._current_save_path is None:
             return
         left = self.element1_edit.text().strip()
@@ -569,7 +569,7 @@ class WindowCombinationsMixin:
         if answer != QMessageBox.StandardButton.Yes:
             return
 
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         gui_module.clear_discarded_pairs(self._current_save_path)
         restored_pairs = sorted(self._current_result["discarded_pairs"])
         self._current_result["discarded_pairs"].clear()
@@ -589,7 +589,7 @@ class WindowCombinationsMixin:
         if not self._current_result or self._current_save_path is None:
             return
 
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         path, _ = gui_module.QFileDialog.getSaveFileName(
             self,
             "Export discarded combinations",
@@ -611,7 +611,7 @@ class WindowCombinationsMixin:
         if not self._current_result or self._current_save_path is None:
             return
 
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         path, _ = gui_module.QFileDialog.getOpenFileName(
             self,
             "Import discarded combinations",

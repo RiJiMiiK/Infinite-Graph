@@ -4,7 +4,8 @@ from PySide6.QtCore import QSize
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import QBoxLayout
 
-from src.infinite_graph import gui, gui_window_combinations
+from src.infinite_graph import gui
+from src.infinite_graph.ui import window_combinations as gui_window_combinations
 
 
 def test_window_live_element_validation(qapp, sample_result) -> None:

@@ -8,7 +8,7 @@ from PySide6.QtCore import QEvent, QModelIndex, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 
 from src.infinite_graph import gui
-from src.infinite_graph.gui_table import ContainsFilterProxyModel
+from src.infinite_graph.ui.table import ContainsFilterProxyModel
 
 
 def test_list_table_model_basic() -> None:

@@ -21,7 +21,7 @@ class WindowCommunitiesMixin:
         self.community_details.setPlainText("No community selected.")
 
     def _refresh_community_parameter_inputs(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         while self.community_parameters_layout.rowCount() > 0:
             self.community_parameters_layout.removeRow(0)
 
@@ -90,7 +90,7 @@ class WindowCommunitiesMixin:
         if not algorithm_name:
             return
 
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         graph = self._current_result["community_graph"]
         algorithm_parameters = self._read_community_parameter_values()
         pre_run_warning = gui_module.get_mono_community_algorithm_pre_run_warning(

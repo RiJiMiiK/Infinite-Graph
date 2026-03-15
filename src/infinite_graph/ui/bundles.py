@@ -20,8 +20,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .gui_table import ContainsFilterProxyModel, ListTableModel
-from .gui_widgets import CopyLineEdit, GraphViewWidget, StatsCanvas
+from .table import ContainsFilterProxyModel, ListTableModel
+from .widgets import CopyLineEdit, GraphViewWidget, StatsCanvas
 
 
 def create_controls_bundle(parent) -> SimpleNamespace:

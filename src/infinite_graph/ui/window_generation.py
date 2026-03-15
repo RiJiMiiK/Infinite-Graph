@@ -5,9 +5,9 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QMessageBox
 
-from .analyzer import candidate_result_weight
-from .gui_constants import INTERFACE_PROGRESS
-from .gui_state import build_summary_text, update_missing_statistics_for_pair
+from ..analyzer import candidate_result_weight
+from .constants import INTERFACE_PROGRESS
+from .state import build_summary_text, update_missing_statistics_for_pair
 
 
 class WindowGenerationMixin:
@@ -63,7 +63,7 @@ class WindowGenerationMixin:
         )
 
     def _generate(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         input_value = self.input_edit.text().strip()
         if not input_value:
             QMessageBox.critical(
@@ -328,7 +328,7 @@ class WindowGenerationMixin:
         return layout_iterations, spring_scale
 
     def _rebuild_layout(self) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         if not self._current_result:
             return
         try:

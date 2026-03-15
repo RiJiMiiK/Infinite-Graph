@@ -11,7 +11,7 @@ import networkx as nx
 import numpy as np
 import pyqtgraph as pg
 
-from .gui_constants import (
+from .constants import (
     GENERATION_STAGE_PROGRESS,
     LAYOUT_CACHE_VERSION,
     LAYOUT_PROGRESS_END,

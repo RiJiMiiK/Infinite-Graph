@@ -123,6 +123,8 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Documentation cleaned accordingly
 - [x] Clean `.gitignore` if some ignored paths are no longer used
 - [x] Check whether dead files remain in the repository
+- [x] Reorganize the `tests` folder into `unit`, `functional`, `integration`, and `e2e`
+- [x] Reorganize `src/infinite_graph` into clearer `community` and `ui` subpackages
 
 ## 9. Software quality
 

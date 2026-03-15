@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Callable
 
 from .analyzer import build_candidate_index, find_missing_combinations
-from .community_analysis import build_cdlib_graph
+from .community.analysis import build_cdlib_graph
 from .discard_store import load_discarded_pairs
 from .graph_model import build_graph_data, build_weight_statistics
 from .save_loader import load_save

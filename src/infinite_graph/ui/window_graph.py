@@ -3,7 +3,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QMessageBox
 
-from .gui_layout import build_subgraph_render_data, build_weight_filtered_render_data
+from .layout import build_subgraph_render_data, build_weight_filtered_render_data
 
 
 class WindowGraphMixin:
@@ -20,7 +20,7 @@ class WindowGraphMixin:
             )
             return
 
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         path, _ = gui_module.QFileDialog.getSaveFileName(
             self,
             "Export graph image",
@@ -68,7 +68,7 @@ class WindowGraphMixin:
         if not node_name:
             return
 
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         menu = gui_module.QMenu(self)
         copy_action = menu.addAction("Copy element name")
         element1_action = menu.addAction("Use as Element 1")
@@ -111,7 +111,7 @@ class WindowGraphMixin:
 
     @staticmethod
     def _copy_graph_node_name(node_name: str) -> None:
-        gui_module = sys.modules[f"{__package__}.gui"]
+        gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         gui_module.QApplication.clipboard().setText(node_name)
 
     @staticmethod

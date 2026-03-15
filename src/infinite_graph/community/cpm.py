@@ -7,7 +7,7 @@ from collections.abc import Mapping
 
 import networkx as nx
 
-from .community_estimation import build_graph_structure_features, finalize_estimate
+from .estimation import build_graph_structure_features, finalize_estimate
 
 CPM_ESTIMATION_REFERENCE_POINTS: tuple[dict[str, float], ...] = (
     {

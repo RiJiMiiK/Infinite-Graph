@@ -30,7 +30,7 @@ class GenerateWorker(QObject):
     def run(self) -> None:
         started_at = time.perf_counter()
         try:
-            gui_module = sys.modules[f"{__package__}.gui"]
+            gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
             self.progress.emit(0, "Starting generation")
 
             def emit_process_progress(message: str) -> None:

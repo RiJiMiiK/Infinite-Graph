@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import networkx as nx
 
-from src.infinite_graph import gui_layout
+from src.infinite_graph.ui import layout as gui_layout
 
 
 def test_spring_layout_strategy_uses_energy_method_for_large_graph() -> None:

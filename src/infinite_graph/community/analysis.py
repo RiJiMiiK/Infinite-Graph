@@ -12,11 +12,11 @@ from functools import lru_cache
 import networkx as nx
 from cdlib import algorithms
 
-from . import community_messages
-from .community_belief import (
+from . import messages as community_messages
+from .belief import (
     estimate_belief_runtime_and_communities as _estimate_belief_runtime_and_communities,
 )
-from .community_preview import build_algorithm_preview_warning
+from .preview import build_algorithm_preview_warning
 
 format_mono_community_algorithm_failure = (
     community_messages.format_mono_community_algorithm_failure
