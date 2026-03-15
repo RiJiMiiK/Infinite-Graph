@@ -6,3 +6,4 @@ __pycache__/
 examples/
 .coverage
 .tmp/
+.vscode/

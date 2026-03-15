@@ -5,7 +5,7 @@ from pathlib import Path
 from src.infinite_graph import save_loader, service
 
 
-FIXTURES_DIR = Path(__file__).parent / "fixtures"
+FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
 STARTERS = {"Water", "Fire", "Wind", "Earth"}
 GRAPH_FIXTURE_PATH = FIXTURES_DIR / "Graph Example"
 

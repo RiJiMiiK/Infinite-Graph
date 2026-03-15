@@ -5,7 +5,7 @@ import tomllib
 
 
 def test_python_module_size_policy() -> None:
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = Path(__file__).resolve().parents[2]
     pyproject = tomllib.loads((repo_root / "pyproject.toml").read_text(encoding="utf-8"))
     policy = pyproject["tool"]["infinite_graph"]["module_size_policy"]
     warning_lines = int(policy["warning_lines"])

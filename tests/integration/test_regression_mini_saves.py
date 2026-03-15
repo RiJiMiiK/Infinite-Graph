@@ -5,7 +5,7 @@ from pathlib import Path
 from src.infinite_graph import service
 
 
-FIXTURES_DIR = Path(__file__).parent / "fixtures"
+FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
 
 
 def test_mini_infinite_craft_save_regression(monkeypatch) -> None:
