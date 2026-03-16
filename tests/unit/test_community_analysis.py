@@ -321,6 +321,8 @@ def test_get_mono_community_algorithm_parameters() -> None:
         },
     ]
 
+    assert community_analysis.get_mono_community_algorithm_parameters("greedy_modularity") == []
+
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
     assert agdl_parameters == [
         {
@@ -445,6 +447,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("girvan_newman", graph, kwargs))
         return "girvan-newman-result"
 
+    def fake_greedy_modularity(graph, **kwargs):
+        calls.append(("greedy_modularity", graph, kwargs))
+        return "greedy-modularity-result"
+
     def fake_cpm(graph, **kwargs):
         calls.append(("cpm", graph, kwargs))
         return "cpm-result"
@@ -470,6 +476,11 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     monkeypatch.setattr(community_analysis.algorithms, "ga", fake_ga)
     monkeypatch.setattr(community_analysis.algorithms, "gdmp2", fake_gdmp2)
     monkeypatch.setattr(community_analysis.algorithms, "girvan_newman", fake_girvan_newman)
+    monkeypatch.setattr(
+        community_analysis.algorithms,
+        "greedy_modularity",
+        fake_greedy_modularity,
+    )
     monkeypatch.setattr(community_analysis.algorithms, "cpm", fake_cpm)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
@@ -509,6 +520,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert (
         community_analysis.run_mono_community_algorithm(graph, "girvan_newman")
         == "girvan-newman-result"
+    )
+    assert (
+        community_analysis.run_mono_community_algorithm(graph, "greedy_modularity")
+        == "greedy-modularity-result"
     )
     assert community_analysis.run_mono_community_algorithm(graph, "cpm") == "cpm-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
@@ -569,17 +584,20 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[12][0] == "girvan_newman"
     assert isinstance(calls[12][1], nx.Graph)
     assert calls[12][2] == {"level": 3}
-    assert calls[13][0] == "cpm"
+    assert calls[13][0] == "greedy_modularity"
     assert isinstance(calls[13][1], nx.Graph)
-    assert calls[13][2] == {
+    assert calls[13][2] == {"weight": "weight"}
+    assert calls[14][0] == "cpm"
+    assert isinstance(calls[14][1], nx.Graph)
+    assert calls[14][2] == {
         "resolution_parameter": 1.0,
         "weights": "weight",
     }
-    assert isinstance(calls[14][1], nx.Graph)
-    assert calls[14][2] == {"weights": "weight"}
-    assert calls[15][0] == "label_propagation"
     assert isinstance(calls[15][1], nx.Graph)
-    assert calls[15][2] == {}
+    assert calls[15][2] == {"weights": "weight"}
+    assert calls[16][0] == "label_propagation"
+    assert isinstance(calls[16][1], nx.Graph)
+    assert calls[16][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

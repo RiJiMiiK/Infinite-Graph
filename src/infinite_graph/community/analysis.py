@@ -380,6 +380,11 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Greedy Modularity",
         "supports_directed": False,
         "supports_weighted": True,
+        "runtime_warning": (
+            "Greedy Modularity stayed fast in project benchmarks, including on large tested "
+            "graphs. The pre-run estimate is mainly there to preview runtime and rough "
+            "fragmentation, not because this method showed strong runtime risk."
+        ),
         "weight_parameter": "weight",
         "weight_value": "weight",
         "compatibility_note": "Will run on an undirected weighted view of the graph.",

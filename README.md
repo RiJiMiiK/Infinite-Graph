@@ -144,6 +144,7 @@ The application also includes:
 - benchmark-based pre-run estimates for `GA` runtime and expected community count
 - benchmark-based pre-run estimates for `GDMP2` runtime and expected community count
 - benchmark-based pre-run estimates for `Girvan-Newman` runtime and expected community count
+- benchmark-based pre-run estimates for `Greedy Modularity` runtime and expected community count
 - benchmark-based pre-run estimates for `Eigenvector` runtime and expected community count
 - guided warning/error handling for `Eigenvector` ARPACK failures on large graphs
 
@@ -259,6 +260,15 @@ Current `Girvan-Newman` warning:
 - project-side runs were still practical at `1000` nodes, but a dedicated `10000`-node run did not finish within more than one hour
 - on the tested benchmark families, the observed community count followed roughly `level + 1` for `level >= 1`
 - the documented `level=-1` mode returned an empty partition in this environment during project benchmarks
+- the estimate is heuristic and should be treated as guidance only
+
+Current `Greedy Modularity` warning:
+
+- `Greedy Modularity` stays available, and the application shows a lightweight pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph
+  - an estimated community count for the current graph
+- benchmark runs showed that `Greedy Modularity` stayed fast even on the large tested graph families
 - the estimate is heuristic and should be treated as guidance only
 
 Current `Eigenvector` warning:

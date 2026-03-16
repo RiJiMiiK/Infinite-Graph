@@ -482,3 +482,33 @@ Project consequence:
 - it also includes a benchmark-based estimated community count
 - it explicitly notes the observed cost growth with size and `level`
 - it also warns that `level=-1` behaved unexpectedly in the project environment
+
+## Greedy Modularity
+
+`Greedy Modularity` stayed fast across the project benchmark families, including at `10000` nodes.
+
+### Runtime baselines
+
+Benchmarks were run on weighted undirected graph views for:
+
+- `acyclic`
+- `cyclic`
+- `cyclic_self`
+
+Observed results:
+
+| Nodes | Acyclic | Cyclic | Cyclic + self-loops |
+| --- | ---: | ---: | ---: |
+| 20 | `0.0037s`, `5` communities | `0.0029s`, `4` | `0.0027s`, `6` |
+| 100 | `0.0087s`, `17` | `0.0102s`, `16` | `0.0096s`, `17` |
+| 300 | `0.0494s`, `25` | `0.0561s`, `25` | `0.0535s`, `25` |
+| 1000 | `0.1777s`, `41` | `0.1601s`, `41` | `0.1901s`, `45` |
+| 3000 | `0.5798s`, `64` | `0.6175s`, `65` | `0.5745s`, `65` |
+| 10000 | `2.0790s`, `105` | `2.1120s`, `105` | `2.1691s`, `208` |
+
+Project consequence:
+
+- the GUI now shows a lightweight pre-run `Greedy Modularity` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- the message explicitly notes that this method stayed fast in the project benchmarks

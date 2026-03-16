@@ -16,6 +16,7 @@ from src.infinite_graph.community import (
     ga as community_ga,
     gdmp2 as community_gdmp2,
     girvan_newman as community_girvan_newman,
+    greedy_modularity as community_greedy_modularity,
 )
 
 
@@ -45,6 +46,11 @@ def test_get_mono_community_algorithm_warning() -> None:
     )
     assert girvan_newman_warning is not None
     assert "10000-node benchmark run did not finish" in girvan_newman_warning
+    greedy_modularity_warning = community_analysis.get_mono_community_algorithm_warning(
+        "greedy_modularity"
+    )
+    assert greedy_modularity_warning is not None
+    assert "stayed fast in project benchmarks" in greedy_modularity_warning
     assert community_analysis.get_mono_community_algorithm_warning("unknown") is None
 
 
@@ -377,6 +383,21 @@ def test_estimate_girvan_newman_runtime_and_communities_level_minus_one() -> Non
     assert estimate["confidence"] == "low"
 
 
+def test_estimate_greedy_modularity_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_greedy_modularity.estimate_greedy_modularity_runtime_and_communities(
+        graph
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) >= 1
+    assert estimate["confidence"] in {"high", "medium", "low"}
+
+
 def test_get_mono_community_algorithm_pre_run_warning_for_cpm() -> None:
     graph = nx.DiGraph()
     graph.add_edge("A", "B", weight=1.0)
@@ -493,6 +514,25 @@ def test_get_mono_community_algorithm_pre_run_warning_for_girvan_newman() -> Non
     assert "Confidence:" in warning
     assert "level + 1" in warning
     assert "level=-1 mode returned an empty partition" in warning
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_greedy_modularity() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "greedy_modularity",
+        graph,
+        {},
+    )
+
+    assert warning is not None
+    assert "Greedy Modularity stayed fast in project benchmarks" in warning
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
 
 
 def test_get_mono_community_algorithm_pre_run_warning_for_eigenvector_large_graph() -> None:
