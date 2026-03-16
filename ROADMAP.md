@@ -235,7 +235,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Integrate `GDMP2` execution from the `Communities` tab
 - [x] Integrate `Girvan-Newman` execution from the `Communities` tab
 - [x] Integrate `Greedy Modularity` execution from the `Communities` tab
-- [ ] Integrate `Head/Tail` execution from the `Communities` tab
+- [x] Integrate `Head/Tail` execution from the `Communities` tab
 - [ ] Integrate `Infomap` execution from the `Communities` tab
 - [ ] Integrate `Kcut` execution from the `Communities` tab
 - [ ] Integrate `Label Propagation Cordasco-Gargano` execution from the `Communities` tab

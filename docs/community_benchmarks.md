@@ -512,3 +512,39 @@ Project consequence:
 - the popup includes a benchmark-based runtime estimate
 - it also includes a benchmark-based estimated community count
 - the message explicitly notes that this method stayed fast in the project benchmarks
+
+## Head/Tail
+
+`Head/Tail` is documented by CDlib as suitable for small-medium sized graphs, and the project benchmarks support that warning.
+
+### Runtime baselines
+
+Benchmarks were run on undirected unweighted graph families for:
+
+- `acyclic`
+- `cyclic`
+- `cyclic_self`
+
+Observed results with `head_tail_ratio=0.4`:
+
+| Nodes | Acyclic | Cyclic | Cyclic + self-loops |
+| --- | ---: | ---: | ---: |
+| 20 | `0.0103s`, `4` communities | `0.0098s`, `8` | `0.0123s`, `20` |
+| 100 | `0.1387s`, `16` | `0.1375s`, `18` | `0.1416s`, `100` |
+| 300 | `1.0891s`, `8` | `1.1060s`, `18` | `1.1941s`, `300` |
+| 1000 | `12.3467s`, `16` | `13.1013s`, `34` | `12.8215s`, `1000` |
+
+### Ratio exploration
+
+Observed pattern on `100`, `300`, and `1000` nodes:
+
+- `head_tail_ratio` changed little on the tested synthetic families
+- graph structure mattered much more than the ratio
+- self-loop-heavy graphs repeatedly collapsed into singleton communities
+
+Project consequence:
+
+- the GUI now shows a pre-run `Head/Tail` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- it surfaces an estimated singleton-fragmentation risk

@@ -17,6 +17,7 @@ from .ga import estimate_ga_runtime_and_communities
 from .gdmp2 import estimate_gdmp2_runtime_and_communities
 from .girvan_newman import estimate_girvan_newman_runtime_and_communities
 from .greedy_modularity import estimate_greedy_modularity_runtime_and_communities
+from .head_tail import estimate_head_tail_runtime_and_communities
 
 
 def build_algorithm_preview_warning(
@@ -248,6 +249,28 @@ def build_algorithm_preview_warning(
                 (
                     "Project benchmarks showed that Greedy Modularity stayed fast even on "
                     "large tested graphs, with community counts growing with graph size."
+                ),
+                (
+                    "This estimate is heuristic and derived from project benchmark data, "
+                    "not a guarantee."
+                ),
+            ]
+        )
+    elif algorithm_name == "head_tail":
+        estimate = estimate_head_tail_runtime_and_communities(graph, **params)
+        warning = "\n".join(
+            [
+                "Head/Tail benchmark-based estimate for the current graph and parameters:",
+                (
+                    "- Estimated runtime: "
+                    f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                ),
+                f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                f"- Confidence: {estimate['confidence']}",
+                f"- Estimated singleton-fragmentation risk: {estimate['singleton_risk']}",
+                (
+                    "Project benchmarks showed that Head/Tail can become slow on larger graphs, "
+                    "and self-loop-heavy graph families collapsed into singleton communities."
                 ),
                 (
                     "This estimate is heuristic and derived from project benchmark data, "

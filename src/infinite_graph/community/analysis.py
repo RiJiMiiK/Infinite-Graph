@@ -393,6 +393,26 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Head/Tail",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": (
+            "Head/Tail is documented by CDlib as suited for small-medium sized graphs and "
+            "may take minutes or longer on bigger ones. Project benchmarks also showed that "
+            "self-loop-heavy graph families can collapse into singleton communities."
+        ),
+        "parameter_definitions": [
+            {
+                "name": "head_tail_ratio",
+                "label": "Head/tail ratio",
+                "type": "float",
+                "default": 0.4,
+                "minimum": 0.0,
+                "maximum": 1.0,
+                "decimals": 3,
+                "step": 0.05,
+            },
+        ],
+        "default_parameters": {
+            "head_tail_ratio": 0.4,
+        },
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",

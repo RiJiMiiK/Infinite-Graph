@@ -322,6 +322,18 @@ def test_get_mono_community_algorithm_parameters() -> None:
     ]
 
     assert community_analysis.get_mono_community_algorithm_parameters("greedy_modularity") == []
+    assert community_analysis.get_mono_community_algorithm_parameters("head_tail") == [
+        {
+            "name": "head_tail_ratio",
+            "label": "Head/tail ratio",
+            "type": "float",
+            "default": 0.4,
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "decimals": 3,
+            "step": 0.05,
+        },
+    ]
 
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
     assert agdl_parameters == [
@@ -451,6 +463,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("greedy_modularity", graph, kwargs))
         return "greedy-modularity-result"
 
+    def fake_head_tail(graph, **kwargs):
+        calls.append(("head_tail", graph, kwargs))
+        return "head-tail-result"
+
     def fake_cpm(graph, **kwargs):
         calls.append(("cpm", graph, kwargs))
         return "cpm-result"
@@ -481,6 +497,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         "greedy_modularity",
         fake_greedy_modularity,
     )
+    monkeypatch.setattr(community_analysis.algorithms, "head_tail", fake_head_tail)
     monkeypatch.setattr(community_analysis.algorithms, "cpm", fake_cpm)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
@@ -525,6 +542,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         community_analysis.run_mono_community_algorithm(graph, "greedy_modularity")
         == "greedy-modularity-result"
     )
+    assert community_analysis.run_mono_community_algorithm(graph, "head_tail") == "head-tail-result"
     assert community_analysis.run_mono_community_algorithm(graph, "cpm") == "cpm-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
     assert (
@@ -587,17 +605,20 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[13][0] == "greedy_modularity"
     assert isinstance(calls[13][1], nx.Graph)
     assert calls[13][2] == {"weight": "weight"}
-    assert calls[14][0] == "cpm"
+    assert calls[14][0] == "head_tail"
     assert isinstance(calls[14][1], nx.Graph)
-    assert calls[14][2] == {
+    assert calls[14][2] == {"head_tail_ratio": 0.4}
+    assert calls[15][0] == "cpm"
+    assert isinstance(calls[15][1], nx.Graph)
+    assert calls[15][2] == {
         "resolution_parameter": 1.0,
         "weights": "weight",
     }
-    assert isinstance(calls[15][1], nx.Graph)
-    assert calls[15][2] == {"weights": "weight"}
-    assert calls[16][0] == "label_propagation"
     assert isinstance(calls[16][1], nx.Graph)
-    assert calls[16][2] == {}
+    assert calls[16][2] == {"weights": "weight"}
+    assert calls[17][0] == "label_propagation"
+    assert isinstance(calls[17][1], nx.Graph)
+    assert calls[17][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

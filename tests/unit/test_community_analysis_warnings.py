@@ -17,6 +17,7 @@ from src.infinite_graph.community import (
     gdmp2 as community_gdmp2,
     girvan_newman as community_girvan_newman,
     greedy_modularity as community_greedy_modularity,
+    head_tail as community_head_tail,
 )
 
 
@@ -51,6 +52,9 @@ def test_get_mono_community_algorithm_warning() -> None:
     )
     assert greedy_modularity_warning is not None
     assert "stayed fast in project benchmarks" in greedy_modularity_warning
+    head_tail_warning = community_analysis.get_mono_community_algorithm_warning("head_tail")
+    assert head_tail_warning is not None
+    assert "singleton communities" in head_tail_warning
     assert community_analysis.get_mono_community_algorithm_warning("unknown") is None
 
 
@@ -398,6 +402,65 @@ def test_estimate_greedy_modularity_runtime_and_communities() -> None:
     assert estimate["confidence"] in {"high", "medium", "low"}
 
 
+def test_estimate_head_tail_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_head_tail.estimate_head_tail_runtime_and_communities(
+        graph,
+        head_tail_ratio=0.4,
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) >= 1
+    assert estimate["confidence"] in {"high", "medium", "low"}
+    assert estimate["singleton_risk"] in {"high", "medium", "low"}
+
+
+def test_estimate_head_tail_runtime_and_communities_low_singleton_risk() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "C", weight=1.0)
+
+    estimate = community_head_tail.estimate_head_tail_runtime_and_communities(
+        graph,
+        head_tail_ratio=0.4,
+    )
+
+    assert estimate["singleton_risk"] == "low"
+
+
+def test_estimate_head_tail_runtime_and_communities_high_singleton_risk() -> None:
+    graph = nx.DiGraph()
+    for index in range(4):
+        node = str(index)
+        graph.add_edge(node, node, weight=1.0)
+
+    estimate = community_head_tail.estimate_head_tail_runtime_and_communities(
+        graph,
+        head_tail_ratio=0.4,
+    )
+
+    assert estimate["singleton_risk"] == "high"
+
+
+def test_estimate_head_tail_runtime_and_communities_medium_singleton_risk() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "A", weight=1.0)
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "C", weight=1.0)
+    graph.add_edge("C", "D", weight=1.0)
+
+    estimate = community_head_tail.estimate_head_tail_runtime_and_communities(
+        graph,
+        head_tail_ratio=0.4,
+    )
+
+    assert estimate["singleton_risk"] == "medium"
+
+
 def test_get_mono_community_algorithm_pre_run_warning_for_cpm() -> None:
     graph = nx.DiGraph()
     graph.add_edge("A", "B", weight=1.0)
@@ -533,6 +596,26 @@ def test_get_mono_community_algorithm_pre_run_warning_for_greedy_modularity() ->
     assert "Estimated runtime:" in warning
     assert "Estimated communities:" in warning
     assert "Confidence:" in warning
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_head_tail() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "head_tail",
+        graph,
+        {"head_tail_ratio": 0.8},
+    )
+
+    assert warning is not None
+    assert "small-medium sized graphs" in warning
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
+    assert "Estimated singleton-fragmentation risk:" in warning
 
 
 def test_get_mono_community_algorithm_pre_run_warning_for_eigenvector_large_graph() -> None:

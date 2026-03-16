@@ -145,6 +145,7 @@ The application also includes:
 - benchmark-based pre-run estimates for `GDMP2` runtime and expected community count
 - benchmark-based pre-run estimates for `Girvan-Newman` runtime and expected community count
 - benchmark-based pre-run estimates for `Greedy Modularity` runtime and expected community count
+- benchmark-based pre-run estimates for `Head/Tail` runtime and expected community count
 - benchmark-based pre-run estimates for `Eigenvector` runtime and expected community count
 - guided warning/error handling for `Eigenvector` ARPACK failures on large graphs
 
@@ -269,6 +270,18 @@ Current `Greedy Modularity` warning:
   - an estimated runtime for the current graph
   - an estimated community count for the current graph
 - benchmark runs showed that `Greedy Modularity` stayed fast even on the large tested graph families
+- the estimate is heuristic and should be treated as guidance only
+
+Current `Head/Tail` warning:
+
+- `Head/Tail` stays available, and the application shows a pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph and `head_tail_ratio`
+  - an estimated community count for the current graph and `head_tail_ratio`
+  - an estimated singleton-fragmentation risk
+- CDlib documents the method as suited for small-medium sized graphs
+- project benchmarks support that warning, with runs already around `12s` to `13s` at `1000` nodes
+- self-loop-heavy benchmark families repeatedly collapsed into singleton communities
 - the estimate is heuristic and should be treated as guidance only
 
 Current `Eigenvector` warning:
