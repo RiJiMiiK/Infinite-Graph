@@ -27,6 +27,7 @@
 - added a benchmark-based `Head/Tail` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Infomap` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Kcut` pre-run warning with estimated runtime and estimated community count
+- added a benchmark-based `Label Propagation Cordasco-Gargano` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Eigenvector` pre-run estimate with runtime and estimated community count
 - added guided warnings and error handling for `Eigenvector` ARPACK failures on large graphs
 - added `tools/test_crisp_algorithms.py` and Docker benchmark environments for cross-platform crisp mono-community validation

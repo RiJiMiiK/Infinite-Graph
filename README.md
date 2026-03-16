@@ -473,6 +473,7 @@ Additional benchmark note:
 - `Bayan` is additionally constrained by the local Gurobi license, so runtime behavior can be dominated by the solver rather than by the graph algorithm itself
 - `Infomap` now uses the native `infomap` Python package directly in the app, with a benchmark-based pre-run preview for runtime and estimated community count
 - `Kcut` now has a benchmark-based pre-run preview, because project benchmarks showed steep runtime growth and a tendency toward one dominant community plus many singleton communities
+- `Label Propagation Cordasco-Gargano` now has a benchmark-based pre-run preview, because project benchmarks showed both slow large-graph collapse to one community and ultra-fast singleton collapse on self-loop-heavy graphs
 
 ## Roadmap direction
 

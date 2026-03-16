@@ -994,3 +994,4 @@ def test_window_compute_communities_supports_kcut_parameters(
     assert "Method name: Kcut" in window.community_summary_label.text()
     assert "kmax=6" in window.community_summary_label.text()
     window.close()
+

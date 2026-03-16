@@ -20,6 +20,7 @@ from src.infinite_graph.community import (
     head_tail as community_head_tail,
     infomap as community_infomap,
     kcut as community_kcut,
+    label_propagation as community_label_propagation,
 )
 
 
@@ -527,6 +528,74 @@ def test_estimate_kcut_runtime_and_communities_medium_degenerate_risk(monkeypatc
     assert estimate["degenerate_partition_risk"] == "medium"
 
 
+def test_estimate_label_propagation_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_label_propagation.estimate_label_propagation_runtime_and_communities(
+        graph
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) >= 1
+    assert estimate["confidence"] in {"high", "medium", "low"}
+    assert estimate["collapse_risk"] in {"single", "split_or_single", "mixed", "singleton"}
+
+
+def test_estimate_label_propagation_runtime_and_communities_singleton_risk() -> None:
+    graph = nx.DiGraph()
+    for index in range(3):
+        graph.add_edge(str(index), str(index), weight=1.0)
+
+    estimate = community_label_propagation.estimate_label_propagation_runtime_and_communities(
+        graph
+    )
+
+    assert estimate["collapse_risk"] == "singleton"
+
+
+def test_estimate_label_propagation_runtime_and_communities_mixed_risk() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "A", weight=1.0)
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "C", weight=1.0)
+
+    estimate = community_label_propagation.estimate_label_propagation_runtime_and_communities(
+        graph
+    )
+
+    assert estimate["collapse_risk"] == "mixed"
+
+
+def test_estimate_label_propagation_runtime_and_communities_split_or_single_risk() -> None:
+    graph = nx.DiGraph()
+    for source in range(4):
+        for target in range(4):
+            if source != target:
+                graph.add_edge(str(source), str(target), weight=1.0)
+
+    estimate = community_label_propagation.estimate_label_propagation_runtime_and_communities(
+        graph
+    )
+
+    assert estimate["collapse_risk"] == "split_or_single"
+
+
+def test_estimate_label_propagation_runtime_and_communities_single_risk_and_medium_confidence() -> None:
+    graph = nx.DiGraph()
+    for index in range(3000):
+        graph.add_edge(str(index), str(index + 1), weight=1.0)
+
+    estimate = community_label_propagation.estimate_label_propagation_runtime_and_communities(
+        graph
+    )
+
+    assert estimate["collapse_risk"] == "single"
+    assert estimate["confidence"] == "medium"
+
+
 def test_get_mono_community_algorithm_pre_run_warning_for_cpm() -> None:
     graph = nx.DiGraph()
     graph.add_edge("A", "B", weight=1.0)
@@ -727,6 +796,26 @@ def test_get_mono_community_algorithm_pre_run_warning_for_kcut() -> None:
     assert "Estimated communities:" in warning
     assert "Confidence:" in warning
     assert "Estimated degenerate-partition risk:" in warning
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_label_propagation() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "label_propagation_cordasco_gargano",
+        graph,
+        {},
+    )
+
+    assert warning is not None
+    assert "Label Propagation benchmark-based estimate" in warning
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
+    assert "Estimated collapse risk:" in warning
 
 
 def test_get_mono_community_algorithm_pre_run_warning_for_eigenvector_large_graph() -> None:

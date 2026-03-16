@@ -473,6 +473,10 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "callable_name": "label_propagation",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": ("Label Propagation Cordasco-Gargano can behave very differently "
+                            "depending on graph structure. Project benchmarks showed both "
+                            "single-community collapse and singleton-community collapse, plus "
+                            "steep runtime growth on large graphs without self-loops."),
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",
@@ -720,7 +724,6 @@ def _is_mono_community_algorithm_visible(algorithm_name: str) -> bool:
         return False
     return True
 
-
 def get_mono_community_algorithm_evaluation() -> list[dict[str, object]]:
     return [
         {
@@ -732,6 +735,7 @@ def get_mono_community_algorithm_evaluation() -> list[dict[str, object]]:
         }
         for key, metadata in MONO_COMMUNITY_ALGORITHM_EVALUATION.items()
     ]
+
 def get_mono_community_algorithms() -> list[dict[str, object]]:
     return [
         {
@@ -748,7 +752,6 @@ def get_mono_community_algorithms() -> list[dict[str, object]]:
         if _is_mono_community_algorithm_visible(key)
     ]
 
-
 def get_mono_community_algorithm_parameters(
     algorithm_name: str,
 ) -> list[dict[str, object]]:
@@ -760,7 +763,6 @@ def get_mono_community_algorithm_parameters(
         return []
     return [{str(key): value for key, value in parameter.items()}
             for parameter in parameter_definitions if isinstance(parameter, Mapping)]
-
 
 def get_default_mono_community_algorithm() -> str:
     return "infomap"
@@ -807,7 +809,6 @@ def get_bayan_gurobi_status() -> dict[str, object]:
         "license_expiration": expiration,
         "message": banner or "Gurobi runtime detected.",
     }
-
 
 def get_mono_community_algorithm_pre_run_warning(
     algorithm_name: str,

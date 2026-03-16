@@ -20,6 +20,7 @@ from .greedy_modularity import estimate_greedy_modularity_runtime_and_communitie
 from .head_tail import estimate_head_tail_runtime_and_communities
 from .infomap import estimate_infomap_runtime_and_communities
 from .kcut import estimate_kcut_runtime_and_communities
+from .label_propagation import estimate_label_propagation_runtime_and_communities
 
 
 def build_algorithm_preview_warning(
@@ -321,6 +322,29 @@ def build_algorithm_preview_warning(
                     "Project benchmarks showed that runtime rises steeply with graph size and "
                     "kmax, while tested graph families often collapsed into one dominant "
                     "community plus many singleton communities."
+                ),
+                (
+                    "This estimate is heuristic and derived from project benchmark data, "
+                    "not a guarantee."
+                ),
+            ]
+        )
+    elif algorithm_name == "label_propagation_cordasco_gargano":
+        estimate = estimate_label_propagation_runtime_and_communities(graph)
+        warning = "\n".join(
+            [
+                "Label Propagation benchmark-based estimate for the current graph:",
+                (
+                    "- Estimated runtime: "
+                    f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                ),
+                f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                f"- Confidence: {estimate['confidence']}",
+                f"- Estimated collapse risk: {estimate['collapse_risk']}",
+                (
+                    "Project benchmarks showed very different failure modes by structure: "
+                    "acyclic-like graphs often collapsed to a single community, cyclic-self "
+                    "graphs collapsed into singletons, and large acyclic/cyclic graphs became slow."
                 ),
                 (
                     "This estimate is heuristic and derived from project benchmark data, "

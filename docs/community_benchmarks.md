@@ -648,3 +648,40 @@ Project consequence:
 - the popup includes a benchmark-based runtime estimate
 - it also includes a benchmark-based estimated community count
 - it surfaces an estimated degenerate-partition risk
+
+## Label Propagation Cordasco-Gargano
+
+`Label Propagation Cordasco-Gargano` stayed simple to run, but project benchmarks showed sharp structural differences in both runtime and output.
+
+### Runtime baselines
+
+Benchmarks were run on undirected unweighted graph views for:
+
+- `acyclic`
+- `cyclic`
+- `cyclic_self`
+
+Observed results:
+
+| Nodes | Acyclic | Cyclic | Cyclic + self-loops |
+| --- | ---: | ---: | ---: |
+| 20 | `0.0027s`, `1` community | `0.0012s`, `2` communities | `0.0009s`, `20` communities |
+| 100 | `0.0220s`, `1` | `0.0161s`, `2` | `0.0061s`, `100` |
+| 300 | `0.1757s`, `1` | `0.0752s`, `1` | `0.0219s`, `300` |
+| 1000 | `1.7476s`, `1` | `0.8709s`, `2` | `0.0501s`, `1000` |
+| 3000 | `15.9048s`, `1` | `8.0270s`, `1` | `0.1859s`, `3000` |
+| 10000 | `151.2859s`, `1` | `82.0005s`, `2` | `0.5202s`, `10000` |
+
+Observed pattern:
+
+- `acyclic` and `cyclic` can become slow on large graphs
+- `acyclic` often collapses to a single giant community
+- `cyclic` often returns only `1` or `2` large communities
+- `cyclic_self` is extremely fast, but collapses into singleton communities
+
+Project consequence:
+
+- the GUI now shows a pre-run `Label Propagation Cordasco-Gargano` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- it surfaces an estimated collapse risk

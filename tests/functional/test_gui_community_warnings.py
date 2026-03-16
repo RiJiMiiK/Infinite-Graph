@@ -310,6 +310,37 @@ def test_window_compute_communities_kcut_warning_can_cancel(
     assert calls == []
     assert window.community_summary_label.text() == "No community analysis has been run yet."
     window.close()
+
+
+def test_window_compute_communities_label_propagation_warning_can_cancel(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("label_propagation_cordasco_gargano")
+    )
+
+    calls = []
+
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: "Label Propagation estimate warning.",
+    )
+    monkeypatch.setattr(gui.QMessageBox, "warning", lambda *args: gui.QMessageBox.Cancel)
+    monkeypatch.setattr(
+        gui,
+        "run_mono_community_algorithm",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    window._compute_communities()
+
+    assert calls == []
+    assert window.community_summary_label.text() == "No community analysis has been run yet."
+    window.close()
 def test_window_compute_communities_der_warning_can_cancel(
     qapp, sample_result, monkeypatch
 ) -> None:
