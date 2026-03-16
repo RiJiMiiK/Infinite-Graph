@@ -548,3 +548,57 @@ Project consequence:
 - the popup includes a benchmark-based runtime estimate
 - it also includes a benchmark-based estimated community count
 - it surfaces an estimated singleton-fragmentation risk
+
+## Infomap
+
+`Infomap` is run through the native `infomap` Python package instead of the CDlib wrapper.
+
+### Runtime baselines
+
+Benchmarks were run on directed weighted graph families for:
+
+- `acyclic`
+- `cyclic`
+- `cyclic_self`
+
+Representative default-parameter results:
+
+| Nodes | Acyclic | Cyclic | Cyclic + self-loops |
+| --- | ---: | ---: | ---: |
+| 20 | `0.0041s`, `2` communities | `0.0022s`, `3` | `0.0013s`, `3` |
+| 100 | `0.0120s`, `2` | `0.0101s`, `8` | `0.0108s`, `9` |
+| 1000 | `0.1784s`, `3` | `0.1565s`, `3` | `0.1852s`, `3` |
+| 10000 | `2.6611s`, `3` | `2.2888s`, `3` | `2.2310s`, `4` |
+| 30000 | `9.0143s`, `2` | `7.2460s`, `6` | `8.6127s`, `5` |
+| 100000 | `38.5306s`, `2` | `27.1643s`, `3` | `29.5149s`, `3` |
+
+### Parameter exploration
+
+Observed pattern on `10000` nodes:
+
+- `num_trials` was the main runtime driver
+- `markov_time` changed both runtime and fragmentation
+- `preferred_number_of_modules` was the clearest control over the returned community count
+- `seed` changed little in runtime and only mildly affected community count on the tested families
+
+Representative points:
+
+- `acyclic`
+  - `num_trials=1` -> `2.7203s`, `3` communities
+  - `num_trials=10` -> `17.1222s`, `3`
+  - `markov_time=5.0` -> `1.0701s`, `2`
+  - `preferred_number_of_modules=10` -> `2.3998s`, `10`
+- `cyclic`
+  - `markov_time=2.0` -> `1.4859s`, `8`
+  - `preferred_number_of_modules=5` -> `2.7306s`, `5`
+- `cyclic_self`
+  - `markov_time=2.0` -> `1.5132s`, `9`
+  - `preferred_number_of_modules=2` -> `2.5319s`, `2`
+
+Project consequence:
+
+- the GUI now shows a pre-run `Infomap` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- it explicitly notes that `num_trials` is the main runtime driver
+- it also notes that `preferred_number_of_modules` is the clearest module-count control

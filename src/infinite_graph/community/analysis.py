@@ -16,6 +16,7 @@ from . import messages as community_messages
 from .belief import (
     estimate_belief_runtime_and_communities as _estimate_belief_runtime_and_communities,
 )
+from .infomap import run_direct_infomap as _run_direct_infomap
 from .preview import build_algorithm_preview_warning
 
 format_mono_community_algorithm_failure = (
@@ -421,8 +422,28 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Infomap",
         "supports_directed": True,
         "supports_weighted": True,
-        "weight_parameter": "flags",
-        "weight_value": "--directed --silent -w",
+        "parameter_definitions": [
+            {
+                "name": "num_trials",
+                "label": "Num trials",
+                "type": "int",
+                "default": 1,
+                "minimum": 1,
+            },
+            {"name": "seed", "label": "Seed", "type": "int", "default": 123, "minimum": 0},
+            {
+                "name": "markov_time", "label": "Markov time", "type": "float", "default": 1.0,
+                "minimum": 0.0, "maximum": 1000.0, "decimals": 3, "step": 0.1,
+            },
+            {
+                "name": "preferred_number_of_modules", "label": "Preferred modules",
+                "type": "int", "default": 0, "minimum": 0,
+            },
+        ],
+        "default_parameters": {"num_trials": 1, "seed": 123, "markov_time": 1.0,
+                                "preferred_number_of_modules": 0},
+        "weight_parameter": None,
+        "weight_value": None,
         "compatibility_note": "Uses the directed weighted graph as-is.",
     },
     "kcut": {
@@ -640,10 +661,8 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
 def uses_directed_community_graph() -> bool:
     return True
 
-
 def uses_edge_weights_only() -> bool:
     return True
-
 
 def ignores_node_weights() -> bool:
     return True
@@ -744,7 +763,6 @@ def get_mono_community_algorithm_parameters(
 
 def get_default_mono_community_algorithm() -> str:
     return "infomap"
-
 
 @lru_cache(maxsize=1)
 def get_bayan_gurobi_status() -> dict[str, object]:
@@ -920,6 +938,8 @@ def run_mono_community_algorithm(
         algorithm_name,
         **kwargs,
     )
+    if algorithm_name == "infomap":
+        return _run_direct_infomap(adapted_graph, **call_kwargs)
     algorithm_callable_name = str(
         MONO_COMMUNITY_ALGORITHM_EVALUATION[algorithm_name].get("callable_name", algorithm_name)
     )
@@ -971,7 +991,6 @@ def _drop_edge_weights(graph: nx.DiGraph | nx.Graph) -> nx.DiGraph | nx.Graph:
     for _source, _target, data in unweighted.edges(data=True):
         data.pop("weight", None)
     return unweighted
-
 
 def _normalize_parameters(parameters: Mapping[str, object] | object) -> dict[str, object]:
     if isinstance(parameters, Mapping):

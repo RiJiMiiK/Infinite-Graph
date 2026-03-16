@@ -334,6 +334,39 @@ def test_get_mono_community_algorithm_parameters() -> None:
             "step": 0.05,
         },
     ]
+    assert community_analysis.get_mono_community_algorithm_parameters("infomap") == [
+        {
+            "name": "num_trials",
+            "label": "Num trials",
+            "type": "int",
+            "default": 1,
+            "minimum": 1,
+        },
+        {
+            "name": "seed",
+            "label": "Seed",
+            "type": "int",
+            "default": 123,
+            "minimum": 0,
+        },
+        {
+            "name": "markov_time",
+            "label": "Markov time",
+            "type": "float",
+            "default": 1.0,
+            "minimum": 0.0,
+            "maximum": 1000.0,
+            "decimals": 3,
+            "step": 0.1,
+        },
+        {
+            "name": "preferred_number_of_modules",
+            "label": "Preferred modules",
+            "type": "int",
+            "default": 0,
+            "minimum": 0,
+        },
+    ]
 
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
     assert agdl_parameters == [
@@ -352,7 +385,6 @@ def test_get_mono_community_algorithm_parameters() -> None:
             "minimum": 1,
         },
     ]
-    assert community_analysis.get_mono_community_algorithm_parameters("infomap") == []
     assert community_analysis.get_mono_community_algorithm_parameters("unknown") == []
 
 
@@ -479,7 +511,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("label_propagation", graph, kwargs))
         return "label-propagation-result"
 
-    monkeypatch.setattr(community_analysis.algorithms, "infomap", fake_infomap)
+    monkeypatch.setattr(community_analysis, "_run_direct_infomap", fake_infomap)
     monkeypatch.setattr(community_analysis.algorithms, "rb_pots", fake_rb_pots)
     monkeypatch.setattr(community_analysis.algorithms, "threshold_clustering", fake_threshold)
     monkeypatch.setattr(community_analysis.algorithms, "agdl", fake_agdl)
@@ -555,7 +587,12 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
 
     assert calls[0][0] == "infomap"
     assert isinstance(calls[0][1], nx.DiGraph)
-    assert calls[0][2] == {"flags": "--directed --silent -w"}
+    assert calls[0][2] == {
+        "num_trials": 1,
+        "seed": 123,
+        "markov_time": 1.0,
+        "preferred_number_of_modules": 0,
+    }
     assert calls[1][2] == {"weights": "weight"}
     assert "threshold_function" in calls[2][2]
     assert calls[3][2] == {"number_communities": 3, "kc": 2}
@@ -644,11 +681,65 @@ def test_run_mono_community_algorithm_allows_overriding_default_parameters(monke
     assert calls == [{"number_communities": 5, "kc": 2}]
 
 
+def test_run_direct_infomap_uses_installed_package() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("Water", "Steam", weight=2.0)
+    graph.add_edge("Steam", "Cloud", weight=1.0)
+
+    result = community_analysis._run_direct_infomap(graph, flags="--silent")
+
+    assert result.method_name == "Infomap"
+    assert result.method_parameters == {
+        "legacy_flags": "--silent",
+        "num_trials": 1,
+        "seed": 123,
+        "markov_time": 1.0,
+    }
+    assert result.communities
+
+
+def test_run_direct_infomap_supports_unweighted_edges() -> None:
+    graph = nx.Graph()
+    graph.add_edge("Water", "Steam")
+    graph.add_edge("Steam", "Cloud")
+
+    result = community_analysis._run_direct_infomap(graph)
+
+    assert result.method_name == "Infomap"
+    assert result.method_parameters == {
+        "num_trials": 1,
+        "seed": 123,
+        "markov_time": 1.0,
+    }
+    assert result.communities
+
+
+def test_run_direct_infomap_supports_api_parameters() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("Water", "Steam", weight=2.0)
+    graph.add_edge("Steam", "Cloud", weight=1.0)
+
+    result = community_analysis._run_direct_infomap(
+        graph,
+        num_trials=3,
+        seed=999,
+        markov_time=2.5,
+        preferred_number_of_modules=7,
+    )
+
+    assert result.method_parameters == {
+        "num_trials": 3,
+        "seed": 999,
+        "markov_time": 2.5,
+        "preferred_number_of_modules": 7,
+    }
+
+
 def test_summarize_mono_community_result_and_parameter_normalization() -> None:
     result = SimpleNamespace(
         communities=[{"Steam", "Water"}, {"Earth"}],
         method_name="Infomap",
-        method_parameters={"flags": "--directed --silent -w"},
+        method_parameters={"num_trials": 1, "seed": 123, "markov_time": 1.0},
     )
 
     summary = community_analysis.summarize_mono_community_result(result)
@@ -661,7 +752,7 @@ def test_summarize_mono_community_result_and_parameter_normalization() -> None:
     assert summary["average_size"] == 1.5
     assert summary["node_to_community"] == {"Steam": 0, "Water": 0, "Earth": 1}
     assert summary["method_name"] == "Infomap"
-    assert summary["parameters"] == {"flags": "--directed --silent -w"}
+    assert summary["parameters"] == {"num_trials": 1, "seed": 123, "markov_time": 1.0}
 
     empty_summary = community_analysis.summarize_mono_community_result(
         SimpleNamespace(communities=[], method_name=None, method_parameters=object())

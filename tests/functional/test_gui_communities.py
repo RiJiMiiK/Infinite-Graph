@@ -25,7 +25,7 @@ def test_window_has_communities_tab(qapp) -> None:
     assert window.community_compute_button.text() == "Compute communities"
     assert window.community_compute_button.isEnabled() is False
     assert window.community_algorithm_combo.isEnabled() is False
-    assert window.community_parameters_group.isHidden() is True
+    assert window.community_parameters_group.isHidden() is False
     assert window.community_summary_label.text() == "No community analysis has been run yet."
     assert window.community_details.toPlainText() == "No community selected."
     assert "QComboBox QAbstractItemView" in window.styleSheet()
@@ -198,12 +198,6 @@ def test_window_community_parameters_visibility_updates_with_algorithm_selection
     assert window.community_parameters_group.isHidden() is False
     assert set(window._community_parameter_inputs) == {"head_tail_ratio"}
     assert isinstance(window._community_parameter_inputs["head_tail_ratio"], QDoubleSpinBox)
-
-    window.community_algorithm_combo.setCurrentIndex(
-        window.community_algorithm_combo.findData("infomap")
-    )
-    assert window.community_parameters_group.isHidden() is True
-    assert window._community_parameter_inputs == {}
     window.close()
 
 

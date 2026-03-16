@@ -18,6 +18,7 @@ from src.infinite_graph.community import (
     girvan_newman as community_girvan_newman,
     greedy_modularity as community_greedy_modularity,
     head_tail as community_head_tail,
+    infomap as community_infomap,
 )
 
 
@@ -461,6 +462,25 @@ def test_estimate_head_tail_runtime_and_communities_medium_singleton_risk() -> N
     assert estimate["singleton_risk"] == "medium"
 
 
+def test_estimate_infomap_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_infomap.estimate_infomap_runtime_and_communities(
+        graph,
+        num_trials=3,
+        seed=999,
+        markov_time=2.0,
+        preferred_number_of_modules=5,
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) >= 1
+    assert estimate["confidence"] in {"high", "medium", "low"}
+
+
 def test_get_mono_community_algorithm_pre_run_warning_for_cpm() -> None:
     graph = nx.DiGraph()
     graph.add_edge("A", "B", weight=1.0)
@@ -616,6 +636,31 @@ def test_get_mono_community_algorithm_pre_run_warning_for_head_tail() -> None:
     assert "Estimated communities:" in warning
     assert "Confidence:" in warning
     assert "Estimated singleton-fragmentation risk:" in warning
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_infomap() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "infomap",
+        graph,
+        {
+            "num_trials": 3,
+            "seed": 999,
+            "markov_time": 2.0,
+            "preferred_number_of_modules": 5,
+        },
+    )
+
+    assert warning is not None
+    assert "Infomap benchmark-based estimate" in warning
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
+    assert "num_trials was the main runtime driver" in warning
 
 
 def test_get_mono_community_algorithm_pre_run_warning_for_eigenvector_large_graph() -> None:

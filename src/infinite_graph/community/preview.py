@@ -18,6 +18,7 @@ from .gdmp2 import estimate_gdmp2_runtime_and_communities
 from .girvan_newman import estimate_girvan_newman_runtime_and_communities
 from .greedy_modularity import estimate_greedy_modularity_runtime_and_communities
 from .head_tail import estimate_head_tail_runtime_and_communities
+from .infomap import estimate_infomap_runtime_and_communities
 
 
 def build_algorithm_preview_warning(
@@ -271,6 +272,28 @@ def build_algorithm_preview_warning(
                 (
                     "Project benchmarks showed that Head/Tail can become slow on larger graphs, "
                     "and self-loop-heavy graph families collapsed into singleton communities."
+                ),
+                (
+                    "This estimate is heuristic and derived from project benchmark data, "
+                    "not a guarantee."
+                ),
+            ]
+        )
+    elif algorithm_name == "infomap":
+        estimate = estimate_infomap_runtime_and_communities(graph, **params)
+        warning = "\n".join(
+            [
+                "Infomap benchmark-based estimate for the current graph and parameters:",
+                (
+                    "- Estimated runtime: "
+                    f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                ),
+                f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                f"- Confidence: {estimate['confidence']}",
+                (
+                    "Project benchmarks showed that Infomap stayed practical on large graphs, "
+                    "while num_trials was the main runtime driver and "
+                    "preferred_number_of_modules was the clearest community-count control."
                 ),
                 (
                     "This estimate is heuristic and derived from project benchmark data, "

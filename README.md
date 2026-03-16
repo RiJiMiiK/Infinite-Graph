@@ -471,6 +471,7 @@ Additional benchmark note:
 - repeated matrix tests across graph size, orientation, weighting, cyclicity, self-loops, and parameter ranges up to `100`
   reproduced non-deterministic failure families in the upstream CDlib implementation
 - `Bayan` is additionally constrained by the local Gurobi license, so runtime behavior can be dominated by the solver rather than by the graph algorithm itself
+- `Infomap` now uses the native `infomap` Python package directly in the app, with a benchmark-based pre-run preview for runtime and estimated community count
 
 ## Roadmap direction
 
