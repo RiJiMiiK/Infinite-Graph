@@ -19,6 +19,7 @@ from .girvan_newman import estimate_girvan_newman_runtime_and_communities
 from .greedy_modularity import estimate_greedy_modularity_runtime_and_communities
 from .head_tail import estimate_head_tail_runtime_and_communities
 from .infomap import estimate_infomap_runtime_and_communities
+from .kcut import estimate_kcut_runtime_and_communities
 
 
 def build_algorithm_preview_warning(
@@ -294,6 +295,32 @@ def build_algorithm_preview_warning(
                     "Project benchmarks showed that Infomap stayed practical on large graphs, "
                     "while num_trials was the main runtime driver and "
                     "preferred_number_of_modules was the clearest community-count control."
+                ),
+                (
+                    "This estimate is heuristic and derived from project benchmark data, "
+                    "not a guarantee."
+                ),
+            ]
+        )
+    elif algorithm_name == "kcut":
+        estimate = estimate_kcut_runtime_and_communities(graph, **params)
+        warning = "\n".join(
+            [
+                "Kcut benchmark-based estimate for the current graph and parameters:",
+                (
+                    "- Estimated runtime: "
+                    f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                ),
+                f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                f"- Confidence: {estimate['confidence']}",
+                (
+                    "- Estimated degenerate-partition risk: "
+                    f"{estimate['degenerate_partition_risk']}"
+                ),
+                (
+                    "Project benchmarks showed that runtime rises steeply with graph size and "
+                    "kmax, while tested graph families often collapsed into one dominant "
+                    "community plus many singleton communities."
                 ),
                 (
                     "This estimate is heuristic and derived from project benchmark data, "

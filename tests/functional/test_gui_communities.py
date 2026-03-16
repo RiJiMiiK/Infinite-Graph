@@ -193,6 +193,12 @@ def test_window_community_parameters_visibility_updates_with_algorithm_selection
     assert window._community_parameter_inputs == {}
 
     window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("kcut")
+    )
+    assert window.community_parameters_group.isHidden() is False
+    assert set(window._community_parameter_inputs) == {"kmax"}
+
+    window.community_algorithm_combo.setCurrentIndex(
         window.community_algorithm_combo.findData("head_tail")
     )
     assert window.community_parameters_group.isHidden() is False
@@ -934,4 +940,57 @@ def test_window_compute_communities_supports_head_tail_parameters(
     assert "Algorithm: Head/Tail" in window.community_summary_label.text()
     assert "Method name: Head/Tail" in window.community_summary_label.text()
     assert "head_tail_ratio=0.8" in window.community_summary_label.text()
+    window.close()
+
+
+def test_window_compute_communities_supports_kcut_parameters(
+    qapp, sample_result, monkeypatch
+) -> None:
+    window = gui.InfiniteGraphWindow()
+    window._current_result = sample_result
+    window._set_community_controls_enabled(True)
+    window.community_algorithm_combo.setCurrentIndex(
+        window.community_algorithm_combo.findData("kcut")
+    )
+
+    calls = []
+
+    def fake_run(graph, algorithm_name, **kwargs):
+        calls.append((graph, algorithm_name, kwargs))
+        return SimpleNamespace(
+            communities=[{"Water", "Fire"}, {"Steam"}],
+            method_name="Kcut",
+            method_parameters=kwargs,
+        )
+
+    monkeypatch.setattr(gui, "run_mono_community_algorithm", fake_run)
+    monkeypatch.setattr(
+        gui,
+        "summarize_mono_community_result",
+        lambda result: {
+            "communities": [["Fire", "Water"], ["Steam"]],
+            "community_count": 2,
+            "community_sizes": [2, 1],
+            "min_size": 1,
+            "max_size": 2,
+            "average_size": 1.5,
+            "node_to_community": {"Fire": 0, "Water": 0, "Steam": 1},
+            "method_name": "Kcut",
+            "parameters": result.method_parameters,
+        },
+    )
+    monkeypatch.setattr(gui, "get_mono_community_algorithm_warning", lambda name: None)
+    monkeypatch.setattr(
+        gui,
+        "get_mono_community_algorithm_pre_run_warning",
+        lambda *args, **kwargs: None,
+    )
+
+    window._community_parameter_inputs["kmax"].setValue(6)
+    window._compute_communities()
+
+    assert calls == [(sample_result["community_graph"], "kcut", {"kmax": 6})]
+    assert "Algorithm: Kcut" in window.community_summary_label.text()
+    assert "Method name: Kcut" in window.community_summary_label.text()
+    assert "kmax=6" in window.community_summary_label.text()
     window.close()

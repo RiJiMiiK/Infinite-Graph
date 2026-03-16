@@ -19,9 +19,7 @@ from .belief import (
 from .infomap import run_direct_infomap as _run_direct_infomap
 from .preview import build_algorithm_preview_warning
 
-format_mono_community_algorithm_failure = (
-    community_messages.format_mono_community_algorithm_failure
-)
+format_mono_community_algorithm_failure = community_messages.format_mono_community_algorithm_failure
 
 MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
     "agdl": {
@@ -450,6 +448,14 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Kcut",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": (
+            "Kcut became expensive quickly in project benchmarks, and the tested graph families "
+            "often produced one dominant community plus many singleton communities. Use the "
+            "pre-run estimate before launching it on anything but a small graph."
+        ),
+        "parameter_definitions": [{"name": "kmax", "label": "K max", "type": "int", "default": 4,
+                                   "minimum": 1}],
+        "default_parameters": {"kmax": 4},
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",
@@ -726,8 +732,6 @@ def get_mono_community_algorithm_evaluation() -> list[dict[str, object]]:
         }
         for key, metadata in MONO_COMMUNITY_ALGORITHM_EVALUATION.items()
     ]
-
-
 def get_mono_community_algorithms() -> list[dict[str, object]]:
     return [
         {
@@ -754,11 +758,8 @@ def get_mono_community_algorithm_parameters(
     parameter_definitions = metadata.get("parameter_definitions", [])
     if not isinstance(parameter_definitions, list):
         return []
-    return [
-        {str(key): value for key, value in parameter.items()}
-        for parameter in parameter_definitions
-        if isinstance(parameter, Mapping)
-    ]
+    return [{str(key): value for key, value in parameter.items()}
+            for parameter in parameter_definitions if isinstance(parameter, Mapping)]
 
 
 def get_default_mono_community_algorithm() -> str:

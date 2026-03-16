@@ -19,6 +19,7 @@ from src.infinite_graph.community import (
     greedy_modularity as community_greedy_modularity,
     head_tail as community_head_tail,
     infomap as community_infomap,
+    kcut as community_kcut,
 )
 
 
@@ -481,6 +482,51 @@ def test_estimate_infomap_runtime_and_communities() -> None:
     assert estimate["confidence"] in {"high", "medium", "low"}
 
 
+def test_estimate_kcut_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_kcut.estimate_kcut_runtime_and_communities(graph, kmax=4)
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) >= 1
+    assert estimate["confidence"] in {"high", "medium", "low"}
+    assert estimate["degenerate_partition_risk"] in {"high", "medium", "low"}
+
+
+def test_estimate_kcut_runtime_and_communities_low_confidence() -> None:
+    graph = nx.DiGraph()
+    for index in range(1000):
+        graph.add_edge(str(index), str((index + 1) % 1000), weight=1.0)
+
+    estimate = community_kcut.estimate_kcut_runtime_and_communities(graph, kmax=4)
+
+    assert estimate["confidence"] == "low"
+
+
+def test_estimate_kcut_runtime_and_communities_medium_degenerate_risk(monkeypatch) -> None:
+    graph = nx.DiGraph()
+    for index in range(100):
+        graph.add_edge(str(index), str(index + 1), weight=1.0)
+
+    monkeypatch.setattr(
+        community_kcut,
+        "finalize_estimate",
+        lambda *args, **kwargs: {
+            "estimated_runtime_seconds": 1.0,
+            "estimated_community_count": 6,
+            "confidence": "high",
+            "features": {"nodes": 100.0},
+        },
+    )
+
+    estimate = community_kcut.estimate_kcut_runtime_and_communities(graph, kmax=2)
+
+    assert estimate["degenerate_partition_risk"] == "medium"
+
+
 def test_get_mono_community_algorithm_pre_run_warning_for_cpm() -> None:
     graph = nx.DiGraph()
     graph.add_edge("A", "B", weight=1.0)
@@ -661,6 +707,26 @@ def test_get_mono_community_algorithm_pre_run_warning_for_infomap() -> None:
     assert "Estimated communities:" in warning
     assert "Confidence:" in warning
     assert "num_trials was the main runtime driver" in warning
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_kcut() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "kcut",
+        graph,
+        {"kmax": 6},
+    )
+
+    assert warning is not None
+    assert "Kcut benchmark-based estimate" in warning
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
+    assert "Estimated degenerate-partition risk:" in warning
 
 
 def test_get_mono_community_algorithm_pre_run_warning_for_eigenvector_large_graph() -> None:

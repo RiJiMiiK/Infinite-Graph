@@ -602,3 +602,49 @@ Project consequence:
 - it also includes a benchmark-based estimated community count
 - it explicitly notes that `num_trials` is the main runtime driver
 - it also notes that `preferred_number_of_modules` is the clearest module-count control
+
+## Kcut
+
+`Kcut` is available, but project benchmarks showed both steep runtime growth and highly degenerate partitions on the tested graph families.
+
+### Runtime baselines
+
+Default benchmark with `kmax=4`:
+
+| Nodes | Acyclic | Cyclic | Cyclic + self-loops |
+| --- | ---: | ---: | ---: |
+| 20 | `5.5207s`, `8` communities | `0.2384s`, `8` | `0.2683s`, `8` |
+| 100 | `1.8071s`, `8` | `1.8532s`, `8` | `2.0117s`, `8` |
+| 300 | `11.5412s`, `8` | `11.5273s`, `8` | `10.0630s`, `8` |
+| 1000 | `88.8809s`, `8` | `112.1901s`, `8` | `82.0082s`, `8` |
+
+Observed structure:
+
+- one very large dominant community
+- the remaining communities were usually singletons
+
+### `kmax` exploration
+
+Observed pattern on `20`, `100`, and `300` nodes:
+
+- runtime rose quickly with `kmax`
+- returned community count tracked roughly `2 * kmax`
+- the partition still remained highly degenerate, with a single huge community and many size-`1` communities
+
+Representative points:
+
+- `100 | cyclic`
+  - `kmax=2` -> `0.3988s`, `4` communities, top `[97, 1, 1, 1]`
+  - `kmax=4` -> `1.0759s`, `8`, top `[93, 1, 1, 1, 1, 1, 1, 1]`
+  - `kmax=10` -> `3.9559s`, `20`, top `[81, 1, 1, 1, 1, 1, 1, 1, 1, 1]`
+- `300 | acyclic`
+  - `kmax=2` -> `2.8846s`, `4`, top `[297, 1, 1, 1]`
+  - `kmax=4` -> `7.0049s`, `8`, top `[293, 1, 1, 1, 1, 1, 1, 1]`
+  - `kmax=10` -> `31.0474s`, `20`, top `[281, 1, 1, 1, 1, 1, 1, 1, 1, 1]`
+
+Project consequence:
+
+- the GUI now shows a pre-run `Kcut` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- it surfaces an estimated degenerate-partition risk

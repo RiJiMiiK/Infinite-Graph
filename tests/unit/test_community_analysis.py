@@ -367,6 +367,15 @@ def test_get_mono_community_algorithm_parameters() -> None:
             "minimum": 0,
         },
     ]
+    assert community_analysis.get_mono_community_algorithm_parameters("kcut") == [
+        {
+            "name": "kmax",
+            "label": "K max",
+            "type": "int",
+            "default": 4,
+            "minimum": 1,
+        },
+    ]
 
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
     assert agdl_parameters == [
@@ -511,6 +520,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("label_propagation", graph, kwargs))
         return "label-propagation-result"
 
+    def fake_kcut(graph, **kwargs):
+        calls.append(("kcut", graph, kwargs))
+        return "kcut-result"
+
     monkeypatch.setattr(community_analysis, "_run_direct_infomap", fake_infomap)
     monkeypatch.setattr(community_analysis.algorithms, "rb_pots", fake_rb_pots)
     monkeypatch.setattr(community_analysis.algorithms, "threshold_clustering", fake_threshold)
@@ -530,6 +543,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         fake_greedy_modularity,
     )
     monkeypatch.setattr(community_analysis.algorithms, "head_tail", fake_head_tail)
+    monkeypatch.setattr(community_analysis.algorithms, "kcut", fake_kcut)
     monkeypatch.setattr(community_analysis.algorithms, "cpm", fake_cpm)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
@@ -575,6 +589,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         == "greedy-modularity-result"
     )
     assert community_analysis.run_mono_community_algorithm(graph, "head_tail") == "head-tail-result"
+    assert community_analysis.run_mono_community_algorithm(graph, "kcut") == "kcut-result"
     assert community_analysis.run_mono_community_algorithm(graph, "cpm") == "cpm-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
     assert (
@@ -645,17 +660,20 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[14][0] == "head_tail"
     assert isinstance(calls[14][1], nx.Graph)
     assert calls[14][2] == {"head_tail_ratio": 0.4}
-    assert calls[15][0] == "cpm"
+    assert calls[15][0] == "kcut"
     assert isinstance(calls[15][1], nx.Graph)
-    assert calls[15][2] == {
+    assert calls[15][2] == {"kmax": 4}
+    assert calls[16][0] == "cpm"
+    assert isinstance(calls[16][1], nx.Graph)
+    assert calls[16][2] == {
         "resolution_parameter": 1.0,
         "weights": "weight",
     }
-    assert isinstance(calls[16][1], nx.Graph)
-    assert calls[16][2] == {"weights": "weight"}
-    assert calls[17][0] == "label_propagation"
     assert isinstance(calls[17][1], nx.Graph)
-    assert calls[17][2] == {}
+    assert calls[17][2] == {"weights": "weight"}
+    assert calls[18][0] == "label_propagation"
+    assert isinstance(calls[18][1], nx.Graph)
+    assert calls[18][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

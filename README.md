@@ -472,6 +472,7 @@ Additional benchmark note:
   reproduced non-deterministic failure families in the upstream CDlib implementation
 - `Bayan` is additionally constrained by the local Gurobi license, so runtime behavior can be dominated by the solver rather than by the graph algorithm itself
 - `Infomap` now uses the native `infomap` Python package directly in the app, with a benchmark-based pre-run preview for runtime and estimated community count
+- `Kcut` now has a benchmark-based pre-run preview, because project benchmarks showed steep runtime growth and a tendency toward one dominant community plus many singleton communities
 
 ## Roadmap direction
 
