@@ -15,6 +15,7 @@ from src.infinite_graph.community import (
     em as community_em,
     ga as community_ga,
     gdmp2 as community_gdmp2,
+    girvan_newman as community_girvan_newman,
 )
 
 
@@ -39,6 +40,11 @@ def test_get_mono_community_algorithm_warning() -> None:
     gdmp2_warning = community_analysis.get_mono_community_algorithm_warning("gdmp2")
     assert gdmp2_warning is not None
     assert "RecursionError around 1000 nodes" in gdmp2_warning
+    girvan_newman_warning = community_analysis.get_mono_community_algorithm_warning(
+        "girvan_newman"
+    )
+    assert girvan_newman_warning is not None
+    assert "10000-node benchmark run did not finish" in girvan_newman_warning
     assert community_analysis.get_mono_community_algorithm_warning("unknown") is None
 
 
@@ -342,6 +348,35 @@ def test_estimate_gdmp2_runtime_and_communities_high_recursion_risk() -> None:
     assert estimate["recursion_risk"] == "high"
 
 
+def test_estimate_girvan_newman_runtime_and_communities() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    estimate = community_girvan_newman.estimate_girvan_newman_runtime_and_communities(
+        graph,
+        level=3,
+    )
+
+    assert float(estimate["estimated_runtime_seconds"]) > 0.0
+    assert int(estimate["estimated_community_count"]) == 4
+    assert estimate["confidence"] in {"high", "medium", "low"}
+
+
+def test_estimate_girvan_newman_runtime_and_communities_level_minus_one() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+
+    estimate = community_girvan_newman.estimate_girvan_newman_runtime_and_communities(
+        graph,
+        level=-1,
+    )
+
+    assert estimate["estimated_community_count"] == 0
+    assert estimate["confidence"] == "low"
+
+
 def test_get_mono_community_algorithm_pre_run_warning_for_cpm() -> None:
     graph = nx.DiGraph()
     graph.add_edge("A", "B", weight=1.0)
@@ -437,6 +472,27 @@ def test_get_mono_community_algorithm_pre_run_warning_for_gdmp2() -> None:
     assert "Confidence:" in warning
     assert "Estimated recursion failure risk:" in warning
     assert "RecursionError" in warning
+
+
+def test_get_mono_community_algorithm_pre_run_warning_for_girvan_newman() -> None:
+    graph = nx.DiGraph()
+    graph.add_edge("A", "B", weight=1.0)
+    graph.add_edge("B", "A", weight=1.0)
+    graph.add_edge("A", "A", weight=0.25)
+
+    warning = community_analysis.get_mono_community_algorithm_pre_run_warning(
+        "girvan_newman",
+        graph,
+        {"level": 4},
+    )
+
+    assert warning is not None
+    assert "Girvan-Newman becomes expensive" in warning
+    assert "Estimated runtime:" in warning
+    assert "Estimated communities:" in warning
+    assert "Confidence:" in warning
+    assert "level + 1" in warning
+    assert "level=-1 mode returned an empty partition" in warning
 
 
 def test_get_mono_community_algorithm_pre_run_warning_for_eigenvector_large_graph() -> None:

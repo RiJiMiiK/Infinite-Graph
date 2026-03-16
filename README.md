@@ -143,6 +143,7 @@ The application also includes:
 - benchmark-based pre-run estimates for `EM` runtime and expected community count
 - benchmark-based pre-run estimates for `GA` runtime and expected community count
 - benchmark-based pre-run estimates for `GDMP2` runtime and expected community count
+- benchmark-based pre-run estimates for `Girvan-Newman` runtime and expected community count
 - benchmark-based pre-run estimates for `Eigenvector` runtime and expected community count
 - guided warning/error handling for `Eigenvector` ARPACK failures on large graphs
 
@@ -246,6 +247,18 @@ Current `GDMP2` warning:
 - benchmark runs showed that `GDMP2` stays fast on small and medium tested graphs
 - the same benchmarks also reproduced `RecursionError` failures around `1000` nodes for every tested `min_threshold`
 - `min_threshold` changes fragmentation on smaller graphs, but did not remove the large-graph recursion issue in project tests
+- the estimate is heuristic and should be treated as guidance only
+
+Current `Girvan-Newman` warning:
+
+- `Girvan-Newman` stays available, and the application shows a pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph and `level`
+  - an estimated community count for the current graph and `level`
+- benchmark runs showed that runtime grows quickly with both graph size and `level`
+- project-side runs were still practical at `1000` nodes, but a dedicated `10000`-node run did not finish within more than one hour
+- on the tested benchmark families, the observed community count followed roughly `level + 1` for `level >= 1`
+- the documented `level=-1` mode returned an empty partition in this environment during project benchmarks
 - the estimate is heuristic and should be treated as guidance only
 
 Current `Eigenvector` warning:

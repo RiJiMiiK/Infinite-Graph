@@ -419,3 +419,66 @@ Project consequence:
 - it also includes a benchmark-based estimated community count
 - it explicitly surfaces an estimated recursion-failure risk
 - the warning states that changing `min_threshold` can alter fragmentation, but did not remove the large-graph recursion problem in project benchmarks
+
+## Girvan-Newman
+
+`Girvan-Newman` is available, but runtime rises quickly with both graph size and `level`.
+
+### Runtime and `level` exploration
+
+Benchmark graph families:
+
+- `acyclic`
+- `cyclic`
+- `cyclic_self`
+
+Representative results with `level=3`:
+
+- `20` nodes
+  - `acyclic`: `0.0201s`, `4` communities
+  - `cyclic`: `0.0325s`, `4` communities
+  - `cyclic_self`: `0.0344s`, `4` communities
+- `100` nodes
+  - `acyclic`: `0.3187s`, `4` communities
+  - `cyclic`: `0.7276s`, `4` communities
+  - `cyclic_self`: `0.7078s`, `4` communities
+- `300` nodes
+  - `acyclic`: `3.0414s`, `4` communities
+  - `cyclic`: `6.9848s`, `4` communities
+  - `cyclic_self`: `6.7630s`, `4` communities
+- `1000` nodes
+  - `acyclic`: `9.4773s`, `4` communities
+  - `cyclic`: `17.9428s`, `4` communities
+  - `cyclic_self`: `18.8398s`, `4` communities
+
+A dedicated `10000`-node run did not finish within more than one hour in this environment.
+
+### `level` follow-up
+
+Observed pattern on `300` and `1000` nodes:
+
+- runtime grows as `level` grows
+- on the tested graph families, the returned community count tracked `level + 1` for `level >= 1`
+
+Representative points:
+
+- `300 | acyclic`
+  - `level=1` -> `0.4279s`, `2` communities
+  - `level=3` -> `0.7638s`, `4`
+  - `level=10` -> `1.3286s`, `11`
+- `1000 | cyclic`
+  - `level=1` -> `7.5776s`, `2`
+  - `level=3` -> `18.5216s`, `4`
+  - `level=10` -> `20.1967s`, `11`
+
+Special note:
+
+- although the documentation mentions `level=-1` for highest modularity, the installed environment returned an empty partition for that mode during project benchmarks
+
+Project consequence:
+
+- the GUI now shows a pre-run `Girvan-Newman` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- it explicitly notes the observed cost growth with size and `level`
+- it also warns that `level=-1` behaved unexpectedly in the project environment

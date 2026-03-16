@@ -308,6 +308,19 @@ def test_get_mono_community_algorithm_parameters() -> None:
         },
     ]
 
+    girvan_newman_parameters = community_analysis.get_mono_community_algorithm_parameters(
+        "girvan_newman"
+    )
+    assert girvan_newman_parameters == [
+        {
+            "name": "level",
+            "label": "Level",
+            "type": "int",
+            "default": 3,
+            "minimum": -1,
+        },
+    ]
+
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
     assert agdl_parameters == [
         {
@@ -428,6 +441,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("gdmp2", graph, kwargs))
         return "gdmp2-result"
 
+    def fake_girvan_newman(graph, **kwargs):
+        calls.append(("girvan_newman", graph, kwargs))
+        return "girvan-newman-result"
+
     def fake_cpm(graph, **kwargs):
         calls.append(("cpm", graph, kwargs))
         return "cpm-result"
@@ -452,6 +469,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     monkeypatch.setattr(community_analysis.algorithms, "em", fake_em)
     monkeypatch.setattr(community_analysis.algorithms, "ga", fake_ga)
     monkeypatch.setattr(community_analysis.algorithms, "gdmp2", fake_gdmp2)
+    monkeypatch.setattr(community_analysis.algorithms, "girvan_newman", fake_girvan_newman)
     monkeypatch.setattr(community_analysis.algorithms, "cpm", fake_cpm)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
     monkeypatch.setattr(
@@ -488,6 +506,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert community_analysis.run_mono_community_algorithm(graph, "em") == "em-result"
     assert community_analysis.run_mono_community_algorithm(graph, "ga") == "ga-result"
     assert community_analysis.run_mono_community_algorithm(graph, "gdmp2") == "gdmp2-result"
+    assert (
+        community_analysis.run_mono_community_algorithm(graph, "girvan_newman")
+        == "girvan-newman-result"
+    )
     assert community_analysis.run_mono_community_algorithm(graph, "cpm") == "cpm-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
     assert (
@@ -544,17 +566,20 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert calls[11][2] == {
         "min_threshold": 0.75,
     }
-    assert calls[12][0] == "cpm"
+    assert calls[12][0] == "girvan_newman"
     assert isinstance(calls[12][1], nx.Graph)
-    assert calls[12][2] == {
+    assert calls[12][2] == {"level": 3}
+    assert calls[13][0] == "cpm"
+    assert isinstance(calls[13][1], nx.Graph)
+    assert calls[13][2] == {
         "resolution_parameter": 1.0,
         "weights": "weight",
     }
-    assert isinstance(calls[13][1], nx.Graph)
-    assert calls[13][2] == {"weights": "weight"}
-    assert calls[14][0] == "label_propagation"
     assert isinstance(calls[14][1], nx.Graph)
-    assert calls[14][2] == {}
+    assert calls[14][2] == {"weights": "weight"}
+    assert calls[15][0] == "label_propagation"
+    assert isinstance(calls[15][1], nx.Graph)
+    assert calls[15][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:

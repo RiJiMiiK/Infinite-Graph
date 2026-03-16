@@ -355,6 +355,23 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Girvan-Newman",
         "supports_directed": False,
         "supports_weighted": False,
+        "runtime_warning": (
+            "Girvan-Newman becomes expensive as graph size and level grow. "
+            "Project benchmarks showed double-digit seconds already around 1000 nodes, "
+            "and a 10000-node benchmark run did not finish within more than one hour."
+        ),
+        "parameter_definitions": [
+            {
+                "name": "level",
+                "label": "Level",
+                "type": "int",
+                "default": 3,
+                "minimum": -1,
+            },
+        ],
+        "default_parameters": {
+            "level": 3,
+        },
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",

@@ -15,6 +15,7 @@ from .em import estimate_em_runtime_and_communities
 from .eigenvector import estimate_eigenvector_runtime_and_communities
 from .ga import estimate_ga_runtime_and_communities
 from .gdmp2 import estimate_gdmp2_runtime_and_communities
+from .girvan_newman import estimate_girvan_newman_runtime_and_communities
 
 
 def build_algorithm_preview_warning(
@@ -199,6 +200,32 @@ def build_algorithm_preview_warning(
                 (
                     "min_threshold changed fragmentation on smaller graphs, but it did not "
                     "remove the large-graph recursion issue."
+                ),
+                (
+                    "This estimate is heuristic and derived from project benchmark data, "
+                    "not a guarantee."
+                ),
+            ]
+        )
+    elif algorithm_name == "girvan_newman":
+        estimate = estimate_girvan_newman_runtime_and_communities(graph, **params)
+        warning = "\n".join(
+            [
+                "Girvan-Newman benchmark-based estimate for the current graph and parameters:",
+                (
+                    "- Estimated runtime: "
+                    f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                ),
+                f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                f"- Confidence: {estimate['confidence']}",
+                (
+                    "Project benchmarks showed that runtime grows noticeably with both graph size "
+                    "and level, while the observed community count on the tested graph families "
+                    "tracked level + 1 for level >= 1."
+                ),
+                (
+                    "The documented level=-1 mode returned an empty partition in this "
+                    "environment during project benchmarks, so treat that option cautiously."
                 ),
                 (
                     "This estimate is heuristic and derived from project benchmark data, "
