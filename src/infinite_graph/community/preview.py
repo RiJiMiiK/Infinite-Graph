@@ -21,6 +21,7 @@ from .head_tail import estimate_head_tail_runtime_and_communities
 from .infomap import estimate_infomap_runtime_and_communities
 from .kcut import estimate_kcut_runtime_and_communities
 from .label_propagation import estimate_label_propagation_runtime_and_communities
+from .leiden import estimate_leiden_runtime_and_communities
 
 
 def build_algorithm_preview_warning(
@@ -345,6 +346,28 @@ def build_algorithm_preview_warning(
                     "Project benchmarks showed very different failure modes by structure: "
                     "acyclic-like graphs often collapsed to a single community, cyclic-self "
                     "graphs collapsed into singletons, and large acyclic/cyclic graphs became slow."
+                ),
+                (
+                    "This estimate is heuristic and derived from project benchmark data, "
+                    "not a guarantee."
+                ),
+            ]
+        )
+    elif algorithm_name == "leiden":
+        estimate = estimate_leiden_runtime_and_communities(graph)
+        warning = "\n".join(
+            [
+                "Leiden benchmark-based estimate for the current graph:",
+                (
+                    "- Estimated runtime: "
+                    f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                ),
+                f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                f"- Confidence: {estimate['confidence']}",
+                (
+                    "Project benchmarks showed that Leiden stayed fast even on very large "
+                    "tested graphs, while self-loop-heavy families produced somewhat more "
+                    "communities than the other tested families."
                 ),
                 (
                     "This estimate is heuristic and derived from project benchmark data, "

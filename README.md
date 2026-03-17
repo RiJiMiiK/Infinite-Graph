@@ -146,6 +146,7 @@ The application also includes:
 - benchmark-based pre-run estimates for `Girvan-Newman` runtime and expected community count
 - benchmark-based pre-run estimates for `Greedy Modularity` runtime and expected community count
 - benchmark-based pre-run estimates for `Head/Tail` runtime and expected community count
+- benchmark-based pre-run estimates for `Leiden` runtime and expected community count
 - benchmark-based pre-run estimates for `Eigenvector` runtime and expected community count
 - guided warning/error handling for `Eigenvector` ARPACK failures on large graphs
 
@@ -277,6 +278,15 @@ Current `Head/Tail` warning:
 - `Head/Tail` stays available, and the application shows a pre-run warning before execution
 - the warning includes:
   - an estimated runtime for the current graph and `head_tail_ratio`
+
+Current `Leiden` warning:
+
+- `Leiden` stays available, and the application shows a lightweight pre-run warning before execution
+- the warning includes:
+  - an estimated runtime for the current graph
+  - an estimated community count for the current graph
+- benchmark runs showed that `Leiden` stayed fast even on the large tested graph families, including `100000` nodes
+- the estimate is heuristic and should be treated as guidance only
   - an estimated community count for the current graph and `head_tail_ratio`
   - an estimated singleton-fragmentation risk
 - CDlib documents the method as suited for small-medium sized graphs
@@ -472,6 +482,7 @@ Additional benchmark note:
   reproduced non-deterministic failure families in the upstream CDlib implementation
 - `Bayan` is additionally constrained by the local Gurobi license, so runtime behavior can be dominated by the solver rather than by the graph algorithm itself
 - `Infomap` now uses the native `infomap` Python package directly in the app, with a benchmark-based pre-run preview for runtime and estimated community count
+- `Leiden` now has a benchmark-based pre-run preview, because project benchmarks showed strong scalability with moderate community-count growth even on very large graph families
 - `Kcut` now has a benchmark-based pre-run preview, because project benchmarks showed steep runtime growth and a tendency toward one dominant community plus many singleton communities
 - `Label Propagation Cordasco-Gargano` now has a benchmark-based pre-run preview, because project benchmarks showed both slow large-graph collapse to one community and ultra-fast singleton collapse on self-loop-heavy graphs
 

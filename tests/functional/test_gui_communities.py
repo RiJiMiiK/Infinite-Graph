@@ -204,6 +204,7 @@ def test_window_community_parameters_visibility_updates_with_algorithm_selection
     assert window.community_parameters_group.isHidden() is False
     assert set(window._community_parameter_inputs) == {"head_tail_ratio"}
     assert isinstance(window._community_parameter_inputs["head_tail_ratio"], QDoubleSpinBox)
+
     window.close()
 
 
@@ -994,4 +995,3 @@ def test_window_compute_communities_supports_kcut_parameters(
     assert "Method name: Kcut" in window.community_summary_label.text()
     assert "kmax=6" in window.community_summary_label.text()
     window.close()
-

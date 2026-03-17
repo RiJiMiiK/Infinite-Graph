@@ -549,6 +549,50 @@ Project consequence:
 - it also includes a benchmark-based estimated community count
 - it surfaces an estimated singleton-fragmentation risk
 
+## Leiden
+
+`Leiden` stayed fast across the project benchmark families, including on very large tested graphs.
+
+### Runtime baselines
+
+Benchmarks were run on weighted undirected graph views for:
+
+- `acyclic`
+- `cyclic`
+- `cyclic_self`
+
+Representative timings and observed community counts:
+
+- `20` nodes
+  - `acyclic`: `0.0072s`, `4` communities
+  - `cyclic`: `0.0026s`, `4`
+  - `cyclic_self`: `0.0023s`, `5`
+- `1000` nodes
+  - `acyclic`: `0.0389s`, `26`
+  - `cyclic`: `0.0304s`, `26`
+  - `cyclic_self`: `0.0394s`, `32`
+- `10000` nodes
+  - `acyclic`: `0.5385s`, `83`
+  - `cyclic`: `0.4362s`, `83`
+  - `cyclic_self`: `0.4783s`, `103`
+- `100000` nodes
+  - `acyclic`: `5.4589s`, `266`
+  - `cyclic`: `5.4714s`, `268`
+  - `cyclic_self`: `6.3304s`, `320`
+
+Observed pattern:
+
+- `Leiden` remained fast even on the largest tested graph families
+- community count grew steadily with graph size
+- self-loop-heavy graph families produced somewhat more communities than the other families
+
+Current app behavior:
+
+- the GUI now shows a lightweight pre-run `Leiden` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- the message explicitly notes that the method stayed fast in the project benchmarks
+
 ## Infomap
 
 `Infomap` is run through the native `infomap` Python package instead of the CDlib wrapper.

@@ -25,6 +25,7 @@
 - added a benchmark-based `Girvan-Newman` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Greedy Modularity` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Head/Tail` pre-run warning with estimated runtime and estimated community count
+- added a benchmark-based `Leiden` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Infomap` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Kcut` pre-run warning with estimated runtime and estimated community count
 - added a benchmark-based `Label Propagation Cordasco-Gargano` pre-run warning with estimated runtime and estimated community count
