@@ -506,6 +506,13 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "LSWL",
         "supports_directed": False,
         "supports_weighted": True,
+        "parameter_definitions": [
+            {"name": "strength_type", "label": "Strength type", "type": "int",
+             "default": 2, "minimum": 1, "maximum": 2},
+            {"name": "timeout", "label": "Timeout", "type": "float", "default": 1.0,
+             "minimum": 0.0, "step": 0.1},
+        ],
+        "default_parameters": {"strength_type": 2, "timeout": 1.0, "online": True},
         "weight_parameter": None,
         "weight_value": None,
         "compatibility_note": "Will run on an undirected weighted view of the graph.",
@@ -678,8 +685,7 @@ def uses_edge_weights_only() -> bool:
 def ignores_node_weights() -> bool:
     return True
 def estimate_belief_runtime_and_communities(
-    graph: nx.DiGraph,
-    **parameters: object,
+    graph: nx.DiGraph, **parameters: object,
 ) -> dict[str, object]:
     """Expose the Belief estimator through the main community analysis module."""
     return _estimate_belief_runtime_and_communities(graph, **parameters)
@@ -708,12 +714,8 @@ def build_cdlib_graph(
             elements=list(edge.get("elements", [])),
         )
     return graph
-
-
 def _is_unix_platform() -> bool:
     return os.name == "posix"
-
-
 def _is_mono_community_algorithm_visible(algorithm_name: str) -> bool:
     if algorithm_name == "label_propagation_raghavan":
         return False
@@ -937,9 +939,16 @@ def run_mono_community_algorithm(
         MONO_COMMUNITY_ALGORITHM_EVALUATION[algorithm_name].get("callable_name", algorithm_name)
     )
     algorithm = getattr(algorithms, algorithm_callable_name)
-    return algorithm(adapted_graph, **call_kwargs)
-
-
+    try:
+        return algorithm(adapted_graph, **call_kwargs)
+    except IndexError as exc:
+        if algorithm_name == "lswl" and "list index out of range" in str(exc):
+            raise RuntimeError(
+                "LSWL did not return a community for the selected query node before timing out. "
+                f"query_node={call_kwargs.get('query_node')!r}, "
+                f"timeout={call_kwargs.get('timeout')!r}"
+            ) from exc
+        raise
 def summarize_mono_community_result(result) -> dict[str, object]:
     communities = [sorted(str(node) for node in community) for community in result.communities]
     sizes = [len(community) for community in communities]

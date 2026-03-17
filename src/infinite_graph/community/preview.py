@@ -23,6 +23,7 @@ from .kcut import estimate_kcut_runtime_and_communities
 from .label_propagation import estimate_label_propagation_runtime_and_communities
 from .leiden import estimate_leiden_runtime_and_communities
 from .louvain import estimate_louvain_runtime_and_communities
+from .lswl import estimate_lswl_runtime_and_communities
 
 
 def build_algorithm_preview_warning(
@@ -394,6 +395,30 @@ def build_algorithm_preview_warning(
                 (
                     "Runtime stayed practical on many tested graphs but was noticeably less stable "
                     "than Leiden on very large graph families."
+                ),
+                (
+                    "This estimate is heuristic and derived from project benchmark data, "
+                    "not a guarantee."
+                ),
+            ]
+        )
+    elif algorithm_name == "lswl":
+        estimate = estimate_lswl_runtime_and_communities(graph, **params)
+        warning = "\n".join(
+            [
+                "LSWL benchmark-based estimate for the current graph and parameters:",
+                (
+                    "- Estimated runtime: "
+                    f"{format_duration(float(estimate['estimated_runtime_seconds']))}"
+                ),
+                f"- Estimated communities: {int(estimate['estimated_community_count'])}",
+                f"- Confidence: {estimate['confidence']}",
+                f"- Estimated timeout risk: {estimate['timeout_risk']}",
+                f"- Estimated single-community collapse risk: {estimate['collapse_risk']}",
+                (
+                    "Project benchmarks showed that LSWL often collapses into one giant "
+                    "community on the tested graph families, and larger graphs can simply "
+                    "time out before returning anything."
                 ),
                 (
                     "This estimate is heuristic and derived from project benchmark data, "

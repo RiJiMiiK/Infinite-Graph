@@ -393,6 +393,24 @@ def test_get_mono_community_algorithm_parameters() -> None:
             "minimum": 0,
         },
     ]
+    assert community_analysis.get_mono_community_algorithm_parameters("lswl") == [
+        {
+            "name": "strength_type",
+            "label": "Strength type",
+            "type": "int",
+            "default": 2,
+            "minimum": 1,
+            "maximum": 2,
+        },
+        {
+            "name": "timeout",
+            "label": "Timeout",
+            "type": "float",
+            "default": 1.0,
+            "minimum": 0.0,
+            "step": 0.1,
+        },
+    ]
 
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
     assert agdl_parameters == [
@@ -533,6 +551,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
         calls.append(("leiden", graph, kwargs))
         return "leiden-result"
 
+    def fake_lswl(graph, **kwargs):
+        calls.append(("lswl", graph, kwargs))
+        return "lswl-result"
+
     def fake_label_propagation(graph, **kwargs):
         calls.append(("label_propagation", graph, kwargs))
         return "label-propagation-result"
@@ -563,6 +585,7 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     monkeypatch.setattr(community_analysis.algorithms, "kcut", fake_kcut)
     monkeypatch.setattr(community_analysis.algorithms, "cpm", fake_cpm)
     monkeypatch.setattr(community_analysis.algorithms, "leiden", fake_leiden)
+    monkeypatch.setattr(community_analysis.algorithms, "lswl", fake_lswl)
     monkeypatch.setattr(
         community_analysis.algorithms,
         "label_propagation",
@@ -609,6 +632,10 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     assert community_analysis.run_mono_community_algorithm(graph, "kcut") == "kcut-result"
     assert community_analysis.run_mono_community_algorithm(graph, "cpm") == "cpm-result"
     assert community_analysis.run_mono_community_algorithm(graph, "leiden") == "leiden-result"
+    assert (
+        community_analysis.run_mono_community_algorithm(graph, "lswl", query_node="Water")
+        == "lswl-result"
+    )
     assert (
         community_analysis.run_mono_community_algorithm(
             graph,
@@ -688,9 +715,12 @@ def test_run_mono_community_algorithm_adds_expected_weight_parameters(monkeypatc
     }
     assert isinstance(calls[17][1], nx.Graph)
     assert calls[17][2] == {"weights": "weight"}
-    assert calls[18][0] == "label_propagation"
+    assert calls[18][0] == "lswl"
     assert isinstance(calls[18][1], nx.Graph)
-    assert calls[18][2] == {}
+    assert calls[18][2] == {"query_node": "Water", "strength_type": 2, "timeout": 1.0, "online": True}
+    assert calls[19][0] == "label_propagation"
+    assert isinstance(calls[19][1], nx.Graph)
+    assert calls[19][2] == {}
 
 
 def test_run_mono_community_algorithm_allows_overriding_default_parameters(monkeypatch) -> None:
@@ -714,6 +744,42 @@ def test_run_mono_community_algorithm_allows_overriding_default_parameters(monke
         == "agdl-result"
     )
     assert calls == [{"number_communities": 5, "kc": 2}]
+
+
+def test_run_mono_community_algorithm_reframes_lswl_empty_community_crash(monkeypatch) -> None:
+    def fake_lswl(graph, **kwargs):
+        raise IndexError("list index out of range")
+
+    monkeypatch.setattr(community_analysis.algorithms, "lswl", fake_lswl)
+
+    graph = nx.DiGraph()
+    graph.add_edge("Water", "Steam", weight=2.0, elements=["Fire"])
+
+    with pytest.raises(RuntimeError) as excinfo:
+        community_analysis.run_mono_community_algorithm(
+            graph,
+            "lswl",
+            query_node="Water",
+            timeout=5.0,
+        )
+
+    message = str(excinfo.value)
+    assert "did not return a community" in message
+    assert "query_node='Water'" in message
+    assert "timeout=5.0" in message
+
+
+def test_run_mono_community_algorithm_reraises_other_index_errors(monkeypatch) -> None:
+    def fake_kcut(graph, **kwargs):
+        raise IndexError("list index out of range")
+
+    monkeypatch.setattr(community_analysis.algorithms, "kcut", fake_kcut)
+
+    graph = nx.DiGraph()
+    graph.add_edge("Water", "Steam", weight=2.0, elements=["Fire"])
+
+    with pytest.raises(IndexError, match="list index out of range"):
+        community_analysis.run_mono_community_algorithm(graph, "kcut")
 
 
 def test_run_direct_infomap_uses_installed_package() -> None:

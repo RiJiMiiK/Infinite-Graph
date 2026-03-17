@@ -93,6 +93,16 @@ class WindowCommunitiesMixin:
         gui_module = sys.modules[f"{__package__.rsplit('.', 1)[0]}.gui"]
         graph = self._current_result["community_graph"]
         algorithm_parameters = self._read_community_parameter_values()
+        if str(algorithm_name) == "lswl":
+            selected_node = getattr(self.graph_view, "selected_node_id", None)
+            if selected_node is None:
+                QMessageBox.warning(
+                    self,
+                    "Community computation requires a selected node",
+                    "LSWL requires a selected graph node. Select a node in the graph view first.",
+                )
+                return
+            algorithm_parameters["query_node"] = str(selected_node)
         pre_run_warning = gui_module.get_mono_community_algorithm_pre_run_warning(
             str(algorithm_name),
             graph,
