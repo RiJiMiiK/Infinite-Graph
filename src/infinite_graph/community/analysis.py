@@ -493,6 +493,11 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "label": "Louvain",
         "supports_directed": False,
         "supports_weighted": True,
+        "parameter_definitions": [{"name": "resolution", "label": "Resolution", "type": "float",
+                                   "default": 1.0, "minimum": 0.0, "step": 0.1},
+                                  {"name": "randomize", "label": "Randomize", "type": "int",
+                                   "default": 0, "minimum": 0}],
+        "default_parameters": {"resolution": 1.0, "randomize": 0},
         "weight_parameter": "weight",
         "weight_value": "weight",
         "compatibility_note": "Will run on an undirected weighted view of the graph.",
@@ -666,26 +671,18 @@ MONO_COMMUNITY_ALGORITHM_EVALUATION: dict[str, dict[str, object]] = {
         "compatibility_note": "Will run on an undirected unweighted view of the graph.",
     },
 }
-
-
 def uses_directed_community_graph() -> bool:
     return True
-
 def uses_edge_weights_only() -> bool:
     return True
-
 def ignores_node_weights() -> bool:
     return True
-
-
 def estimate_belief_runtime_and_communities(
     graph: nx.DiGraph,
     **parameters: object,
 ) -> dict[str, object]:
     """Expose the Belief estimator through the main community analysis module."""
     return _estimate_belief_runtime_and_communities(graph, **parameters)
-
-
 def build_cdlib_graph(
     graph_nodes: list[dict[str, object]],
     graph_edges: list[dict[str, object]],
@@ -723,7 +720,6 @@ def _is_mono_community_algorithm_visible(algorithm_name: str) -> bool:
     if algorithm_name in {"ricci_community", "sbm_dl", "sbm_dl_nested"} and not _is_unix_platform():
         return False
     return True
-
 def get_mono_community_algorithm_evaluation() -> list[dict[str, object]]:
     return [
         {
@@ -735,7 +731,6 @@ def get_mono_community_algorithm_evaluation() -> list[dict[str, object]]:
         }
         for key, metadata in MONO_COMMUNITY_ALGORITHM_EVALUATION.items()
     ]
-
 def get_mono_community_algorithms() -> list[dict[str, object]]:
     return [
         {
@@ -751,7 +746,6 @@ def get_mono_community_algorithms() -> list[dict[str, object]]:
         for key, metadata in MONO_COMMUNITY_ALGORITHM_EVALUATION.items()
         if _is_mono_community_algorithm_visible(key)
     ]
-
 def get_mono_community_algorithm_parameters(
     algorithm_name: str,
 ) -> list[dict[str, object]]:
@@ -763,10 +757,8 @@ def get_mono_community_algorithm_parameters(
         return []
     return [{str(key): value for key, value in parameter.items()}
             for parameter in parameter_definitions if isinstance(parameter, Mapping)]
-
 def get_default_mono_community_algorithm() -> str:
     return "infomap"
-
 @lru_cache(maxsize=1)
 def get_bayan_gurobi_status() -> dict[str, object]:
     """Return a best-effort snapshot of the local Gurobi runtime status."""
@@ -809,7 +801,6 @@ def get_bayan_gurobi_status() -> dict[str, object]:
         "license_expiration": expiration,
         "message": banner or "Gurobi runtime detected.",
     }
-
 def get_mono_community_algorithm_pre_run_warning(
     algorithm_name: str,
     graph: nx.DiGraph | None = None,

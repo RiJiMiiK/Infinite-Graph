@@ -240,7 +240,7 @@ This roadmap describes the current state of the `Infinite Graph` project, what h
 - [x] Integrate `Kcut` execution from the `Communities` tab
 - [x] Integrate `Label Propagation Cordasco-Gargano` execution from the `Communities` tab
 - [x] Integrate `Leiden` execution from the `Communities` tab
-- [ ] Integrate `Louvain` execution from the `Communities` tab
+  - [x] Integrate `Louvain` execution from the `Communities` tab
 - [ ] Integrate `LSWL` execution from the `Communities` tab
 - [ ] Integrate `LSWL Plus` execution from the `Communities` tab
 - [ ] Integrate `Markov Clustering` execution from the `Communities` tab

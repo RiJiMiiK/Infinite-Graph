@@ -593,6 +593,54 @@ Current app behavior:
 - it also includes a benchmark-based estimated community count
 - the message explicitly notes that the method stayed fast in the project benchmarks
 
+## Louvain
+
+`Louvain` stayed usable on the tested graph families, but its runtime was clearly less stable than `Leiden` on very large graphs.
+
+### Runtime baselines
+
+Benchmarks were run through the app path, on weighted undirected graph views, for:
+
+- `acyclic`
+- `cyclic`
+- `cyclic_self`
+
+Representative timings and observed community counts:
+
+- `10000` nodes with `resolution=1.0`, `randomize=0`
+  - `acyclic`: `11.016s`, `79` communities
+  - `cyclic`: `5.681s`, `79`
+  - `cyclic_self`: `17.588s`, `109`
+- `30000` nodes with `resolution=1.0`, `randomize=0`
+  - `acyclic`: `45.1166s`, `132`
+  - `cyclic`: `35.0275s`, `133`
+  - `cyclic_self`: `35.4023s`, `199`
+- `100000` nodes with `resolution=1.0`, `randomize=0`
+  - `acyclic`: `37.6411s`, `245`
+  - `cyclic`: `151.5146s`, `257`
+  - `cyclic_self`: `41.0520s`, `364`
+
+### Parameter effects
+
+Parameters were varied on `10000` nodes for:
+
+- `resolution ∈ {0.5, 1.0, 2.0, 5.0}`
+- `randomize ∈ {0, 1, 7, 42}`
+
+Observed pattern:
+
+- `resolution` was the main control over fragmentation
+- `randomize` changed runtime and community count only secondarily
+- runtime was not monotone with `resolution`
+- `Louvain` remained usable, but the runtime profile was noticeably less predictable than `Leiden`
+
+Current app behavior:
+
+- the GUI now shows a pre-run `Louvain` popup
+- the popup includes a benchmark-based runtime estimate
+- it also includes a benchmark-based estimated community count
+- it explicitly notes that `resolution` is the main community-granularity control
+
 ## Infomap
 
 `Infomap` is run through the native `infomap` Python package instead of the CDlib wrapper.

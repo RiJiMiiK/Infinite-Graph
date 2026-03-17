@@ -376,6 +376,23 @@ def test_get_mono_community_algorithm_parameters() -> None:
             "minimum": 1,
         },
     ]
+    assert community_analysis.get_mono_community_algorithm_parameters("louvain") == [
+        {
+            "name": "resolution",
+            "label": "Resolution",
+            "type": "float",
+            "default": 1.0,
+            "minimum": 0.0,
+            "step": 0.1,
+        },
+        {
+            "name": "randomize",
+            "label": "Randomize",
+            "type": "int",
+            "default": 0,
+            "minimum": 0,
+        },
+    ]
 
     agdl_parameters = community_analysis.get_mono_community_algorithm_parameters("agdl")
     assert agdl_parameters == [
